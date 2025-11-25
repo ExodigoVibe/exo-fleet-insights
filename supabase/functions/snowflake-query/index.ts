@@ -69,7 +69,7 @@ async function extractPublicKeyAndComputeFingerprint(privateKeyDer: Uint8Array):
   // Import the private key
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",
-    privateKeyDer,
+    privateKeyDer.buffer as ArrayBuffer,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
     true,
     ["sign"],
@@ -121,13 +121,13 @@ serve(async (req) => {
 
     console.log(Deno.env.get("SF_PRIVATE_KEY"));
 
-    const privateKeyBase64 = (Deno.env.get("SNOWFLAKE_PRIVATE_KEY_BASE64") || Deno.env.get("SF_PRIVATE_KEY"))?.trim();
+    const privateKeyBase64 = Deno.env.get("SNOWFLAKE_PRIVATE_KEY_BASE64")?.trim();
     const configuredFingerprint = Deno.env.get("SNOWFLAKE_PUBLIC_KEY_FP")?.trim();
 
     if (!account || !user || !privateKeyBase64) {
       return new Response(
         JSON.stringify({
-          error: "Snowflake credentials not configured (need SF_ACCOUNT, SF_USER, and SF_PRIVATE_KEY).",
+          error: "Snowflake credentials not configured (need SF_ACCOUNT, SF_USER, and SNOWFLAKE_PRIVATE_KEY_BASE64).",
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
