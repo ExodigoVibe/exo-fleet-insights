@@ -31,7 +31,7 @@ async function createJWT(
 
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",
-    privateKeyDer, // use the Uint8Array directly
+    privateKeyDer, // use Uint8Array directly
     {
       name: "RSASSA-PKCS1-v1_5",
       hash: "SHA-256",
@@ -75,8 +75,12 @@ serve(async (req) => {
     const warehouse = Deno.env.get("SF_WAREHOUSE") ?? undefined;
     const database = Deno.env.get("SF_DATABASE") ?? undefined;
     const schema = Deno.env.get("SF_SCHEMA") ?? undefined;
+
+    // PRIVATE_KEY_PATH is optional; default to "./rsa_key.der" next to this file
+    const privateKeyPathEnv = Deno.env.get("PRIVATE_KEY_PATH")?.trim() ?? "./rsa_key.der";
+    const privateKeyUrl = new URL(privateKeyPathEnv, import.meta.url);
+
     const publicKeyFingerprint = Deno.env.get("SNOWFLAKE_PUBLIC_KEY_FP")?.trim();
-    const privateKeyBase64 = Deno.env.get("SNOWFLAKE_PRIVATE_KEY_BASE64")?.trim();
 
     if (!account || !user) {
       return new Response(
@@ -102,32 +106,17 @@ serve(async (req) => {
       );
     }
 
-    if (!privateKeyBase64) {
-      return new Response(
-        JSON.stringify({
-          error: "SNOWFLAKE_PRIVATE_KEY_BASE64 is not set. Configure it with the base64-encoded private key.",
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    // Decode base64 private key
+    // 🔑 Read private key file as raw DER bytes using module-relative URL
     let privateKeyDer: Uint8Array;
     try {
-      const binaryString = atob(privateKeyBase64);
-      privateKeyDer = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        privateKeyDer[i] = binaryString.charCodeAt(i);
-      }
+      console.log("[Key Debug] Reading private key from URL:", privateKeyUrl.toString());
+      privateKeyDer = await Deno.readFile(privateKeyUrl);
       console.log("[Key Debug] Private key DER length:", privateKeyDer.length);
     } catch (e) {
-      console.error("[Key Debug] Failed to decode private key:", e);
+      console.error("[Key Debug] Failed to read private key file:", e);
       return new Response(
         JSON.stringify({
-          error: "Failed to decode base64 private key. Ensure SNOWFLAKE_PRIVATE_KEY_BASE64 is valid base64.",
+          error: `Failed to read private key file at '${privateKeyUrl.toString()}'. Ensure rsa_key.der is in the same folder as index.ts or PRIVATE_KEY_PATH points to a valid file.`,
         }),
         {
           status: 500,
