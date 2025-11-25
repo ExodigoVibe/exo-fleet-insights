@@ -87,11 +87,11 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates }
             <div className="space-y-2">
               <Label htmlFor="driver">Driver</Label>
               <Select
-                value={filters.drivers[0] || ""}
+                value={filters.drivers[0] || "all"}
                 onValueChange={(value) =>
                   onFiltersChange({
                     ...filters,
-                    drivers: value ? [value] : [],
+                    drivers: value === "all" ? [] : [value],
                   })
                 }
               >
@@ -99,7 +99,7 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates }
                   <SelectValue placeholder="All Drivers" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Drivers</SelectItem>
+                  <SelectItem value="all">All Drivers</SelectItem>
                   {drivers.map((driver) => (
                     <SelectItem key={driver} value={driver}>
                       {driver}
@@ -111,11 +111,11 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates }
             <div className="space-y-2">
               <Label htmlFor="licensePlate">License Plate</Label>
               <Select
-                value={filters.licensePlates[0] || ""}
+                value={filters.licensePlates[0] || "all"}
                 onValueChange={(value) =>
                   onFiltersChange({
                     ...filters,
-                    licensePlates: value ? [value] : [],
+                    licensePlates: value === "all" ? [] : [value],
                   })
                 }
               >
@@ -123,7 +123,7 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates }
                   <SelectValue placeholder="All Vehicles" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Vehicles</SelectItem>
+                  <SelectItem value="all">All Vehicles</SelectItem>
                   {licensePlates.map((plate) => (
                     <SelectItem key={plate} value={plate}>
                       {plate}
