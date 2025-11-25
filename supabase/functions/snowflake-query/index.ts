@@ -25,7 +25,12 @@ async function sha256Base64(bytes: Uint8Array | ArrayBuffer): Promise<string> {
   return base64Encode(binary);
 }
 // Create JWT for Snowflake SQL API using KEYPAIR_JWT
-async function createJWT(account: string, user: string, privateKeyDer: BufferSource, publicKeyFingerprint: string): Promise<string> {
+async function createJWT(
+  account: string,
+  user: string,
+  privateKeyDer: BufferSource,
+  publicKeyFingerprint: string,
+): Promise<string> {
   const accountUpper = account.toUpperCase();
   const userUpper = user.toUpperCase();
   const qualifiedUsername = `${accountUpper}.${userUpper}`;
@@ -143,22 +148,22 @@ serve(async (req) => {
     }
     // Decode private key (PKCS#8 DER, unencrypted)
     let privateKeyDer;
-    try {
-      privateKeyDer = base64Decode(privateKeyBase64.replace(/\s/g, ""));
-    } catch {
-      return new Response(
-        JSON.stringify({
-          error: "Failed to decode private key (must be base64 of PKCS#8 DER, unencrypted).",
-        }),
-        {
-          status: 500,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-    }
+    // try {
+    //   privateKeyDer = base64Decode(privateKeyBase64.replace(/\s/g, ""));
+    // } catch {
+    //   return new Response(
+    //     JSON.stringify({
+    //       error: "Failed to decode private key (must be base64 of PKCS#8 DER, unencrypted).",
+    //     }),
+    //     {
+    //       status: 500,
+    //       headers: {
+    //         ...corsHeaders,
+    //         "Content-Type": "application/json",
+    //       },
+    //     },
+    //   );
+    // }
     // Use configured fingerprint if available, otherwise compute it
     let publicKeyFingerprint;
     if (configuredFingerprint) {
