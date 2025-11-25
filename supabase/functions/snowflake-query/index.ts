@@ -75,12 +75,8 @@ serve(async (req) => {
     const warehouse = Deno.env.get("SF_WAREHOUSE") ?? undefined;
     const database = Deno.env.get("SF_DATABASE") ?? undefined;
     const schema = Deno.env.get("SF_SCHEMA") ?? undefined;
-
-    // PRIVATE_KEY_PATH is optional; default to "./rsa_key.der" next to this file
-    const privateKeyPathEnv = Deno.env.get("PRIVATE_KEY_PATH")?.trim();
-    const keyUrl = new URL(privateKeyPathEnv ?? "./rsa_key.der", import.meta.url);
-
     const publicKeyFingerprint = Deno.env.get("SNOWFLAKE_PUBLIC_KEY_FP")?.trim();
+    const privateKeyBase64 = Deno.env.get("SNOWFLAKE_PRIVATE_KEY_BASE64")?.trim();
 
     if (!account || !user) {
       return new Response(
@@ -106,17 +102,32 @@ serve(async (req) => {
       );
     }
 
-    // 🔑 Read private key file as raw DER bytes (relative to this module)
-    let privateKeyDer: Uint8Array;
-    try {
-      console.log("[Key Debug] Reading private key from URL:", keyUrl.toString());
-      privateKeyDer = await Deno.readFile(keyUrl);
-      console.log("[Key Debug] Private key DER length:", privateKeyDer.length);
-    } catch (e) {
-      console.error("[Key Debug] Failed to read private key file:", e);
+    if (!privateKeyBase64) {
       return new Response(
         JSON.stringify({
-          error: `Failed to read private key file at '${keyUrl.toString()}'. Ensure rsa_key.der is in the same folder as index.ts or PRIVATE_KEY_PATH points to a valid file.`,
+          error: "SNOWFLAKE_PRIVATE_KEY_BASE64 is not set. Configure it with the base64-encoded private key.",
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Decode base64 private key
+    let privateKeyDer: Uint8Array;
+    try {
+      const binaryString = atob(privateKeyBase64);
+      privateKeyDer = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        privateKeyDer[i] = binaryString.charCodeAt(i);
+      }
+      console.log("[Key Debug] Private key DER length:", privateKeyDer.length);
+    } catch (e) {
+      console.error("[Key Debug] Failed to decode private key:", e);
+      return new Response(
+        JSON.stringify({
+          error: "Failed to decode base64 private key. Ensure SNOWFLAKE_PRIVATE_KEY_BASE64 is valid base64.",
         }),
         {
           status: 500,
