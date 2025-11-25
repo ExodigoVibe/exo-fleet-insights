@@ -99,7 +99,7 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates }
                   <SelectValue placeholder="All Drivers" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Drivers</SelectItem>
+                  <SelectItem value="all">All Drivers ({drivers.length})</SelectItem>
                   {drivers.map((driver) => (
                     <SelectItem key={driver} value={driver}>
                       {driver}
