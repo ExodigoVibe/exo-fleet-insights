@@ -102,34 +102,16 @@ serve(async (req) => {
       );
     }
 
-    const privateKeyBase64 = Deno.env.get("SNOWFLAKE_PRIVATE_KEY_BASE64");
-    if (!privateKeyBase64) {
-      return new Response(
-        JSON.stringify({
-          error: "SNOWFLAKE_PRIVATE_KEY_BASE64 is not set. Configure it with the base64-encoded private key.",
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
     let privateKeyDer: Uint8Array;
     try {
-      const privateKeyPem = atob(privateKeyBase64);
-      const binaryLen = privateKeyPem.length;
-      const bytes = new Uint8Array(binaryLen);
-      for (let i = 0; i < binaryLen; i++) {
-        bytes[i] = privateKeyPem.charCodeAt(i);
-      }
-      privateKeyDer = bytes;
-      console.log("[Key Debug] Decoded private key from base64, length:", privateKeyDer.length);
+      // Read the private key file from the function directory
+      privateKeyDer = await Deno.readFile("./rsa_key.der");
+      console.log("[Key Debug] Private key loaded, length:", privateKeyDer.length);
     } catch (e) {
-      console.error("[Key Debug] Failed to decode base64 private key:", e);
+      console.error("[Key Debug] Failed to read private key:", e);
       return new Response(
         JSON.stringify({
-          error: `Failed to decode SNOWFLAKE_PRIVATE_KEY_BASE64: ${e instanceof Error ? e.message : String(e)}`,
+          error: `Failed to load private key: ${e instanceof Error ? e.message : String(e)}`,
         }),
         {
           status: 500,
