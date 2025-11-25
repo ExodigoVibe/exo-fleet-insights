@@ -119,17 +119,43 @@ serve(async (req) => {
     // Decode private key (PKCS#8 DER, unencrypted) - strip PEM headers if present
     let privateKeyDer: Uint8Array;
     try {
+      console.log("[Key Debug] Original key length:", privateKeyBase64.length);
+      console.log("[Key Debug] First 50 chars:", privateKeyBase64.substring(0, 50));
+      
       let cleanedKey = privateKeyBase64
         .replace(/-----BEGIN PRIVATE KEY-----/g, "")
         .replace(/-----END PRIVATE KEY-----/g, "")
         .replace(/-----BEGIN RSA PRIVATE KEY-----/g, "")
         .replace(/-----END RSA PRIVATE KEY-----/g, "")
-        .replace(/\s/g, "");
+        .replace(/\s/g, "")
+        .replace(/\n/g, "")
+        .replace(/\r/g, "");
+      
+      console.log("[Key Debug] Cleaned key length:", cleanedKey.length);
+      console.log("[Key Debug] First 50 chars after cleaning:", cleanedKey.substring(0, 50));
+      
+      // Validate base64 characters
+      const base64Pattern = /^[A-Za-z0-9+/]*={0,2}$/;
+      if (!base64Pattern.test(cleanedKey)) {
+        console.error("[Key Debug] Invalid base64 characters detected");
+        return new Response(
+          JSON.stringify({
+            error: "Private key contains invalid base64 characters. Key must be base64-encoded PKCS#8 DER format.",
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+      
       privateKeyDer = base64Decode(cleanedKey);
+      console.log("[Key Debug] Successfully decoded, length:", privateKeyDer.length);
     } catch (e) {
+      console.error("[Key Debug] Decode error:", e);
       return new Response(
         JSON.stringify({
-          error: `Failed to decode base64: ${e instanceof Error ? e.message : String(e)}`,
+          error: `Failed to decode private key base64: ${e instanceof Error ? e.message : String(e)}. Ensure SF_PRIVATE_KEY is base64-encoded PKCS#8 DER format.`,
         }),
         {
           status: 500,
