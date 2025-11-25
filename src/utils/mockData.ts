@@ -1,92 +1,5 @@
 import { Trip, Vehicle, Driver } from "@/types/fleet";
 
-const drivers: Driver[] = [
-  {
-    "driver_id": 552750659,
-    "first_name": "Amit",
-    "last_name": "Bukra",
-    "identification_number": "",
-    "driver_code": 0,
-    "managed_code": 3355,
-    "phone": "",
-    "cellular": "",
-    "email": "",
-    "is_blocked": true
-  },
-  {
-    "driver_id": 552741391,
-    "first_name": "Amit",
-    "last_name": "Dean",
-    "identification_number": "",
-    "driver_code": 3435,
-    "managed_code": 3435,
-    "phone": "",
-    "cellular": "",
-    "email": "",
-    "is_blocked": true
-  },
-  {
-    "driver_id": 552749486,
-    "first_name": "Amit",
-    "last_name": "Dvir",
-    "identification_number": "",
-    "driver_code": 0,
-    "managed_code": 4221,
-    "phone": "",
-    "cellular": "",
-    "email": "amit.dvir@exodigo.ai",
-    "is_blocked": false
-  },
-  {
-    "driver_id": 552769063,
-    "first_name": "Amit",
-    "last_name": "Gal",
-    "identification_number": "",
-    "driver_code": 0,
-    "managed_code": 2345,
-    "phone": "",
-    "cellular": "",
-    "email": "",
-    "is_blocked": false
-  },
-  {
-    "driver_id": 552741392,
-    "first_name": "Amit",
-    "last_name": "Hazan",
-    "identification_number": "",
-    "driver_code": 3111,
-    "managed_code": 3111,
-    "phone": "",
-    "cellular": "",
-    "email": "",
-    "is_blocked": false
-  },
-  {
-    "driver_id": 552741393,
-    "first_name": "Ariel",
-    "last_name": "Verbov",
-    "identification_number": "",
-    "driver_code": 2523,
-    "managed_code": 2523,
-    "phone": "",
-    "cellular": "",
-    "email": "",
-    "is_blocked": false
-  },
-  {
-    "driver_id": 552741394,
-    "first_name": "Asaf",
-    "last_name": "Ornstein",
-    "identification_number": "",
-    "driver_code": 3524,
-    "managed_code": 3524,
-    "phone": "",
-    "cellular": "",
-    "email": "",
-    "is_blocked": false
-  }
-];  
-
 const vehiclesData: Vehicle[] = [
   {
     license_plate: "11153104",
@@ -164,9 +77,19 @@ const locations = [
 function generateTrip(
   tripId: number,
   vehicle: Vehicle,
-  driver: Driver,
+  driver: Driver | undefined,
   date: Date
 ): Trip {
+  // Fallback driver if none provided
+  const fallbackDriver = {
+    driver_id: 0,
+    first_name: "Unknown",
+    last_name: "Driver",
+    driver_code: 0,
+    managed_code: 0,
+  };
+  
+  const driverData = driver || fallbackDriver;
   const startTime = new Date(date);
   startTime.setHours(8 + Math.floor(Math.random() * 10));
   startTime.setMinutes(Math.floor(Math.random() * 60));
@@ -183,8 +106,8 @@ function generateTrip(
   return {
     trip_id: tripId,
     license_plate: vehicle.license_plate,
-    driver_code: driver.driver_code,
-    driver_name: `${driver.first_name} ${driver.last_name}`,
+    driver_code: driverData.driver_code,
+    driver_name: `${driverData.first_name} ${driverData.last_name}`,
     driver_source: 0,
     start_location: {
       location: {
@@ -215,7 +138,7 @@ function generateTrip(
   };
 }
 
-export function generateMockTrips(days: number = 30): Trip[] {
+export function generateMockTrips(days: number = 30, drivers: Driver[] = []): Trip[] {
   const trips: Trip[] = [];
   let tripIdCounter = 10034010074943;
 
@@ -226,7 +149,9 @@ export function generateMockTrips(days: number = 30): Trip[] {
     vehiclesData.forEach((vehicle) => {
       const numTrips = Math.floor(Math.random() * 5) + 1;
       for (let t = 0; t < numTrips; t++) {
-        const driver = drivers[Math.floor(Math.random() * drivers.length)];
+        const driver = drivers.length > 0 
+          ? drivers[Math.floor(Math.random() * drivers.length)]
+          : undefined;
         trips.push(generateTrip(tripIdCounter++, vehicle, driver, date));
       }
     });
