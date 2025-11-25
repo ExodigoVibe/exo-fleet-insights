@@ -4,6 +4,7 @@ import { FilterPanel } from "@/components/fleet/FilterPanel";
 import { VehicleUtilizationChart } from "@/components/fleet/VehicleUtilizationChart";
 import { DailyUsageChart } from "@/components/fleet/DailyUsageChart";
 import { VehicleDetailTable } from "@/components/fleet/VehicleDetailTable";
+import { SnowflakeTest } from "@/components/SnowflakeTest";
 import { generateMockTrips, getMockVehicles } from "@/utils/mockData";
 import {
   filterTrips,
@@ -53,6 +54,8 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        <SnowflakeTest />
+        
         <FilterPanel
           filters={filters}
           onFiltersChange={setFilters}
