@@ -31,7 +31,7 @@ async function createJWT(
 
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",
-    privateKeyDer.buffer as ArrayBuffer, // raw DER bytes from rsa_key.der
+    privateKeyDer, // use the Uint8Array directly
     {
       name: "RSASSA-PKCS1-v1_5",
       hash: "SHA-256",
@@ -76,15 +76,16 @@ serve(async (req) => {
     const database = Deno.env.get("SF_DATABASE") ?? undefined;
     const schema = Deno.env.get("SF_SCHEMA") ?? undefined;
 
-    // PRIVATE_KEY_PATH is a path to a binary PKCS#8 DER file, e.g. "rsa_key.der"
-    const privateKeyPath = Deno.env.get("PRIVATE_KEY_PATH")?.trim() ?? "rsa_key.der";
+    // PRIVATE_KEY_PATH is optional; default to "./rsa_key.der" next to this file
+    const privateKeyPathEnv = Deno.env.get("PRIVATE_KEY_PATH")?.trim();
+    const keyUrl = new URL(privateKeyPathEnv ?? "./rsa_key.der", import.meta.url);
+
     const publicKeyFingerprint = Deno.env.get("SNOWFLAKE_PUBLIC_KEY_FP")?.trim();
 
-    if (!account || !user || !privateKeyPath) {
+    if (!account || !user) {
       return new Response(
         JSON.stringify({
-          error:
-            "Snowflake credentials not configured (need SF_ACCOUNT, SF_USER, and PRIVATE_KEY_PATH pointing to PKCS#8 DER private key file).",
+          error: "Snowflake credentials not configured (need SF_ACCOUNT and SF_USER).",
         }),
         {
           status: 500,
@@ -105,17 +106,17 @@ serve(async (req) => {
       );
     }
 
-    // 🔑 Read private key file as raw DER bytes
+    // 🔑 Read private key file as raw DER bytes (relative to this module)
     let privateKeyDer: Uint8Array;
     try {
-      console.log("[Key Debug] Reading private key from path:", privateKeyPath);
-      privateKeyDer = await Deno.readFile(privateKeyPath);
+      console.log("[Key Debug] Reading private key from URL:", keyUrl.toString());
+      privateKeyDer = await Deno.readFile(keyUrl);
       console.log("[Key Debug] Private key DER length:", privateKeyDer.length);
     } catch (e) {
       console.error("[Key Debug] Failed to read private key file:", e);
       return new Response(
         JSON.stringify({
-          error: `Failed to read private key file at PRIVATE_KEY_PATH='${privateKeyPath}'. Ensure rsa_key.der is bundled and the path is correct.`,
+          error: `Failed to read private key file at '${keyUrl.toString()}'. Ensure rsa_key.der is in the same folder as index.ts or PRIVATE_KEY_PATH points to a valid file.`,
         }),
         {
           status: 500,
@@ -133,11 +134,11 @@ serve(async (req) => {
       publicKeyFingerprint,
     );
 
-    const jwtToken = await createJWT(account!, user!, privateKeyDer, publicKeyFingerprint);
+    const jwtToken = await createJWT(account, user, privateKeyDer, publicKeyFingerprint);
 
     console.log(
       "[Snowflake Auth] JWT created successfully, issuer will be:",
-      `${account!.toUpperCase()}.${user!.toUpperCase()}.${publicKeyFingerprint}`,
+      `${account.toUpperCase()}.${user.toUpperCase()}.${publicKeyFingerprint}`,
     );
 
     const snowflakeUrl = `https://${account}.snowflakecomputing.com/api/v2/statements`;
