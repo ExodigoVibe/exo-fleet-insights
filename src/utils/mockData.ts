@@ -143,7 +143,7 @@ export function generateMockTrips(days: number = 30, drivers: Driver[] = [], veh
   let tripIdCounter = 10034010074943;
 
   // Use provided vehicles or fall back to default mock vehicles
-  const vehiclesToUse = vehicles.length > 0 ? vehicles : vehiclesData;
+  const vehiclesToUse = vehicles.length > 0 ? vehicles : [];
 
   for (let d = 0; d < days; d++) {
     const date = new Date();
@@ -163,6 +163,3 @@ export function generateMockTrips(days: number = 30, drivers: Driver[] = [], veh
   return trips;
 }
 
-export function getMockVehicles(): Vehicle[] {
-  return vehiclesData;
-}
