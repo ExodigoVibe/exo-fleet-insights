@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 export const SnowflakeTest = () => {
-  const [query, setQuery] = useState("SELECT CURRENT_VERSION(), CURRENT_USER(), CURRENT_ROLE()");
+  const [query, setQuery] = useState("SELECT * FROM BUSINESS_DB.ITURAN.DRIVERS");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const { toast } = useToast();
