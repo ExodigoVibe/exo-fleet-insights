@@ -102,19 +102,34 @@ serve(async (req) => {
       );
     }
 
-    // 🔑 Always read ./rsa_key.der relative to this file
-    const privateKeyUrl = new URL("./rsa_key.der", import.meta.url);
+    const privateKeyBase64 = Deno.env.get("SNOWFLAKE_PRIVATE_KEY_BASE64");
+    if (!privateKeyBase64) {
+      return new Response(
+        JSON.stringify({
+          error: "SNOWFLAKE_PRIVATE_KEY_BASE64 is not set. Configure it with the base64-encoded private key.",
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     let privateKeyDer: Uint8Array;
     try {
-      console.log("[Key Debug] Reading private key from URL:", privateKeyUrl.toString());
-      privateKeyDer = await Deno.readFile(privateKeyUrl);
-      console.log("[Key Debug] Private key DER length:", privateKeyDer.length);
+      const privateKeyPem = atob(privateKeyBase64);
+      const binaryLen = privateKeyPem.length;
+      const bytes = new Uint8Array(binaryLen);
+      for (let i = 0; i < binaryLen; i++) {
+        bytes[i] = privateKeyPem.charCodeAt(i);
+      }
+      privateKeyDer = bytes;
+      console.log("[Key Debug] Decoded private key from base64, length:", privateKeyDer.length);
     } catch (e) {
-      console.error("[Key Debug] Failed to read private key file:", e);
+      console.error("[Key Debug] Failed to decode base64 private key:", e);
       return new Response(
         JSON.stringify({
-          error: `Failed to read private key file at '${privateKeyUrl.toString()}'. Ensure rsa_key.der is in the same folder as index.ts in the snowflake-query function.`,
+          error: `Failed to decode SNOWFLAKE_PRIVATE_KEY_BASE64: ${e instanceof Error ? e.message : String(e)}`,
         }),
         {
           status: 500,
