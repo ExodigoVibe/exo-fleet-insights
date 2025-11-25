@@ -45,6 +45,20 @@ export interface Vehicle {
   telematics_units: Array<{ ip_address: string }>;
 }
 
+export interface Driver {
+  driver_id: number;
+  first_name: string;
+  last_name: string;
+  identification_number: string;
+  driver_code: number;
+  managed_code: number;
+  phone: string;
+  cellular: string;
+  email: string;
+  is_blocked: boolean;
+  drive_permission_groups?: Array<{ id: number; name: string }>;
+}
+
 export interface VehicleUsageMetrics {
   license_plate: string;
   nickname: string;

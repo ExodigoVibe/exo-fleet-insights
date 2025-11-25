@@ -1,12 +1,91 @@
-import { Trip, Vehicle } from "@/types/fleet";
+import { Trip, Vehicle, Driver } from "@/types/fleet";
 
-const drivers = [
-  { code: 4151, name: "Gil Sorkin" },
-  { code: 4152, name: "Sarah Cohen" },
-  { code: 4153, name: "David Levi" },
-  { code: 4154, name: "Rachel Ben-David" },
-  { code: 4155, name: "Yossi Goldstein" },
-];
+const drivers: Driver[] = [
+  {
+    "driver_id": 552750659,
+    "first_name": "Amit",
+    "last_name": "Bukra",
+    "identification_number": "",
+    "driver_code": 0,
+    "managed_code": 3355,
+    "phone": "",
+    "cellular": "",
+    "email": "",
+    "is_blocked": true
+  },
+  {
+    "driver_id": 552741391,
+    "first_name": "Amit",
+    "last_name": "Dean",
+    "identification_number": "",
+    "driver_code": 3435,
+    "managed_code": 3435,
+    "phone": "",
+    "cellular": "",
+    "email": "",
+    "is_blocked": true
+  },
+  {
+    "driver_id": 552749486,
+    "first_name": "Amit",
+    "last_name": "Dvir",
+    "identification_number": "",
+    "driver_code": 0,
+    "managed_code": 4221,
+    "phone": "",
+    "cellular": "",
+    "email": "amit.dvir@exodigo.ai",
+    "is_blocked": false
+  },
+  {
+    "driver_id": 552769063,
+    "first_name": "Amit",
+    "last_name": "Gal",
+    "identification_number": "",
+    "driver_code": 0,
+    "managed_code": 2345,
+    "phone": "",
+    "cellular": "",
+    "email": "",
+    "is_blocked": false
+  },
+  {
+    "driver_id": 552741392,
+    "first_name": "Amit",
+    "last_name": "Hazan",
+    "identification_number": "",
+    "driver_code": 3111,
+    "managed_code": 3111,
+    "phone": "",
+    "cellular": "",
+    "email": "",
+    "is_blocked": false
+  },
+  {
+    "driver_id": 552741393,
+    "first_name": "Ariel",
+    "last_name": "Verbov",
+    "identification_number": "",
+    "driver_code": 2523,
+    "managed_code": 2523,
+    "phone": "",
+    "cellular": "",
+    "email": "",
+    "is_blocked": false
+  },
+  {
+    "driver_id": 552741394,
+    "first_name": "Asaf",
+    "last_name": "Ornstein",
+    "identification_number": "",
+    "driver_code": 3524,
+    "managed_code": 3524,
+    "phone": "",
+    "cellular": "",
+    "email": "",
+    "is_blocked": false
+  }
+];  
 
 const vehiclesData: Vehicle[] = [
   {
@@ -85,7 +164,7 @@ const locations = [
 function generateTrip(
   tripId: number,
   vehicle: Vehicle,
-  driver: { code: number; name: string },
+  driver: Driver,
   date: Date
 ): Trip {
   const startTime = new Date(date);
@@ -104,8 +183,8 @@ function generateTrip(
   return {
     trip_id: tripId,
     license_plate: vehicle.license_plate,
-    driver_code: driver.code,
-    driver_name: driver.name,
+    driver_code: driver.driver_code,
+    driver_name: `${driver.first_name} ${driver.last_name}`,
     driver_source: 0,
     start_location: {
       location: {
