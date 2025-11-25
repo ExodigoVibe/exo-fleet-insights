@@ -170,15 +170,29 @@ serve(async (req) => {
     }
 
     // Decode private key (PKCS#8 DER, unencrypted)
+    // Handle both PEM format and raw base64
     let privateKeyDer: Uint8Array;
     try {
-      const decoded = base64Decode(privateKeyBase64.replace(/\s/g, ""));
+      let cleanedKey = privateKeyBase64;
+      
+      // Strip PEM headers if present
+      cleanedKey = cleanedKey
+        .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+        .replace(/-----END PRIVATE KEY-----/g, "")
+        .replace(/-----BEGIN RSA PRIVATE KEY-----/g, "")
+        .replace(/-----END RSA PRIVATE KEY-----/g, "")
+        .replace(/\s/g, "");
+      
+      const decoded = base64Decode(cleanedKey);
       // Create a new Uint8Array with proper ArrayBuffer type
       privateKeyDer = Uint8Array.from(decoded);
-    } catch {
+      
+      console.log("[Private Key] Successfully decoded private key, length:", privateKeyDer.length);
+    } catch (error) {
+      console.error("[Private Key] Failed to decode:", error);
       return new Response(
         JSON.stringify({
-          error: "Failed to decode private key (must be base64 of PKCS#8 DER, unencrypted).",
+          error: "Failed to decode private key (must be base64 of PKCS#8 DER, unencrypted, with or without PEM headers).",
         }),
         {
           status: 500,
