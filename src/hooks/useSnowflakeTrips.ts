@@ -17,19 +17,28 @@ export function useSnowflakeTrips() {
       try {
         setLoading(true);
         setError(null);
+        console.log("[useSnowflakeTrips] Starting fetch...");
 
         const { data, error: functionError } = await supabase.functions.invoke(
           "snowflake-query",
           {
             body: {
-              query: "SELECT * FROM BUSINESS_DB.ITURAN.TRIPS",
+              query: "SELECT * FROM BUSINESS_DB.ITURAN.TRIPS LIMIT 100",
             },
           }
         );
 
-        if (functionError) throw functionError;
-        if (!data) throw new Error("No data returned from Snowflake");
+        if (functionError) {
+          console.error("[useSnowflakeTrips] Function error:", functionError);
+          throw functionError;
+        }
+        
+        if (!data) {
+          console.error("[useSnowflakeTrips] No data returned");
+          throw new Error("No data returned from Snowflake");
+        }
 
+        console.log("[useSnowflakeTrips] Received data, processing...");
         const response = data as SnowflakeResponse;
         
         // Map column names to indices
@@ -86,10 +95,12 @@ export function useSnowflakeTrips() {
           };
         });
 
+        console.log(`[useSnowflakeTrips] Successfully transformed ${transformedTrips.length} trips`);
         setTrips(transformedTrips);
       } catch (err) {
-        console.error("Error fetching trips from Snowflake:", err);
+        console.error("[useSnowflakeTrips] Error:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch trips");
+        setTrips([]); // Set empty array on error
       } finally {
         setLoading(false);
       }
