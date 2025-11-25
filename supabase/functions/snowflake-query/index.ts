@@ -147,23 +147,7 @@ serve(async (req) => {
       );
     }
     // Decode private key (PKCS#8 DER, unencrypted)
-    let privateKeyDer;
-    // try {
-    //   privateKeyDer = base64Decode(privateKeyBase64.replace(/\s/g, ""));
-    // } catch {
-    //   return new Response(
-    //     JSON.stringify({
-    //       error: "Failed to decode private key (must be base64 of PKCS#8 DER, unencrypted).",
-    //     }),
-    //     {
-    //       status: 500,
-    //       headers: {
-    //         ...corsHeaders,
-    //         "Content-Type": "application/json",
-    //       },
-    //     },
-    //   );
-    // }
+
     // Use configured fingerprint if available, otherwise compute it
     let publicKeyFingerprint;
     if (configuredFingerprint) {
