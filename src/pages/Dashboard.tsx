@@ -5,9 +5,9 @@ import { VehicleUtilizationChart } from "@/components/fleet/VehicleUtilizationCh
 import { DailyUsageChart } from "@/components/fleet/DailyUsageChart";
 import { VehicleDetailTable } from "@/components/fleet/VehicleDetailTable";
 import { SnowflakeTest } from "@/components/SnowflakeTest";
-import { generateMockTrips } from "@/utils/mockData";
 import { useSnowflakeDrivers } from "@/hooks/useSnowflakeDrivers";
 import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
+import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
 import {
   filterTrips,
   calculateVehicleUsageMetrics,
@@ -16,40 +16,43 @@ import {
   getUniqueDrivers,
   getUniqueLicensePlates,
 } from "@/utils/fleetCalculations";
-import { FleetFilters, Trip } from "@/types/fleet";
-import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
+import { FleetFilters } from "@/types/fleet";
+import { Activity, Clock, TrendingUp, Car, Timer, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Dashboard = () => {
   const { drivers: snowflakeDrivers, loading: driversLoading, error: driversError } = useSnowflakeDrivers();
   const { vehicles: snowflakeVehicles, loading: vehiclesLoading, error: vehiclesError } = useSnowflakeVehicles();
-  const [allTrips, setAllTrips] = useState<Trip[]>([]);
+  const { trips: snowflakeTrips, loading: tripsLoading, error: tripsError } = useSnowflakeTrips();
   
-  const allVehicles = snowflakeVehicles.length > 0 ? snowflakeVehicles : [];
+  const allTrips = snowflakeTrips;
+  const allVehicles = snowflakeVehicles;
   const drivers = useMemo(() => getUniqueDrivers(allTrips), [allTrips]);
   const licensePlates = useMemo(() => getUniqueLicensePlates(allTrips), [allTrips]);
 
-  // Generate trips when both drivers and vehicles are loaded
+  const isLoading = driversLoading || vehiclesLoading || tripsLoading;
+
+  // Show success message when all data is loaded
   useEffect(() => {
-    if (!driversLoading && !vehiclesLoading && snowflakeDrivers.length > 0 && snowflakeVehicles.length > 0) {
-      const trips = generateMockTrips(30, snowflakeDrivers, snowflakeVehicles);
-      setAllTrips(trips);
-      toast.success(`Loaded ${snowflakeDrivers.length} drivers and ${snowflakeVehicles.length} vehicles from Snowflake`);
+    if (!isLoading && snowflakeDrivers.length > 0 && snowflakeVehicles.length > 0 && snowflakeTrips.length > 0) {
+      toast.success(
+        `Loaded ${snowflakeTrips.length} trips, ${snowflakeDrivers.length} drivers, and ${snowflakeVehicles.length} vehicles from Snowflake`
+      );
     }
-  }, [driversLoading, vehiclesLoading, snowflakeDrivers, snowflakeVehicles]);
+  }, [isLoading, snowflakeDrivers.length, snowflakeVehicles.length, snowflakeTrips.length]);
 
   // Show error toasts
   useEffect(() => {
-    if (driversError) {
-      toast.error(`Failed to load drivers: ${driversError}`);
-    }
+    if (driversError) toast.error(`Failed to load drivers: ${driversError}`);
   }, [driversError]);
 
   useEffect(() => {
-    if (vehiclesError) {
-      toast.error(`Failed to load vehicles: ${vehiclesError}`);
-    }
+    if (vehiclesError) toast.error(`Failed to load vehicles: ${vehiclesError}`);
   }, [vehiclesError]);
+
+  useEffect(() => {
+    if (tripsError) toast.error(`Failed to load trips: ${tripsError}`);
+  }, [tripsError]);
 
   const [filters, setFilters] = useState<FleetFilters>({
     dateFrom: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
@@ -83,53 +86,64 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         <SnowflakeTest />
-        
-        <FilterPanel
-          filters={filters}
-          onFiltersChange={setFilters}
-          drivers={drivers}
-          licensePlates={licensePlates}
-        />
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          <KPICard
-            title="Active Driving Time"
-            value={`${kpis.totalActiveTimeHours.toFixed(1)}h`}
-            icon={Activity}
-            subtitle="Total time vehicles were actively driving"
-          />
-          <KPICard
-            title="Idle Time"
-            value={`${kpis.totalIdleTimeHours.toFixed(1)}h`}
-            icon={Clock}
-            subtitle="Total time engines were on but not moving"
-          />
-          <KPICard
-            title="Total Trips"
-            value={kpis.totalTrips.toLocaleString()}
-            icon={TrendingUp}
-            subtitle="Number of completed trips"
-          />
-          <KPICard
-            title="Active Vehicles"
-            value={kpis.activeVehicles}
-            icon={Car}
-            subtitle="Vehicles with at least one trip"
-          />
-          <KPICard
-            title="Avg Trip Duration"
-            value={`${kpis.avgTripDurationMinutes.toFixed(0)}m`}
-            icon={Timer}
-            subtitle="Average duration per trip"
-          />
-        </div>
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2 text-muted-foreground">Loading data from Snowflake...</span>
+          </div>
+        )}
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <VehicleUtilizationChart metrics={vehicleMetrics} />
-          <DailyUsageChart metrics={dailyMetrics} />
-        </div>
+        {!isLoading && (
+          <>
+            <FilterPanel
+              filters={filters}
+              onFiltersChange={setFilters}
+              drivers={drivers}
+              licensePlates={licensePlates}
+            />
 
-        <VehicleDetailTable metrics={vehicleMetrics} />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+              <KPICard
+                title="Active Driving Time"
+                value={`${kpis.totalActiveTimeHours.toFixed(1)}h`}
+                icon={Activity}
+                subtitle="Total time vehicles were actively driving"
+              />
+              <KPICard
+                title="Idle Time"
+                value={`${kpis.totalIdleTimeHours.toFixed(1)}h`}
+                icon={Clock}
+                subtitle="Total time engines were on but not moving"
+              />
+              <KPICard
+                title="Total Trips"
+                value={kpis.totalTrips.toLocaleString()}
+                icon={TrendingUp}
+                subtitle="Number of completed trips"
+              />
+              <KPICard
+                title="Active Vehicles"
+                value={kpis.activeVehicles}
+                icon={Car}
+                subtitle="Vehicles with at least one trip"
+              />
+              <KPICard
+                title="Avg Trip Duration"
+                value={`${kpis.avgTripDurationMinutes.toFixed(0)}m`}
+                icon={Timer}
+                subtitle="Average duration per trip"
+              />
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <VehicleUtilizationChart metrics={vehicleMetrics} />
+              <DailyUsageChart metrics={dailyMetrics} />
+            </div>
+
+            <VehicleDetailTable metrics={vehicleMetrics} />
+          </>
+        )}
       </main>
     </div>
   );
