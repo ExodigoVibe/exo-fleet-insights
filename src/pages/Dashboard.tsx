@@ -5,9 +5,9 @@ import { VehicleUtilizationChart } from "@/components/fleet/VehicleUtilizationCh
 import { DailyUsageChart } from "@/components/fleet/DailyUsageChart";
 import { VehicleDetailTable } from "@/components/fleet/VehicleDetailTable";
 import { SnowflakeTest } from "@/components/SnowflakeTest";
-import { generateMockTrips } from "@/utils/mockData";
 import { useSnowflakeDrivers } from "@/hooks/useSnowflakeDrivers";
 import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
+import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
 import {
   filterTrips,
   calculateVehicleUsageMetrics,
@@ -23,20 +23,27 @@ import { toast } from "sonner";
 const Dashboard = () => {
   const { drivers: snowflakeDrivers, loading: driversLoading, error: driversError } = useSnowflakeDrivers();
   const { vehicles: snowflakeVehicles, loading: vehiclesLoading, error: vehiclesError } = useSnowflakeVehicles();
-  const [allTrips, setAllTrips] = useState<Trip[]>([]);
+  const { trips: snowflakeTrips, loading: tripsLoading, error: tripsError, progress } = useSnowflakeTrips();
   
   const allVehicles = snowflakeVehicles.length > 0 ? snowflakeVehicles : [];
+  const allTrips = snowflakeTrips;
   const drivers = useMemo(() => getUniqueDrivers(allTrips), [allTrips]);
   const licensePlates = useMemo(() => getUniqueLicensePlates(allTrips), [allTrips]);
 
-  // Generate trips when both drivers and vehicles are loaded
+  // Show success toast when data is loaded
   useEffect(() => {
-    if (!driversLoading && !vehiclesLoading && snowflakeDrivers.length > 0 && snowflakeVehicles.length > 0) {
-      const trips = generateMockTrips(30, snowflakeDrivers, snowflakeVehicles);
-      setAllTrips(trips);
-      toast.success(`Loaded ${snowflakeDrivers.length} drivers and ${snowflakeVehicles.length} vehicles from Snowflake`);
+    if (!driversLoading && !vehiclesLoading && !tripsLoading && 
+        snowflakeDrivers.length > 0 && snowflakeVehicles.length > 0 && snowflakeTrips.length > 0) {
+      toast.success(`Loaded ${snowflakeTrips.length} trips, ${snowflakeDrivers.length} drivers, and ${snowflakeVehicles.length} vehicles from Snowflake`);
     }
-  }, [driversLoading, vehiclesLoading, snowflakeDrivers, snowflakeVehicles]);
+  }, [driversLoading, vehiclesLoading, tripsLoading, snowflakeDrivers.length, snowflakeVehicles.length, snowflakeTrips.length]);
+
+  // Show progress toast while loading trips
+  useEffect(() => {
+    if (tripsLoading && progress.total > 0) {
+      toast.info(`Loading trips: ${progress.current} / ${progress.total}`, { id: 'trips-progress' });
+    }
+  }, [tripsLoading, progress]);
 
   // Show error toasts
   useEffect(() => {
@@ -50,6 +57,12 @@ const Dashboard = () => {
       toast.error(`Failed to load vehicles: ${vehiclesError}`);
     }
   }, [vehiclesError]);
+
+  useEffect(() => {
+    if (tripsError) {
+      toast.error(`Failed to load trips: ${tripsError}`);
+    }
+  }, [tripsError]);
 
   const [filters, setFilters] = useState<FleetFilters>({
     dateFrom: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
