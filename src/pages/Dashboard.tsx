@@ -21,12 +21,12 @@ import { Activity, Clock, TrendingUp, Car, Timer, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Dashboard = () => {
-  const { drivers: snowflakeDrivers, loading: driversLoading, error: driversError } = useSnowflakeDrivers();
-  const { vehicles: snowflakeVehicles, loading: vehiclesLoading, error: vehiclesError } = useSnowflakeVehicles();
-  const { trips: snowflakeTrips, loading: tripsLoading, error: tripsError } = useSnowflakeTrips();
+  const { drivers: snowflakeDrivers = [], loading: driversLoading, error: driversError } = useSnowflakeDrivers();
+  const { vehicles: snowflakeVehicles = [], loading: vehiclesLoading, error: vehiclesError } = useSnowflakeVehicles();
+  const { trips: snowflakeTrips = [], loading: tripsLoading, error: tripsError } = useSnowflakeTrips();
   
-  const allTrips = snowflakeTrips || [];
-  const allVehicles = snowflakeVehicles || [];
+  const allTrips = snowflakeTrips;
+  const allVehicles = snowflakeVehicles;
   const drivers = useMemo(() => getUniqueDrivers(allTrips), [allTrips]);
   const licensePlates = useMemo(() => getUniqueLicensePlates(allTrips), [allTrips]);
 
