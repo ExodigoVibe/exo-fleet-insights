@@ -54,7 +54,11 @@ async function createJWT(
   };
 
   const message = `${base64UrlEncode(JSON.stringify(header))}.${base64UrlEncode(JSON.stringify(payload))}`;
-  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", privateKey, new TextEncoder().encode(message));
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    privateKey,
+    new TextEncoder().encode(message),
+  );
   const encodedSignature = base64UrlEncode(new Uint8Array(signature));
   return `${message}.${encodedSignature}`;
 }
@@ -67,10 +71,13 @@ serve(async (req) => {
   try {
     const { query } = await req.json();
     if (!query || typeof query !== "string") {
-      return new Response(JSON.stringify({ error: "SQL query is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "SQL query is required" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const account = Deno.env.get("SF_ACCOUNT");
@@ -80,7 +87,8 @@ serve(async (req) => {
     const database = Deno.env.get("SF_DATABASE") ?? undefined;
     const schema = Deno.env.get("SF_SCHEMA") ?? undefined;
 
-    const privateKeyBase64 = (Deno.env.get("SNOWFLAKE_PRIVATE_KEY_BASE64") || Deno.env.get("SF_PRIVATE_KEY"))?.trim();
+    const privateKeyBase64 =
+      (Deno.env.get("SNOWFLAKE_PRIVATE_KEY_BASE64") || Deno.env.get("SF_PRIVATE_KEY"))?.trim();
     const configuredFingerprint = Deno.env.get("SNOWFLAKE_PUBLIC_KEY_FP")?.trim();
 
     if (!account || !user || !privateKeyBase64) {
@@ -98,7 +106,8 @@ serve(async (req) => {
     if (!configuredFingerprint) {
       return new Response(
         JSON.stringify({
-          error: "SNOWFLAKE_PUBLIC_KEY_FP is not set. Configure it with the fingerprint from DESCRIBE USER.",
+          error:
+            "SNOWFLAKE_PUBLIC_KEY_FP is not set. Configure it with the fingerprint from DESCRIBE USER.",
         }),
         {
           status: 500,
@@ -111,7 +120,10 @@ serve(async (req) => {
     const privateKeyDer = base64Decode(privateKeyBase64);
 
     const publicKeyFingerprint = configuredFingerprint;
-    console.log("[Fingerprint] Using configured fingerprint from SNOWFLAKE_PUBLIC_KEY_FP:", publicKeyFingerprint);
+    console.log(
+      "[Fingerprint] Using configured fingerprint from SNOWFLAKE_PUBLIC_KEY_FP:",
+      publicKeyFingerprint,
+    );
 
     // Build JWT (do NOT replace '-' with '_'; Snowflake expects hyphens preserved)
     console.log(
@@ -123,22 +135,36 @@ serve(async (req) => {
       publicKeyFingerprint.length,
     );
 
-    const jwtToken = await createJWT(account, user, privateKeyDer as BufferSource, publicKeyFingerprint);
+    const jwtToken = await createJWT(
+      account,
+      user,
+      privateKeyDer as BufferSource,
+      publicKeyFingerprint,
+    );
 
     console.log(
       "[Snowflake Auth] JWT created successfully, issuer will be:",
       `${account.toUpperCase()}.${user.toUpperCase()}.${publicKeyFingerprint}`,
     );
 
-    const snowflakeUrl = `https://${account}.snowflakecomputing.com/api/v2/statements`;
+    const snowflakeUrl =
+      `https://${account}.snowflakecomputing.com/api/v2/statements`;
 
     // Optional connectivity check
     try {
       const rootUrl = `https://${account}.snowflakecomputing.com/`;
       const headResp = await fetch(rootUrl, { method: "HEAD" });
-      console.log("[Connectivity] Snowflake host reachable:", rootUrl, "status:", headResp.status);
+      console.log(
+        "[Connectivity] Snowflake host reachable:",
+        rootUrl,
+        "status:",
+        headResp.status,
+      );
     } catch (e) {
-      console.error("[Connectivity] Failed to reach Snowflake host:", e instanceof Error ? e.message : e);
+      console.error(
+        "[Connectivity] Failed to reach Snowflake host:",
+        e instanceof Error ? e.message : e,
+      );
     }
 
     const resp = await fetch(snowflakeUrl, {
@@ -229,9 +255,12 @@ serve(async (req) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Failed to execute query";
     console.error("Error in snowflake-query function:", msg);
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: msg }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });
