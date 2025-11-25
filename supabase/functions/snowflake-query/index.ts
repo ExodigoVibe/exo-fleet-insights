@@ -1,67 +1,11 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { decode as base64Decode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST,GET,OPTIONS",
 };
-
-// Base64URL encode (without padding)
-function base64UrlEncode(data: string | Uint8Array): string {
-  let binary = "";
-  if (typeof data === "string") {
-    binary = data;
-  } else {
-    for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
-  }
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-}
-
-// Create JWT for Snowflake SQL API using KEYPAIR_JWT
-async function createJWT(
-  account: string,
-  user: string,
-  privateKeyDer: BufferSource,
-  publicKeyFingerprint: string,
-): Promise<string> {
-  const accountUpper = account.toUpperCase();
-  const userUpper = user.toUpperCase();
-  const qualifiedUsername = `${accountUpper}.${userUpper}`;
-
-  const privateKey = await crypto.subtle.importKey(
-    "pkcs8",
-    privateKeyDer as ArrayBuffer,
-    {
-      name: "RSASSA-PKCS1-v1_5",
-      hash: "SHA-256",
-    },
-    false,
-    ["sign"],
-  );
-
-  const now = Math.floor(Date.now() / 1000);
-  const header = {
-    alg: "RS256",
-    typ: "JWT",
-  };
-  const payload = {
-    iss: `${qualifiedUsername}.${publicKeyFingerprint}`, // use provided FP
-    sub: qualifiedUsername,
-    iat: now,
-    exp: now + 3600,
-  };
-
-  const message = `${base64UrlEncode(JSON.stringify(header))}.${base64UrlEncode(JSON.stringify(payload))}`;
-  const signature = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    privateKey,
-    new TextEncoder().encode(message),
-  );
-  const encodedSignature = base64UrlEncode(new Uint8Array(signature));
-  return `${message}.${encodedSignature}`;
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -71,30 +15,25 @@ serve(async (req) => {
   try {
     const { query } = await req.json();
     if (!query || typeof query !== "string") {
-      return new Response(
-        JSON.stringify({ error: "SQL query is required" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "SQL query is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const account = Deno.env.get("SF_ACCOUNT");
-    const user = Deno.env.get("SF_USER");
     const role = Deno.env.get("SF_ROLE") ?? undefined;
     const warehouse = Deno.env.get("SF_WAREHOUSE") ?? undefined;
     const database = Deno.env.get("SF_DATABASE") ?? undefined;
     const schema = Deno.env.get("SF_SCHEMA") ?? undefined;
 
-    const privateKeyBase64 =
-      (Deno.env.get("SNOWFLAKE_PRIVATE_KEY_BASE64") || Deno.env.get("SF_PRIVATE_KEY"))?.trim();
-    const configuredFingerprint = Deno.env.get("SNOWFLAKE_PUBLIC_KEY_FP")?.trim();
+    // 🔑 Pre-signed JWT, created elsewhere using the private key
+    const jwtToken = Deno.env.get("SNOWFLAKE_JWT")?.trim();
 
-    if (!account || !user || !privateKeyBase64) {
+    if (!account || !jwtToken) {
       return new Response(
         JSON.stringify({
-          error: "Snowflake credentials not configured (need SF_ACCOUNT, SF_USER, and SF_PRIVATE_KEY).",
+          error: "Snowflake credentials not configured (need SF_ACCOUNT and SNOWFLAKE_JWT).",
         }),
         {
           status: 500,
@@ -103,69 +42,7 @@ serve(async (req) => {
       );
     }
 
-    if (!configuredFingerprint) {
-      return new Response(
-        JSON.stringify({
-          error:
-            "SNOWFLAKE_PUBLIC_KEY_FP is not set. Configure it with the fingerprint from DESCRIBE USER.",
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    // Decode private key (PKCS#8 DER, unencrypted)
-    const privateKeyDer = base64Decode(privateKeyBase64);
-
-    const publicKeyFingerprint = configuredFingerprint;
-    console.log(
-      "[Fingerprint] Using configured fingerprint from SNOWFLAKE_PUBLIC_KEY_FP:",
-      publicKeyFingerprint,
-    );
-
-    // Build JWT (do NOT replace '-' with '_'; Snowflake expects hyphens preserved)
-    console.log(
-      "[Snowflake Auth] Building JWT with account:",
-      account,
-      "user:",
-      user,
-      "fingerprint length:",
-      publicKeyFingerprint.length,
-    );
-
-    const jwtToken = await createJWT(
-      account,
-      user,
-      privateKeyDer as BufferSource,
-      publicKeyFingerprint,
-    );
-
-    console.log(
-      "[Snowflake Auth] JWT created successfully, issuer will be:",
-      `${account.toUpperCase()}.${user.toUpperCase()}.${publicKeyFingerprint}`,
-    );
-
-    const snowflakeUrl =
-      `https://${account}.snowflakecomputing.com/api/v2/statements`;
-
-    // Optional connectivity check
-    try {
-      const rootUrl = `https://${account}.snowflakecomputing.com/`;
-      const headResp = await fetch(rootUrl, { method: "HEAD" });
-      console.log(
-        "[Connectivity] Snowflake host reachable:",
-        rootUrl,
-        "status:",
-        headResp.status,
-      );
-    } catch (e) {
-      console.error(
-        "[Connectivity] Failed to reach Snowflake host:",
-        e instanceof Error ? e.message : e,
-      );
-    }
+    const snowflakeUrl = `https://${account}.snowflakecomputing.com/api/v2/statements`;
 
     const resp = await fetch(snowflakeUrl, {
       method: "POST",
@@ -188,7 +65,7 @@ serve(async (req) => {
     if (!resp.ok) {
       const errText = await resp.text();
       if (errText.includes("JWT_TOKEN_INVALID")) {
-        console.error("Likely fingerprint/account/user formatting issue in JWT. Check DESCRIBE USER.");
+        console.error("JWT invalid or expired – check the externally generated SNOWFLAKE_JWT.");
       }
       return new Response(
         JSON.stringify({
@@ -203,7 +80,6 @@ serve(async (req) => {
 
     const result = await resp.json();
 
-    // Poll if needed
     if (result.statementHandle && !result.data) {
       const pollUrl = `${snowflakeUrl}/${result.statementHandle}`;
       for (let i = 0; i < 30; i++) {
@@ -229,38 +105,23 @@ serve(async (req) => {
           }
         }
       }
-      return new Response(
-        JSON.stringify({
-          error: "Timed out waiting for Snowflake statement to complete.",
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "Timed out waiting for Snowflake statement to complete." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const metadata = result.resultSetMetaData?.rowType || [];
     const rows = result.data ? result.data.map((row: any) => row) : [];
-    return new Response(
-      JSON.stringify({
-        columns: metadata,
-        rows,
-        rowCount: rows.length,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ columns: metadata, rows, rowCount: rows.length }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Failed to execute query";
     console.error("Error in snowflake-query function:", msg);
-    return new Response(
-      JSON.stringify({ error: msg }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ error: msg }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
