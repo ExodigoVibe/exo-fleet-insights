@@ -21,11 +21,11 @@ function base64UrlEncode(data: string | Uint8Array): string {
 
 // Compute SHA-256 digest and return standard Base64 (not URL-safe)
 async function sha256Base64(bytes: Uint8Array): Promise<string> {
-  const hashBuf = await crypto.subtle.digest("SHA-256", new Uint8Array(bytes));
+  const hashBuf = await crypto.subtle.digest("SHA-256", bytes.buffer as ArrayBuffer);
   const hash = new Uint8Array(hashBuf);
   let binary = "";
   for (let i = 0; i < hash.length; i++) binary += String.fromCharCode(hash[i]);
-  return base64Encode(binary);
+  return btoa(binary);
 }
 
 // Create JWT for Snowflake SQL API using KEYPAIR_JWT
