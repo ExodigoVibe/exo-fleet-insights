@@ -12,17 +12,30 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { generateMockTrips, getMockVehicles } from "@/utils/mockData";
+import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
+import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
 import { formatDuration } from "@/utils/fleetCalculations";
-import { ArrowLeft, Activity, Clock, TrendingUp, Gauge, Shield } from "lucide-react";
+import { ArrowLeft, Activity, Clock, TrendingUp, Gauge, Shield, Loader2 } from "lucide-react";
 
 const VehicleDetail = () => {
   const { licensePlate } = useParams<{ licensePlate: string }>();
-  const allTrips = useMemo(() => generateMockTrips(30), []);
-  const allVehicles = useMemo(() => getMockVehicles(), []);
+  const { trips: allTrips, loading: tripsLoading } = useSnowflakeTrips();
+  const { vehicles: allVehicles, loading: vehiclesLoading } = useSnowflakeVehicles();
 
+  const isLoading = tripsLoading || vehiclesLoading;
   const vehicle = allVehicles.find((v) => v.license_plate === licensePlate);
   const vehicleTrips = allTrips.filter((t) => t.license_plate === licensePlate);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="text-muted-foreground">Loading vehicle data...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!vehicle) {
     return (
