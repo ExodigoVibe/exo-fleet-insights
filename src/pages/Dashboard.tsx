@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { KPICard } from "@/components/fleet/KPICard";
 import { FilterPanel } from "@/components/fleet/FilterPanel";
 import { VehicleUtilizationChart } from "@/components/fleet/VehicleUtilizationChart";
@@ -6,6 +6,7 @@ import { DailyUsageChart } from "@/components/fleet/DailyUsageChart";
 import { VehicleDetailTable } from "@/components/fleet/VehicleDetailTable";
 import { SnowflakeTest } from "@/components/SnowflakeTest";
 import { generateMockTrips, getMockVehicles } from "@/utils/mockData";
+import { useSnowflakeDrivers } from "@/hooks/useSnowflakeDrivers";
 import {
   filterTrips,
   calculateVehicleUsageMetrics,
@@ -16,12 +17,30 @@ import {
 } from "@/utils/fleetCalculations";
 import { FleetFilters } from "@/types/fleet";
 import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
+import { toast } from "sonner";
 
 const Dashboard = () => {
-  const allTrips = useMemo(() => generateMockTrips(30), []);
+  const { drivers: snowflakeDrivers, loading: driversLoading, error: driversError } = useSnowflakeDrivers();
+  const [allTrips, setAllTrips] = useState(() => generateMockTrips(30, []));
+  
   const allVehicles = useMemo(() => getMockVehicles(), []);
   const drivers = useMemo(() => getUniqueDrivers(allTrips), [allTrips]);
   const licensePlates = useMemo(() => getUniqueLicensePlates(allTrips), [allTrips]);
+
+  // Update trips when real drivers are loaded
+  useEffect(() => {
+    if (!driversLoading && snowflakeDrivers.length > 0) {
+      setAllTrips(generateMockTrips(30, snowflakeDrivers));
+      toast.success(`Loaded ${snowflakeDrivers.length} drivers from Snowflake`);
+    }
+  }, [driversLoading, snowflakeDrivers]);
+
+  // Show error toast if drivers failed to load
+  useEffect(() => {
+    if (driversError) {
+      toast.error(`Failed to load drivers: ${driversError}`);
+    }
+  }, [driversError]);
 
   const [filters, setFilters] = useState<FleetFilters>({
     dateFrom: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
