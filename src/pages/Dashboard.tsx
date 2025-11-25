@@ -25,8 +25,8 @@ const Dashboard = () => {
   const { vehicles: snowflakeVehicles, loading: vehiclesLoading, error: vehiclesError } = useSnowflakeVehicles();
   const { trips: snowflakeTrips, loading: tripsLoading, error: tripsError } = useSnowflakeTrips();
   
-  const allTrips = snowflakeTrips;
-  const allVehicles = snowflakeVehicles;
+  const allTrips = snowflakeTrips || [];
+  const allVehicles = snowflakeVehicles || [];
   const drivers = useMemo(() => getUniqueDrivers(allTrips), [allTrips]);
   const licensePlates = useMemo(() => getUniqueLicensePlates(allTrips), [allTrips]);
 
@@ -34,12 +34,17 @@ const Dashboard = () => {
 
   // Show success message when all data is loaded
   useEffect(() => {
-    if (!isLoading && snowflakeDrivers.length > 0 && snowflakeVehicles.length > 0 && snowflakeTrips.length > 0) {
-      toast.success(
-        `Loaded ${snowflakeTrips.length} trips, ${snowflakeDrivers.length} drivers, and ${snowflakeVehicles.length} vehicles from Snowflake`
-      );
+    if (!isLoading) {
+      const hasData = snowflakeDrivers.length > 0 || snowflakeVehicles.length > 0 || snowflakeTrips.length > 0;
+      if (hasData) {
+        toast.success(
+          `Loaded ${snowflakeTrips.length} trips, ${snowflakeDrivers.length} drivers, and ${snowflakeVehicles.length} vehicles from Snowflake`
+        );
+      } else if (!driversError && !vehiclesError && !tripsError) {
+        toast.info("No data found in Snowflake tables");
+      }
     }
-  }, [isLoading, snowflakeDrivers.length, snowflakeVehicles.length, snowflakeTrips.length]);
+  }, [isLoading, snowflakeDrivers.length, snowflakeVehicles.length, snowflakeTrips.length, driversError, vehiclesError, tripsError]);
 
   // Show error toasts
   useEffect(() => {
@@ -96,6 +101,14 @@ const Dashboard = () => {
 
         {!isLoading && (
           <>
+            {allTrips.length === 0 && !tripsError && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  No trip data available. The TRIPS table may be empty or the query may have failed.
+                </p>
+              </div>
+            )}
+            
             <FilterPanel
               filters={filters}
               onFiltersChange={setFilters}
