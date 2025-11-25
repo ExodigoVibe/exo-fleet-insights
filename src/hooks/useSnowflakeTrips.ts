@@ -22,7 +22,7 @@ export function useSnowflakeTrips() {
           "snowflake-query",
           {
             body: {
-              query: "SELECT * FROM BUSINESS_DB.ITURAN.TRIPS",
+              query: "SELECT * FROM BUSINESS_DB.ITURAN.TRIPS LIMIT 10",
             },
           }
         );
