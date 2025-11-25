@@ -22,7 +22,7 @@ export function useSnowflakeTrips() {
           "snowflake-query",
           {
             body: {
-              query: "SELECT * FROM BUSINESS_DB.ITURAN.TRIPS LIMIT 10",
+              query: "SELECT * FROM BUSINESS_DB.ITURAN.TRIPS",
             },
           }
         );
@@ -40,53 +40,51 @@ export function useSnowflakeTrips() {
 
         // Transform Snowflake rows to Trip objects
         const transformedTrips: Trip[] = response.rows.map((row) => {
-          try {
-            // Parse JSON fields if they exist
-            const startLocation = row[columnMap["START_LOCATION"]] 
-              ? JSON.parse(row[columnMap["START_LOCATION"]])
-              : null;
-            const endLocation = row[columnMap["END_LOCATION"]] 
-              ? JSON.parse(row[columnMap["END_LOCATION"]])
-              : null;
-            const safety = row[columnMap["SAFETY"]] 
-              ? JSON.parse(row[columnMap["SAFETY"]])
-              : { safety_grade: 0, fuel_grade: 0, safety_events_count: 0 };
-
-            return {
-              trip_id: parseInt(row[columnMap["TRIP_ID"]] || "0"),
-              license_plate: row[columnMap["LICENSE_PLATE"]] || "",
-              driver_code: parseInt(row[columnMap["DRIVER_CODE"]] || "0"),
-              driver_name: row[columnMap["DRIVER_NAME"]] || "",
-              driver_source: parseInt(row[columnMap["DRIVER_SOURCE"]] || "0"),
-              start_location: startLocation || {
-                location: {
-                  point: { lat: 0, lon: 0 },
-                  address: { location: "Unknown" },
+          return {
+            trip_id: parseInt(row[columnMap["TRIP_ID"]] || "0"),
+            license_plate: row[columnMap["LICENSE_PLATE"]] || "",
+            driver_code: parseInt(row[columnMap["DRIVER_CODE"]] || "0"),
+            driver_name: row[columnMap["DRIVER_NAME"]] || "",
+            driver_source: parseInt(row[columnMap["DRIVER_SOURCE"]] || "0"),
+            start_location: {
+              location: {
+                point: { 
+                  lat: parseFloat(row[columnMap["START_LAT"]] || "0"), 
+                  lon: parseFloat(row[columnMap["START_LON"]] || "0") 
                 },
-                odometer: 0,
-                timestamp: new Date().toISOString(),
-              },
-              end_location: endLocation || {
-                location: {
-                  point: { lat: 0, lon: 0 },
-                  address: { location: "Unknown" },
+                address: { 
+                  location: row[columnMap["START_ADDRESS"]] || "Unknown",
+                  speedlimit: parseInt(row[columnMap["START_SPEEDLIMIT"]] || "0")
                 },
-                odometer: 0,
-                timestamp: new Date().toISOString(),
               },
-              duration_in_seconds: parseInt(row[columnMap["DURATION_IN_SECONDS"]] || "0"),
-              distance: parseFloat(row[columnMap["DISTANCE"]] || "0"),
-              max_speed: parseInt(row[columnMap["MAX_SPEED"]] || "0"),
-              idle_duration_in_minutes: parseInt(row[columnMap["IDLE_DURATION_IN_MINUTES"]] || "0"),
-              safety,
-              trip_status: row[columnMap["TRIP_STATUS"]] || "trip_end",
-            };
-          } catch (parseError) {
-            console.error("Error parsing trip row:", parseError, row);
-            // Return null for failed rows and filter them out later
-            return null;
-          }
-        }).filter((trip): trip is Trip => trip !== null);
+              odometer: parseFloat(row[columnMap["START_ODOMETER"]] || "0"),
+              timestamp: row[columnMap["START_TIMESTAMP"]] || new Date().toISOString(),
+            },
+            end_location: {
+              location: {
+                point: { 
+                  lat: parseFloat(row[columnMap["END_LAT"]] || "0"), 
+                  lon: parseFloat(row[columnMap["END_LON"]] || "0") 
+                },
+                address: { 
+                  location: row[columnMap["END_ADDRESS"]] || "Unknown"
+                },
+              },
+              odometer: parseFloat(row[columnMap["END_ODOMETER"]] || "0"),
+              timestamp: row[columnMap["END_TIMESTAMP"]] || new Date().toISOString(),
+            },
+            duration_in_seconds: parseInt(row[columnMap["DURATION_SECONDS"]] || "0"),
+            distance: parseFloat(row[columnMap["DISTANCE"]] || "0"),
+            max_speed: parseInt(row[columnMap["MAX_SPEED"]] || "0"),
+            idle_duration_in_minutes: parseInt(row[columnMap["IDLE_MINUTES"]] || "0"),
+            safety: {
+              safety_grade: parseFloat(row[columnMap["SAFETY_GRADE"]] || "0"),
+              fuel_grade: parseInt(row[columnMap["FUEL_GRADE"]] || "0"),
+              safety_events_count: parseInt(row[columnMap["SAFETY_EVENTS_COUNT"]] || "0"),
+            },
+            trip_status: row[columnMap["TRIP_STATUS"]] || "trip_end",
+          };
+        });
 
         setTrips(transformedTrips);
       } catch (err) {
