@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST,GET,OPTIONS",
 };
 // Base64URL encode (without padding)
-function base64UrlEncode(data) {
+function base64UrlEncode(data: string | Uint8Array): string {
   let binary = "";
   if (typeof data === "string") {
     binary = data;
@@ -17,7 +17,7 @@ function base64UrlEncode(data) {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 // Compute SHA-256 digest and return standard Base64 (not URL-safe)
-async function sha256Base64(bytes) {
+async function sha256Base64(bytes: Uint8Array | ArrayBuffer): Promise<string> {
   const hashBuf = await crypto.subtle.digest("SHA-256", new Uint8Array(bytes));
   const hash = new Uint8Array(hashBuf);
   let binary = "";
@@ -25,13 +25,13 @@ async function sha256Base64(bytes) {
   return base64Encode(binary);
 }
 // Create JWT for Snowflake SQL API using KEYPAIR_JWT
-async function createJWT(account, user, privateKeyDer, publicKeyFingerprint) {
+async function createJWT(account: string, user: string, privateKeyDer: BufferSource, publicKeyFingerprint: string): Promise<string> {
   const accountUpper = account.toUpperCase();
   const userUpper = user.toUpperCase();
   const qualifiedUsername = `${accountUpper}.${userUpper}`;
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",
-    new Uint8Array(privateKeyDer),
+    privateKeyDer as ArrayBuffer,
     {
       name: "RSASSA-PKCS1-v1_5",
       hash: "SHA-256",
@@ -56,12 +56,12 @@ async function createJWT(account, user, privateKeyDer, publicKeyFingerprint) {
   return `${message}.${encodedSignature}`;
 }
 // Extract public key from private key and compute fingerprint
-async function extractPublicKeyAndComputeFingerprint(privateKeyDer) {
+async function extractPublicKeyAndComputeFingerprint(privateKeyDer: BufferSource): Promise<string> {
   console.log("[Fingerprint] Starting public key extraction from private key");
   // Import the private key
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",
-    privateKeyDer,
+    privateKeyDer as ArrayBuffer,
     {
       name: "RSASSA-PKCS1-v1_5",
       hash: "SHA-256",
@@ -165,7 +165,7 @@ serve(async (req) => {
       publicKeyFingerprint = configuredFingerprint;
       console.log("[Fingerprint] Using configured fingerprint from SNOWFLAKE_PUBLIC_KEY_FP:", publicKeyFingerprint);
     } else {
-      publicKeyFingerprint = await extractPublicKeyAndComputeFingerprint(privateKeyDer);
+      publicKeyFingerprint = await extractPublicKeyAndComputeFingerprint(privateKeyDer as BufferSource);
       console.log("[Fingerprint] Computed fingerprint from private key:", publicKeyFingerprint);
     }
     // Build JWT (do NOT replace '-' with '_'; Snowflake expects hyphens preserved)
@@ -177,7 +177,7 @@ serve(async (req) => {
       "fingerprint length:",
       publicKeyFingerprint.length,
     );
-    const jwtToken = await createJWT(account, user, privateKeyDer, publicKeyFingerprint);
+    const jwtToken = await createJWT(account, user, privateKeyDer as BufferSource, publicKeyFingerprint);
     console.log(
       "[Snowflake Auth] JWT created successfully, issuer will be:",
       `${account.toUpperCase()}.${user.toUpperCase()}.${publicKeyFingerprint}`,
@@ -243,7 +243,7 @@ serve(async (req) => {
           const prJson = await pr.json();
           if (prJson.data) {
             const metadata = prJson.resultSetMetaData?.rowType || [];
-            const rows = prJson.data.map((row) => row);
+            const rows = prJson.data.map((row: any) => row);
             return new Response(
               JSON.stringify({
                 columns: metadata,
@@ -274,7 +274,7 @@ serve(async (req) => {
       );
     }
     const metadata = result.resultSetMetaData?.rowType || [];
-    const rows = result.data ? result.data.map((row) => row) : [];
+    const rows = result.data ? result.data.map((row: any) => row) : [];
     return new Response(
       JSON.stringify({
         columns: metadata,
