@@ -31,7 +31,7 @@ async function createJWT(
 
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",
-    privateKeyDer, // use Uint8Array directly
+    privateKeyDer, // raw DER bytes
     {
       name: "RSASSA-PKCS1-v1_5",
       hash: "SHA-256",
@@ -76,10 +76,6 @@ serve(async (req) => {
     const database = Deno.env.get("SF_DATABASE") ?? undefined;
     const schema = Deno.env.get("SF_SCHEMA") ?? undefined;
 
-    // PRIVATE_KEY_PATH is optional; default to "./rsa_key.der" next to this file
-    const privateKeyPathEnv = Deno.env.get("PRIVATE_KEY_PATH")?.trim() ?? "./rsa_key.der";
-    const privateKeyUrl = new URL(privateKeyPathEnv, import.meta.url);
-
     const publicKeyFingerprint = Deno.env.get("SNOWFLAKE_PUBLIC_KEY_FP")?.trim();
 
     if (!account || !user) {
@@ -106,7 +102,9 @@ serve(async (req) => {
       );
     }
 
-    // 🔑 Read private key file as raw DER bytes using module-relative URL
+    // 🔑 Always read ./rsa_key.der relative to this file
+    const privateKeyUrl = new URL("./rsa_key.der", import.meta.url);
+
     let privateKeyDer: Uint8Array;
     try {
       console.log("[Key Debug] Reading private key from URL:", privateKeyUrl.toString());
@@ -116,7 +114,7 @@ serve(async (req) => {
       console.error("[Key Debug] Failed to read private key file:", e);
       return new Response(
         JSON.stringify({
-          error: `Failed to read private key file at '${privateKeyUrl.toString()}'. Ensure rsa_key.der is in the same folder as index.ts or PRIVATE_KEY_PATH points to a valid file.`,
+          error: `Failed to read private key file at '${privateKeyUrl.toString()}'. Ensure rsa_key.der is in the same folder as index.ts in the snowflake-query function.`,
         }),
         {
           status: 500,
