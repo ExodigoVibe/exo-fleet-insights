@@ -31,7 +31,7 @@ async function createJWT(
 
   const privateKey = await crypto.subtle.importKey(
     "pkcs8",
-    privateKeyDer, // raw DER bytes
+    privateKeyDer.buffer as ArrayBuffer,
     {
       name: "RSASSA-PKCS1-v1_5",
       hash: "SHA-256",
