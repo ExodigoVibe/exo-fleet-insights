@@ -20,7 +20,15 @@ import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
 const VehicleDetail = () => {
   const { licensePlate } = useParams<{ licensePlate: string }>();
   const { vehicles: allVehicles } = useSnowflakeVehicles();
-  const { trips: allTrips, loading: tripsLoading, loadedCount, totalCount } = useSnowflakeTrips();
+  
+  // Get trips for the last 90 days for vehicle detail view
+  const dateFrom = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const dateTo = new Date().toISOString().split("T")[0];
+  
+  const { trips: allTrips, loading: tripsLoading, loadedCount, totalCount } = useSnowflakeTrips({
+    dateFrom,
+    dateTo,
+  });
 
   const vehicle = allVehicles.find((v) => v.license_plate === licensePlate);
   const vehicleTrips = useMemo(

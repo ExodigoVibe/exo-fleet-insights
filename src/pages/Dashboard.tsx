@@ -23,16 +23,6 @@ import { toast } from "sonner";
 const Dashboard = () => {
   const { drivers: snowflakeDrivers, loading: driversLoading, error: driversError } = useSnowflakeDrivers();
   const { vehicles: snowflakeVehicles, loading: vehiclesLoading, error: vehiclesError } = useSnowflakeVehicles();
-  const {
-    trips: snowflakeTrips,
-    loading: tripsLoading,
-    error: tripsError,
-    loadedCount,
-    totalCount,
-  } = useSnowflakeTrips();
-  
-  // Use real Snowflake trips only
-  const allTrips: Trip[] = snowflakeTrips;
   const allVehicles = useMemo(
     () => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []),
     [snowflakeVehicles]
@@ -79,6 +69,21 @@ const Dashboard = () => {
     safetyGradeMax: 100,
     tripStatus: [],
   });
+
+  // Pass date filters to useSnowflakeTrips to filter at database level
+  const {
+    trips: snowflakeTrips,
+    loading: tripsLoading,
+    error: tripsError,
+    loadedCount,
+    totalCount,
+  } = useSnowflakeTrips({
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+  });
+  
+  // Use real Snowflake trips only
+  const allTrips: Trip[] = snowflakeTrips;
 
   const filteredTrips = useMemo(() => filterTrips(allTrips, filters), [allTrips, filters]);
   const vehicleMetrics = useMemo(
