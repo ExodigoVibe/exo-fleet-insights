@@ -78,8 +78,8 @@ const Dashboard = () => {
   const dailyMetrics = useMemo(() => calculateDailyMetrics(filteredTrips), [filteredTrips]);
   const kpis = useMemo(() => calculateKPIs(filteredTrips), [filteredTrips]);
 
-  // Show loading state until drivers and vehicles are loaded
-  if (driversLoading || vehiclesLoading) {
+  // Show loading state until drivers and vehicles are fully loaded with data
+  if (driversLoading || vehiclesLoading || snowflakeDrivers.length === 0 || snowflakeVehicles.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b bg-card">
@@ -94,7 +94,12 @@ const Dashboard = () => {
           <div className="flex items-center justify-center h-[60vh]">
             <div className="text-center space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground">Loading drivers and vehicles data...</p>
+              <p className="text-muted-foreground">
+                {driversLoading && vehiclesLoading && "Loading drivers and vehicles data..."}
+                {driversLoading && !vehiclesLoading && "Loading drivers data..."}
+                {!driversLoading && vehiclesLoading && "Loading vehicles data..."}
+                {!driversLoading && !vehiclesLoading && (snowflakeDrivers.length === 0 || snowflakeVehicles.length === 0) && "Waiting for data..."}
+              </p>
             </div>
           </div>
         </main>
