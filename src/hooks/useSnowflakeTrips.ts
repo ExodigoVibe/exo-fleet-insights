@@ -17,6 +17,31 @@ export function useSnowflakeTrips() {
   const [totalLoaded, setTotalLoaded] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  // Helper function to convert Snowflake timestamp to ISO string
+  const parseSnowflakeTimestamp = (timestamp: any): string => {
+    if (!timestamp) return new Date().toISOString();
+    
+    // If it's already a valid ISO string, return it
+    const date = new Date(timestamp);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+    
+    // Handle Snowflake format "YYYY-MM-DD HH:MM:SS"
+    const snowflakeFormat = /^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/;
+    const match = String(timestamp).match(snowflakeFormat);
+    
+    if (match) {
+      const [, year, month, day, hour, minute, second] = match;
+      const isoString = `${year}-${month}-${day}T${hour}:${minute}:${second}.000Z`;
+      return isoString;
+    }
+    
+    // Fallback to current date if parsing fails
+    console.warn("Failed to parse timestamp:", timestamp);
+    return new Date().toISOString();
+  };
+
   const fetchTripsChunk = useCallback(async (offset: number, limit: number) => {
     const { data, error: functionError } = await supabase.functions.invoke(
       "snowflake-query",
@@ -51,7 +76,7 @@ export function useSnowflakeTrips() {
           },
         },
         odometer: parseFloat(row[10]) || 0,
-        timestamp: row[11] || new Date().toISOString(),
+        timestamp: parseSnowflakeTimestamp(row[11]),
       },
       end_location: {
         location: {
@@ -64,7 +89,7 @@ export function useSnowflakeTrips() {
           },
         },
         odometer: parseFloat(row[15]) || 0,
-        timestamp: row[16] || new Date().toISOString(),
+        timestamp: parseSnowflakeTimestamp(row[16]),
       },
       duration_in_seconds: parseInt(row[17]) || 0,
       distance: parseFloat(row[18]) || 0,
