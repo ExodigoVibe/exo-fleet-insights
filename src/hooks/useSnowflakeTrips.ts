@@ -40,7 +40,7 @@ export function useSnowflakeTrips(): UseSnowflakeTripsResult {
           "snowflake-query",
           {
             body: {
-              query: "SELECT * FROM BUSINESS_DB.ITURAN.TRIPS",
+              query: "SELECT * FROM BUSINESS_DB.ITURAN.TRIPS ORDER BY START_TIMESTAMP DESC",
             },
           }
         );
