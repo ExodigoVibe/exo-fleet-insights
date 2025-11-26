@@ -1,56 +1,5 @@
 import { Trip, Vehicle, Driver } from "@/types/fleet";
 
-const vehiclesData: Vehicle[] = [
-  {
-    license_plate: "11153104",
-    vehicle_id: 3506257,
-    vin: "3104631",
-    nickname: "סקודה ביזנס",
-    model_name: "קאמיק",
-    make_name: "סקודה",
-    model_year: "2024",
-    color: "לבן",
-    motion_status: "parking",
-    telematics_units: [{ ip_address: "52.7.3.67" }],
-  },
-  {
-    license_plate: "70806703",
-    vehicle_id: 3506258,
-    vin: "6703890",
-    nickname: "טויוטה משרד",
-    model_name: "קורולה",
-    make_name: "טויוטה",
-    model_year: "2023",
-    color: "כסף",
-    motion_status: "parking",
-    telematics_units: [{ ip_address: "52.7.3.68" }],
-  },
-  {
-    license_plate: "45789012",
-    vehicle_id: 3506259,
-    vin: "7890123",
-    nickname: "יונדאי סדאן",
-    model_name: "אלנטרה",
-    make_name: "יונדאי",
-    model_year: "2023",
-    color: "שחור",
-    motion_status: "parking",
-    telematics_units: [{ ip_address: "52.7.3.69" }],
-  },
-  {
-    license_plate: "89012345",
-    vehicle_id: 3506260,
-    vin: "0123456",
-    nickname: "מרצדס מנהל",
-    model_name: "C-Class",
-    make_name: "מרצדס",
-    model_year: "2024",
-    color: "כחול",
-    motion_status: "driving",
-    telematics_units: [{ ip_address: "52.7.3.70" }],
-  },
-];
-
 const locations = [
   {
     lat: 32.0628662109375,
@@ -143,7 +92,7 @@ export function generateMockTrips(days: number = 30, drivers: Driver[] = [], veh
   let tripIdCounter = 10034010074943;
 
   // Use provided vehicles or fall back to default mock vehicles
-  const vehiclesToUse = vehicles.length > 0 ? vehicles : vehiclesData;
+  const vehiclesToUse = vehicles.length > 0 ? vehicles : [];
 
   for (let d = 0; d < days; d++) {
     const date = new Date();
@@ -161,8 +110,4 @@ export function generateMockTrips(days: number = 30, drivers: Driver[] = [], veh
   }
 
   return trips;
-}
-
-export function getMockVehicles(): Vehicle[] {
-  return vehiclesData;
 }
