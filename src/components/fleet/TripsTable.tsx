@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -32,7 +32,7 @@ export function TripsTable({ trips }: TripsTableProps) {
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 50; // Show more items per page
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -79,6 +79,11 @@ export function TripsTable({ trips }: TripsTableProps) {
 
     return sorted;
   }, [trips, sortField, sortDirection]);
+
+  // Reset to first page when trips change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [trips]);
 
   const totalPages = Math.max(1, Math.ceil(sortedTrips.length / itemsPerPage));
   const paginatedTrips = sortedTrips.slice(
