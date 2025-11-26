@@ -78,6 +78,30 @@ const Dashboard = () => {
   const dailyMetrics = useMemo(() => calculateDailyMetrics(filteredTrips), [filteredTrips]);
   const kpis = useMemo(() => calculateKPIs(filteredTrips), [filteredTrips]);
 
+  // Show loading state until drivers and vehicles are loaded
+  if (driversLoading || vehiclesLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card">
+          <div className="container mx-auto px-4 py-6">
+            <h1 className="text-3xl font-bold text-foreground">Fleet Usage Dashboard</h1>
+            <p className="text-muted-foreground mt-1">
+              Analyze vehicle utilization and driver performance
+            </p>
+          </div>
+        </header>
+        <main className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-center h-[60vh]">
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground">Loading drivers and vehicles data...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
