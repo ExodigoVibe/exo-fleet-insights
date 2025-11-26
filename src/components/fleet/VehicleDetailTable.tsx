@@ -37,6 +37,7 @@ export function VehicleDetailTable({ metrics }: VehicleDetailTableProps) {
     }
   };
 
+  console.log({metrics});
   const sortedMetrics = [...metrics].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
