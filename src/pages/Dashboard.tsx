@@ -23,19 +23,19 @@ import { toast } from "sonner";
 const Dashboard = () => {
   const { drivers: snowflakeDrivers, loading: driversLoading, error: driversError } = useSnowflakeDrivers();
   const { vehicles: snowflakeVehicles, loading: vehiclesLoading, error: vehiclesError } = useSnowflakeVehicles();
-  const { trips: allTrips, loading: tripsLoading, error: tripsError, totalLoaded } = useSnowflakeTrips();
+  const { trips: allTrips, loading: tripsLoading, error: tripsError, totalLoaded, isFullyLoaded } = useSnowflakeTrips();
   
   const allVehicles = snowflakeVehicles.length > 0 ? snowflakeVehicles : [];
   const drivers = useMemo(() => getUniqueDrivers(allTrips), [allTrips]);
   const licensePlates = useMemo(() => getUniqueLicensePlates(allTrips), [allTrips]);
 
-  // Show success toast when data is loaded
+  // Show success toast only when all data is fully loaded
   useEffect(() => {
-    if (!driversLoading && !vehiclesLoading && !tripsLoading && 
-        snowflakeDrivers.length > 0 && snowflakeVehicles.length > 0 && allTrips.length > 0) {
+    if (!driversLoading && !vehiclesLoading && isFullyLoaded && 
+        snowflakeDrivers.length > 0 && snowflakeVehicles.length > 0 && totalLoaded > 0) {
       toast.success(`Loaded ${snowflakeDrivers.length} drivers, ${snowflakeVehicles.length} vehicles, and ${totalLoaded} trips from Snowflake`);
     }
-  }, [driversLoading, vehiclesLoading, tripsLoading, snowflakeDrivers.length, snowflakeVehicles.length, allTrips.length, totalLoaded]);
+  }, [isFullyLoaded, driversLoading, vehiclesLoading, snowflakeDrivers.length, snowflakeVehicles.length, totalLoaded]);
 
   // Show error toasts
   useEffect(() => {
