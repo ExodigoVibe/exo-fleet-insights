@@ -10,7 +10,7 @@ interface SnowflakeResponse {
 const CHUNK_SIZE = 100;
 const INITIAL_LOAD = 30;
 
-export function useSnowflakeTrips() {
+export function useSnowflakeTrips(shouldStart: boolean = true) {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,6 +121,12 @@ export function useSnowflakeTrips() {
   }, [totalLoaded, isLoadingMore, fetchTripsChunk]);
 
   useEffect(() => {
+    // Don't start loading until shouldStart is true
+    if (!shouldStart) {
+      setLoading(false);
+      return;
+    }
+
     async function fetchInitialTrips() {
       try {
         setLoading(true);
@@ -166,7 +172,7 @@ export function useSnowflakeTrips() {
     }
 
     fetchInitialTrips();
-  }, [fetchTripsChunk]);
+  }, [shouldStart, fetchTripsChunk]);
 
   return { trips, loading, error, totalLoaded, loadMoreTrips, isLoadingMore, isFullyLoaded };
 }

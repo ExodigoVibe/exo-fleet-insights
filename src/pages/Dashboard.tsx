@@ -23,7 +23,10 @@ import { toast } from "sonner";
 const Dashboard = () => {
   const { drivers: snowflakeDrivers, loading: driversLoading, error: driversError } = useSnowflakeDrivers();
   const { vehicles: snowflakeVehicles, loading: vehiclesLoading, error: vehiclesError } = useSnowflakeVehicles();
-  const { trips: allTrips, loading: tripsLoading, error: tripsError, totalLoaded, isFullyLoaded } = useSnowflakeTrips();
+  
+  // Only start loading trips after drivers and vehicles are loaded
+  const shouldLoadTrips = !driversLoading && !vehiclesLoading;
+  const { trips: allTrips, loading: tripsLoading, error: tripsError, totalLoaded, isFullyLoaded } = useSnowflakeTrips(shouldLoadTrips);
   
   const allVehicles = snowflakeVehicles.length > 0 ? snowflakeVehicles : [];
   const drivers = useMemo(() => getUniqueDrivers(allTrips), [allTrips]);
