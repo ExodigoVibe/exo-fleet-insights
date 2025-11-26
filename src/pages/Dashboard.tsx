@@ -13,8 +13,6 @@ import {
   calculateVehicleUsageMetrics,
   calculateDailyMetrics,
   calculateKPIs,
-  getUniqueDrivers,
-  getUniqueLicensePlates,
 } from "@/utils/fleetCalculations";
 import { FleetFilters, Trip } from "@/types/fleet";
 import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
@@ -29,8 +27,15 @@ const Dashboard = () => {
   const { trips: allTrips, loading: tripsLoading, error: tripsError, totalLoaded, isFullyLoaded } = useSnowflakeTrips(shouldLoadTrips);
   
   const allVehicles = snowflakeVehicles.length > 0 ? snowflakeVehicles : [];
-  const drivers = useMemo(() => getUniqueDrivers(allTrips), [allTrips]);
-  const licensePlates = useMemo(() => getUniqueLicensePlates(allTrips), [allTrips]);
+  const drivers = useMemo(
+    () =>
+      [...new Set(snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`.trim()))].sort(),
+    [snowflakeDrivers]
+  );
+  const licensePlates = useMemo(
+    () => [...new Set(snowflakeVehicles.map((v) => v.license_plate))].sort(),
+    [snowflakeVehicles]
+  );
 
   // Show success toast only when all data is fully loaded
   useEffect(() => {
