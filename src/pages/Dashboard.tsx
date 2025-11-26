@@ -3,11 +3,11 @@ import { KPICard } from "@/components/fleet/KPICard";
 import { FilterPanel } from "@/components/fleet/FilterPanel";
 import { VehicleUtilizationChart } from "@/components/fleet/VehicleUtilizationChart";
 import { DailyUsageChart } from "@/components/fleet/DailyUsageChart";
-import { VehicleDetailTable } from "@/components/fleet/VehicleDetailTable";
+import { TripsTable } from "@/components/fleet/TripsTable";
 import { SnowflakeTest } from "@/components/SnowflakeTest";
-import { generateMockTrips } from "@/utils/mockData";
 import { useSnowflakeDrivers } from "@/hooks/useSnowflakeDrivers";
 import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
+import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
 import {
   filterTrips,
   calculateVehicleUsageMetrics,
@@ -23,20 +23,38 @@ import { toast } from "sonner";
 const Dashboard = () => {
   const { drivers: snowflakeDrivers, loading: driversLoading, error: driversError } = useSnowflakeDrivers();
   const { vehicles: snowflakeVehicles, loading: vehiclesLoading, error: vehiclesError } = useSnowflakeVehicles();
-  const [allTrips, setAllTrips] = useState<Trip[]>([]);
+  const {
+    trips: snowflakeTrips,
+    loading: tripsLoading,
+    error: tripsError,
+    loadedCount,
+    totalCount,
+  } = useSnowflakeTrips();
   
-  const allVehicles = snowflakeVehicles.length > 0 ? snowflakeVehicles : [];
-  const drivers = useMemo(() => getUniqueDrivers(allTrips), [allTrips]);
-  const licensePlates = useMemo(() => getUniqueLicensePlates(allTrips), [allTrips]);
+  // Use real Snowflake trips only
+  const allTrips: Trip[] = snowflakeTrips;
+  const allVehicles = useMemo(
+    () => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []),
+    [snowflakeVehicles]
+  );
 
-  // Generate trips when both drivers and vehicles are loaded
-  useEffect(() => {
-    if (!driversLoading && !vehiclesLoading && snowflakeDrivers.length > 0 && snowflakeVehicles.length > 0) {
-      const trips = generateMockTrips(30, snowflakeDrivers, snowflakeVehicles);
-      setAllTrips(trips);
-      toast.success(`Loaded ${snowflakeDrivers.length} drivers and ${snowflakeVehicles.length} vehicles from Snowflake`);
-    }
-  }, [driversLoading, vehiclesLoading, snowflakeDrivers, snowflakeVehicles]);
+  // For filters, use the full master data from Snowflake drivers/vehicles
+  // so you always see all drivers and license plates immediately,
+  // independent of how many trips have been chunk-processed so far.
+  const driverOptions = useMemo(
+    () =>
+      snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`).sort(),
+    [snowflakeDrivers]
+  );
+
+  const licensePlateOptions = useMemo(
+    () =>
+      snowflakeVehicles
+        .map((v) => v.license_plate)
+        .filter(Boolean)
+        .sort(),
+    [snowflakeVehicles]
+  );
 
   // Show error toasts
   useEffect(() => {
@@ -52,7 +70,7 @@ const Dashboard = () => {
   }, [vehiclesError]);
 
   const [filters, setFilters] = useState<FleetFilters>({
-    dateFrom: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    dateFrom: new Date("2025-11-12").toISOString().split("T")[0], // make is to be 12/11/2025
     dateTo: new Date().toISOString().split("T")[0],
     drivers: [],
     vehicles: [],
@@ -87,9 +105,34 @@ const Dashboard = () => {
         <FilterPanel
           filters={filters}
           onFiltersChange={setFilters}
-          drivers={drivers}
-          licensePlates={licensePlates}
+          drivers={driverOptions}
+          licensePlates={licensePlateOptions}
         />
+
+        <div className="text-xs text-muted-foreground flex justify-between items-center">
+          {tripsLoading ? (
+            <span>
+              Loading trips from Snowflake (
+              {loadedCount.toLocaleString()}
+              /
+              {(totalCount || loadedCount).toLocaleString()}
+              {" "}
+              rows processed)...
+            </span>
+          ) : tripsError ? (
+            <span className="text-destructive">
+              Failed to load trips from Snowflake: {tripsError}
+            </span>
+          ) : (
+            <span>
+              Loaded
+              {" "}
+              {allTrips.length.toLocaleString()}
+              {" "}
+              trips from Snowflake.
+            </span>
+          )}
+        </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <KPICard
@@ -129,7 +172,7 @@ const Dashboard = () => {
           <DailyUsageChart metrics={dailyMetrics} />
         </div>
 
-        <VehicleDetailTable metrics={vehicleMetrics} />
+        <TripsTable trips={filteredTrips} />
       </main>
     </div>
   );

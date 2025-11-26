@@ -12,18 +12,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { generateMockTrips } from "@/utils/mockData";
 import { formatDuration } from "@/utils/fleetCalculations";
 import { ArrowLeft, Activity, Clock, TrendingUp, Gauge, Shield } from "lucide-react";
 import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
+import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
 
 const VehicleDetail = () => {
   const { licensePlate } = useParams<{ licensePlate: string }>();
-  const allTrips = useMemo(() => generateMockTrips(30), []);
   const { vehicles: allVehicles } = useSnowflakeVehicles();
+  const { trips: allTrips, loading: tripsLoading, loadedCount, totalCount } = useSnowflakeTrips();
 
   const vehicle = allVehicles.find((v) => v.license_plate === licensePlate);
-  const vehicleTrips = allTrips.filter((t) => t.license_plate === licensePlate);
+  const vehicleTrips = useMemo(
+    () => allTrips.filter((t) => t.license_plate === licensePlate),
+    [allTrips, licensePlate]
+  );
 
   if (!vehicle) {
     return (
@@ -175,7 +178,7 @@ const VehicleDetail = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {vehicleTrips.slice(0, 20).map((trip) => (
+                  {vehicleTrips.slice(0, 30).map((trip) => (
                     <TableRow key={trip.trip_id}>
                       <TableCell>
                         {new Date(trip.start_location.timestamp).toLocaleDateString()}
@@ -187,7 +190,9 @@ const VehicleDetail = () => {
                       <TableCell>
                         {new Date(trip.end_location.timestamp).toLocaleTimeString()}
                       </TableCell>
-                      <TableCell>{formatDuration(trip.duration_in_seconds / 60)}</TableCell>
+                      <TableCell className="text-success font-medium">
+                        {formatDuration(trip.duration_in_seconds / 60)}
+                      </TableCell>
                       <TableCell className="text-warning">
                         {formatDuration(trip.idle_duration_in_minutes)}
                       </TableCell>
@@ -215,6 +220,16 @@ const VehicleDetail = () => {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+            <div className="mt-2 text-xs text-muted-foreground flex justify-between">
+              <span>
+                Showing {Math.min(30, vehicleTrips.length)} of {vehicleTrips.length} trips
+              </span>
+              {tripsLoading && (
+                <span>
+                  Loading trips in background ({loadedCount}/{totalCount || "?"} loaded)...
+                </span>
+              )}
             </div>
           </CardContent>
         </Card>

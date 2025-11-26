@@ -188,7 +188,17 @@ serve(async (req) => {
         Authorization: `Bearer ${jwtToken}`,
         "X-Snowflake-Authorization-Token-Type": "KEYPAIR_JWT",
       },
-      body: JSON.stringify({ statement: query, timeout: 60, database, schema, warehouse, role }),
+      body: JSON.stringify({
+        statement: query,
+        timeout: 60,
+        database,
+        schema,
+        warehouse,
+        role,
+        // Ensure we get all rows (e.g. all 19k trips) in a single result set
+        // and avoid the default 10k row truncation.
+        resultSetMaxRows: 50000,
+      }),
     });
 
     if (!resp.ok) {
