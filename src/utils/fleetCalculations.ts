@@ -3,13 +3,9 @@ import { Trip, Vehicle, VehicleUsageMetrics, DailyUsageMetrics, FleetFilters } f
 export function filterTrips(trips: Trip[], filters: FleetFilters): Trip[] {
   return trips.filter((trip) => {
     const tripDate = new Date(trip.start_location.timestamp).toISOString().split("T")[0];
-    const ignoreDateForEntitySearch =
-      filters.drivers.length > 0 || filters.licensePlates.length > 0;
 
-    // Apply dateFrom/dateTo only when not actively filtering by driver or vehicle.
-    if (!ignoreDateForEntitySearch) {
-      if (tripDate < filters.dateFrom || tripDate > filters.dateTo) return false;
-    }
+    // Always apply date filters
+    if (tripDate < filters.dateFrom || tripDate > filters.dateTo) return false;
     
     if (filters.drivers.length > 0 && !filters.drivers.includes(trip.driver_name)) return false;
     
