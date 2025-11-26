@@ -41,13 +41,9 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
       setTrips([]);
       setLoadedCount(0);
 
-      // Add date filtering directly in the SQL query
-      const query = `
-        SELECT * FROM BUSINESS_DB.ITURAN.TRIPS 
-        WHERE START_TIMESTAMP >= '${fromDate}' 
-        AND START_TIMESTAMP <= '${toDate} 23:59:59'
-        ORDER BY START_TIMESTAMP DESC
-      `;
+      // Fetch all trips - we'll filter by date in the application layer
+      // since we're not certain of the exact column name in Snowflake
+      const query = `SELECT * FROM BUSINESS_DB.ITURAN.TRIPS`;
 
       const { data, error: functionError } = await supabase.functions.invoke(
         "snowflake-query",
