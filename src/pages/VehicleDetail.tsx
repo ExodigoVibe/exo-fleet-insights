@@ -12,15 +12,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { generateMockTrips, getMockVehicles } from "@/utils/mockData";
 import { formatDuration } from "@/utils/fleetCalculations";
 import { ArrowLeft, Activity, Clock, TrendingUp, Gauge, Shield } from "lucide-react";
-import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
-import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
 
 const VehicleDetail = () => {
   const { licensePlate } = useParams<{ licensePlate: string }>();
-  const { trips: allTrips } = useSnowflakeTrips();
-  const { vehicles: allVehicles } = useSnowflakeVehicles();
+  const allTrips = useMemo(() => generateMockTrips(30), []);
+  const allVehicles = useMemo(() => getMockVehicles(), []);
 
   const vehicle = allVehicles.find((v) => v.license_plate === licensePlate);
   const vehicleTrips = allTrips.filter((t) => t.license_plate === licensePlate);

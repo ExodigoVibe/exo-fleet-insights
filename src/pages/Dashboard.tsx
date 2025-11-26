@@ -5,9 +5,9 @@ import { VehicleUtilizationChart } from "@/components/fleet/VehicleUtilizationCh
 import { DailyUsageChart } from "@/components/fleet/DailyUsageChart";
 import { VehicleDetailTable } from "@/components/fleet/VehicleDetailTable";
 import { SnowflakeTest } from "@/components/SnowflakeTest";
+import { generateMockTrips } from "@/utils/mockData";
 import { useSnowflakeDrivers } from "@/hooks/useSnowflakeDrivers";
 import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
-import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
 import {
   filterTrips,
   calculateVehicleUsageMetrics,
@@ -23,22 +23,20 @@ import { toast } from "sonner";
 const Dashboard = () => {
   const { drivers: snowflakeDrivers, loading: driversLoading, error: driversError } = useSnowflakeDrivers();
   const { vehicles: snowflakeVehicles, loading: vehiclesLoading, error: vehiclesError } = useSnowflakeVehicles();
-  
-  // Only start loading trips after drivers and vehicles are loaded
-  const shouldLoadTrips = !driversLoading && !vehiclesLoading;
-  const { trips: allTrips, loading: tripsLoading, error: tripsError, totalLoaded, isFullyLoaded } = useSnowflakeTrips(shouldLoadTrips);
+  const [allTrips, setAllTrips] = useState<Trip[]>([]);
   
   const allVehicles = snowflakeVehicles.length > 0 ? snowflakeVehicles : [];
   const drivers = useMemo(() => getUniqueDrivers(allTrips), [allTrips]);
   const licensePlates = useMemo(() => getUniqueLicensePlates(allTrips), [allTrips]);
 
-  // Show success toast only when all data is fully loaded
+  // Generate trips when both drivers and vehicles are loaded
   useEffect(() => {
-    if (!driversLoading && !vehiclesLoading && isFullyLoaded && 
-        snowflakeDrivers.length > 0 && snowflakeVehicles.length > 0 && totalLoaded > 0) {
-      toast.success(`Loaded ${snowflakeDrivers.length} drivers, ${snowflakeVehicles.length} vehicles, and ${totalLoaded} trips from Snowflake`);
+    if (!driversLoading && !vehiclesLoading && snowflakeDrivers.length > 0 && snowflakeVehicles.length > 0) {
+      const trips = generateMockTrips(30, snowflakeDrivers, snowflakeVehicles);
+      setAllTrips(trips);
+      toast.success(`Loaded ${snowflakeDrivers.length} drivers and ${snowflakeVehicles.length} vehicles from Snowflake`);
     }
-  }, [isFullyLoaded, driversLoading, vehiclesLoading, snowflakeDrivers.length, snowflakeVehicles.length, totalLoaded]);
+  }, [driversLoading, vehiclesLoading, snowflakeDrivers, snowflakeVehicles]);
 
   // Show error toasts
   useEffect(() => {
@@ -52,12 +50,6 @@ const Dashboard = () => {
       toast.error(`Failed to load vehicles: ${vehiclesError}`);
     }
   }, [vehiclesError]);
-
-  useEffect(() => {
-    if (tripsError) {
-      toast.error(`Failed to load trips: ${tripsError}`);
-    }
-  }, [tripsError]);
 
   const [filters, setFilters] = useState<FleetFilters>({
     dateFrom: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
@@ -77,35 +69,6 @@ const Dashboard = () => {
   );
   const dailyMetrics = useMemo(() => calculateDailyMetrics(filteredTrips), [filteredTrips]);
   const kpis = useMemo(() => calculateKPIs(filteredTrips), [filteredTrips]);
-
-  // Show loading state until drivers and vehicles are fully loaded with data
-  if (driversLoading || vehiclesLoading || snowflakeDrivers.length === 0 || snowflakeVehicles.length === 0) {
-    return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b bg-card">
-          <div className="container mx-auto px-4 py-6">
-            <h1 className="text-3xl font-bold text-foreground">Fleet Usage Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Analyze vehicle utilization and driver performance
-            </p>
-          </div>
-        </header>
-        <main className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-center h-[60vh]">
-            <div className="text-center space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground">
-                {driversLoading && vehiclesLoading && "Loading drivers and vehicles data..."}
-                {driversLoading && !vehiclesLoading && "Loading drivers data..."}
-                {!driversLoading && vehiclesLoading && "Loading vehicles data..."}
-                {!driversLoading && !vehiclesLoading && (snowflakeDrivers.length === 0 || snowflakeVehicles.length === 0) && "Waiting for data..."}
-              </p>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
