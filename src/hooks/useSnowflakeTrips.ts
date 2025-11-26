@@ -14,36 +14,49 @@ interface UseSnowflakeTripsResult {
   error: string | null;
   loadedCount: number;
   totalCount: number;
+  refetch: (dateFrom: string, dateTo: string) => Promise<void>;
+}
+
+interface UseSnowflakeTripsProps {
+  dateFrom: string;
+  dateTo: string;
 }
 
 const CHUNK_SIZE = 100;
 const INITIAL_DISPLAY_COUNT = 30;
 
-export function useSnowflakeTrips(): UseSnowflakeTripsResult {
+export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps): UseSnowflakeTripsResult {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadedCount, setLoadedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
+  const fetchTrips = async (fromDate: string, toDate: string) => {
     let isCancelled = false;
 
-    async function fetchTrips() {
-      try {
-        setLoading(true);
-        setError(null);
-        setTrips([]);
-        setLoadedCount(0);
+    try {
+      setLoading(true);
+      setError(null);
+      setTrips([]);
+      setLoadedCount(0);
 
-        const { data, error: functionError } = await supabase.functions.invoke(
-          "snowflake-query",
-          {
-            body: {
-              query: "SELECT * FROM BUSINESS_DB.ITURAN.TRIPS",
-            },
-          }
-        );
+      // Add date filtering directly in the SQL query
+      const query = `
+        SELECT * FROM BUSINESS_DB.ITURAN.TRIPS 
+        WHERE START_TIMESTAMP >= '${fromDate}' 
+        AND START_TIMESTAMP <= '${toDate} 23:59:59'
+        ORDER BY START_TIMESTAMP DESC
+      `;
+
+      const { data, error: functionError } = await supabase.functions.invoke(
+        "snowflake-query",
+        {
+          body: {
+            query,
+          },
+        }
+      );
 
         if (isCancelled) return;
 
@@ -256,24 +269,21 @@ export function useSnowflakeTrips(): UseSnowflakeTripsResult {
         };
 
         processNextChunk();
-      } catch (err) {
-        if (isCancelled) return;
-        console.error("Error fetching trips from Snowflake:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch trips"
-        );
-        setLoading(false);
-      }
+    } catch (err) {
+      if (isCancelled) return;
+      console.error("Error fetching trips from Snowflake:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch trips"
+      );
+      setLoading(false);
     }
+  };
 
-    fetchTrips();
+  useEffect(() => {
+    fetchTrips(dateFrom, dateTo);
+  }, [dateFrom, dateTo]);
 
-    return () => {
-      isCancelled = true;
-    };
-  }, []);
-
-  return { trips, loading, error, loadedCount, totalCount };
+  return { trips, loading, error, loadedCount, totalCount, refetch: fetchTrips };
 }
 
 
