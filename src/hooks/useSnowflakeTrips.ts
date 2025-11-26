@@ -16,6 +16,7 @@ export function useSnowflakeTrips() {
   const [error, setError] = useState<string | null>(null);
   const [totalLoaded, setTotalLoaded] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isFullyLoaded, setIsFullyLoaded] = useState(false);
 
   // Helper function to convert Snowflake timestamp to ISO string
   const parseSnowflakeTimestamp = (timestamp: any): string => {
@@ -141,6 +142,7 @@ export function useSnowflakeTrips() {
               const chunk = await fetchTripsChunk(offset, CHUNK_SIZE);
               if (chunk.length === 0) {
                 hasMore = false;
+                setIsFullyLoaded(true);
               } else {
                 setTrips(prev => [...prev, ...chunk]);
                 setTotalLoaded(prev => prev + chunk.length);
@@ -151,6 +153,7 @@ export function useSnowflakeTrips() {
             } catch (err) {
               console.error("Background loading error:", err);
               hasMore = false;
+              setIsFullyLoaded(true);
             }
           }
         }, 100);
@@ -165,5 +168,5 @@ export function useSnowflakeTrips() {
     fetchInitialTrips();
   }, [fetchTripsChunk]);
 
-  return { trips, loading, error, totalLoaded, loadMoreTrips, isLoadingMore };
+  return { trips, loading, error, totalLoaded, loadMoreTrips, isLoadingMore, isFullyLoaded };
 }
