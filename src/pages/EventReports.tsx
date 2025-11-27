@@ -23,57 +23,7 @@ interface EventReport {
 }
 
 export default function EventReports() {
-  // Mock data - will be replaced with real data from database
-  const mockReports: EventReport[] = [
-    {
-      id: "1",
-      date: "2025-09-20",
-      employee: "hadas3910",
-      location: "Israel",
-      severity: "slight",
-      status: "reviewed",
-    },
-    {
-      id: "2",
-      date: "2025-09-20",
-      employee: "Hadas Leibovits",
-      location: "Israel",
-      severity: "slight",
-      status: "reviewed",
-    },
-    {
-      id: "3",
-      date: "2025-09-20",
-      employee: "Hadas Leibovits",
-      location: "Israel",
-      severity: "slight",
-      status: "reviewed",
-    },
-    {
-      id: "4",
-      date: "2025-09-20",
-      employee: "Hadas Leibovits",
-      location: "Israel",
-      severity: "slight",
-      status: "reviewed",
-    },
-    {
-      id: "5",
-      date: "2025-09-18",
-      employee: "Assaf Shahaf",
-      location: "Israel",
-      severity: "extensive",
-      status: "pending",
-    },
-    {
-      id: "6",
-      date: "2025-09-23",
-      employee: "Hadas Leibovits",
-      location: "Israel",
-      severity: "slight",
-      status: "pending",
-    },
-  ];
+  const mockReports: EventReport[] = [];
 
   const handleExportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
