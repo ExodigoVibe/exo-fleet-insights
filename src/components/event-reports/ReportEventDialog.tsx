@@ -48,6 +48,12 @@ const formSchema = z.object({
   description: z.string().min(10, "Please provide a detailed description").max(1000),
   severity: z.enum(["slight", "extensive"]),
   thirdPartyInvolved: z.boolean().default(false),
+  thirdPartyCarOwner: z.string().optional(),
+  thirdPartyLicensePlate: z.string().optional(),
+  thirdPartyAddress: z.string().optional(),
+  thirdPartyPhone: z.string().optional(),
+  thirdPartyIdNumber: z.string().optional(),
+  thirdPartyInsurance: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -70,6 +76,12 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
       description: "",
       severity: "slight",
       thirdPartyInvolved: false,
+      thirdPartyCarOwner: "",
+      thirdPartyLicensePlate: "",
+      thirdPartyAddress: "",
+      thirdPartyPhone: "",
+      thirdPartyIdNumber: "",
+      thirdPartyInsurance: "",
     },
   });
 
@@ -310,7 +322,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
             </div>
 
             {/* Third Party Involvement Section */}
-            <div className="border-t pt-6">
+            <div className="border-t pt-6 space-y-6">
               <FormField
                 control={form.control}
                 name="thirdPartyInvolved"
@@ -331,6 +343,94 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                   </FormItem>
                 )}
               />
+
+              {form.watch("thirdPartyInvolved") && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                  <FormField
+                    control={form.control}
+                    name="thirdPartyCarOwner"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Car Owner</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="thirdPartyLicensePlate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>License Plate</FormLabel>
+                        <FormControl>
+                          <Input placeholder="123-45-678" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="thirdPartyAddress"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address</FormLabel>
+                        <FormControl>
+                          <Input placeholder="123 Main St, Anytown" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="thirdPartyPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="555-123-4567" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="thirdPartyIdNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ID Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Driver's License or ID" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="thirdPartyInsurance"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Insurance Policy</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Policy number and company" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}
