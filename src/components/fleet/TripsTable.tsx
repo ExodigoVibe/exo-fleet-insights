@@ -136,7 +136,9 @@ export function TripsTable({ trips, loading = false }: TripsTableProps) {
                   <SortButton field="driver_name">Driver</SortButton>
                 </TableHead>
                 <TableHead>Start Time</TableHead>
+                <TableHead>Start Location</TableHead>
                 <TableHead>End Time</TableHead>
+                <TableHead>End Location</TableHead>
                 <TableHead>
                   <SortButton field="duration_in_minutes">Duration</SortButton>
                 </TableHead>
@@ -162,8 +164,14 @@ export function TripsTable({ trips, loading = false }: TripsTableProps) {
                   <TableCell>
                     {new Date(trip.start_location.timestamp).toLocaleTimeString()}
                   </TableCell>
+                  <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                    {trip.start_location.location.address.location || "—"}
+                  </TableCell>
                   <TableCell>
                     {new Date(trip.end_location.timestamp).toLocaleTimeString()}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                    {trip.end_location.location.address.location || "—"}
                   </TableCell>
                   <TableCell className="text-success font-medium">
                     {formatDuration(trip.duration_in_seconds / 60)}
