@@ -36,7 +36,7 @@ async function fetchDriversFromSnowflake(): Promise<Driver[]> {
     phone: row[columnMap["PHONE"]] ?? "",
     cellular: row[columnMap["CELLULAR"]] ?? "",
     email: row[columnMap["EMAIL"]] ?? "",
-    is_blocked: Boolean(row[columnMap["IS_BLOCKED"]]),
+    is_blocked: row[columnMap["IS_BLOCKED"]] === "true" || row[columnMap["IS_BLOCKED"]] === true,
     drive_permission_groups: [],
   }));
 }
