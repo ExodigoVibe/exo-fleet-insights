@@ -51,8 +51,8 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end
-                      className="flex items-center gap-3 hover:bg-accent"
-                      activeClassName="bg-accent text-accent-foreground font-medium"
+                      className="flex items-center gap-3 hover:bg-primary/10 text-foreground"
+                      activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <item.icon className="h-4 w-4" />
                       {open && <span>{item.title}</span>}
