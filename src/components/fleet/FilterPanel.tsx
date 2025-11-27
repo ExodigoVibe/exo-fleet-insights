@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Filter, X } from "lucide-react";
+import { Filter, X, Check } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -23,7 +23,11 @@ interface FilterPanelProps {
 }
 
 export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, loading = false }: FilterPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [pendingFilters, setPendingFilters] = useState<FleetFilters>(filters);
+
+  useEffect(() => {
+    setPendingFilters(filters);
+  }, [filters]);
 
   const handleReset = () => {
     const defaultFilters: FleetFilters = {
@@ -36,7 +40,12 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
       safetyGradeMax: 100,
       tripStatus: [],
     };
+    setPendingFilters(defaultFilters);
     onFiltersChange(defaultFilters);
+  };
+
+  const handleApply = () => {
+    onFiltersChange(pendingFilters);
   };
 
   return (
@@ -51,26 +60,22 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
             <X className="h-4 w-4 mr-1" />
             Reset
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? "Collapse" : "Expand"}
+          <Button variant="default" size="sm" onClick={handleApply} disabled={loading}>
+            <Check className="h-4 w-4 mr-1" />
+            Apply
           </Button>
         </div>
       </CardHeader>
-      {isExpanded && (
-        <CardContent className="space-y-4">
+      <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <Label htmlFor="dateFrom">Date From</Label>
               <Input
                 id="dateFrom"
                 type="date"
-                value={filters.dateFrom}
+                value={pendingFilters.dateFrom}
                 onChange={(e) =>
-                  onFiltersChange({ ...filters, dateFrom: e.target.value })
+                  setPendingFilters({ ...pendingFilters, dateFrom: e.target.value })
                 }
                 disabled={loading}
               />
@@ -80,9 +85,9 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
               <Input
                 id="dateTo"
                 type="date"
-                value={filters.dateTo}
+                value={pendingFilters.dateTo}
                 onChange={(e) =>
-                  onFiltersChange({ ...filters, dateTo: e.target.value })
+                  setPendingFilters({ ...pendingFilters, dateTo: e.target.value })
                 }
                 disabled={loading}
               />
@@ -90,10 +95,10 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
             <div className="space-y-2">
               <Label htmlFor="driver">Driver</Label>
               <Select
-                value={filters.drivers[0] || "all"}
+                value={pendingFilters.drivers[0] || "all"}
                 onValueChange={(value) =>
-                  onFiltersChange({
-                    ...filters,
+                  setPendingFilters({
+                    ...pendingFilters,
                     drivers: value === "all" ? [] : [value],
                   })
                 }
@@ -115,10 +120,10 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
             <div className="space-y-2">
               <Label htmlFor="licensePlate">License Plate</Label>
               <Select
-                value={filters.licensePlates[0] || "all"}
+                value={pendingFilters.licensePlates[0] || "all"}
                 onValueChange={(value) =>
-                  onFiltersChange({
-                    ...filters,
+                  setPendingFilters({
+                    ...pendingFilters,
                     licensePlates: value === "all" ? [] : [value],
                   })
                 }
@@ -140,16 +145,16 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
           </div>
           <div className="space-y-2">
             <Label>
-              Safety Grade Range: {filters.safetyGradeMin} - {filters.safetyGradeMax}
+              Safety Grade Range: {pendingFilters.safetyGradeMin} - {pendingFilters.safetyGradeMax}
             </Label>
             <Slider
               min={0}
               max={100}
               step={5}
-              value={[filters.safetyGradeMin, filters.safetyGradeMax]}
+              value={[pendingFilters.safetyGradeMin, pendingFilters.safetyGradeMax]}
               onValueChange={([min, max]) =>
-                onFiltersChange({
-                  ...filters,
+                setPendingFilters({
+                  ...pendingFilters,
                   safetyGradeMin: min,
                   safetyGradeMax: max,
                 })
@@ -158,8 +163,7 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
               disabled={loading}
             />
           </div>
-        </CardContent>
-      )}
+      </CardContent>
     </Card>
   );
 }
