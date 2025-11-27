@@ -19,11 +19,12 @@ import {
 import { FleetFilters, Trip } from "@/types/fleet";
 import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
 import { toast } from "sonner";
+import { useInitialDateRange } from "@/hooks/useInitialData";
 
 const Dashboard = () => {
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
-  
+  const { dateFrom, dateTo } = useInitialDateRange();
   const snowflakeDrivers = driversData ?? [];
   const snowflakeVehicles = vehiclesData ?? [];
   
@@ -64,8 +65,8 @@ const Dashboard = () => {
   }, [vehiclesError]);
 
   const [filters, setFilters] = useState<FleetFilters>({
-    dateFrom: new Date("2025-11-24").toISOString().split("T")[0],
-    dateTo: new Date().toISOString().split("T")[0],
+    dateFrom: dateFrom,
+    dateTo: dateTo,
     drivers: [],
     vehicles: [],
     licensePlates: [],
