@@ -28,43 +28,14 @@ interface VehicleRequest {
 export default function Requests() {
   const [statusFilter, setStatusFilter] = useState<RequestStatus>("all");
 
-  // Mock data - will be replaced with real data from database
-  const mockRequests: VehicleRequest[] = [
-    {
-      id: "1",
-      employee_name: "Hadas Leibovits",
-      employee_department: "operation",
-      type: "Single Use",
-      date: "2025-09-16",
-      status: "Pending Manager",
-      priority: "Medium",
-    },
-    {
-      id: "2",
-      employee_name: "Hadas Leibovits",
-      employee_department: "operation",
-      type: "Single Use",
-      date: "2025-09-24",
-      status: "Pending Manager",
-      priority: "Medium",
-    },
-    {
-      id: "3",
-      employee_name: "Hadas Leibovits",
-      employee_department: "operation",
-      type: "Single Use",
-      date: "2025-09-21",
-      status: "Pending Manager",
-      priority: "Medium",
-    },
-  ];
+  const requests: VehicleRequest[] = [];
 
-  const allRequestsCount = mockRequests.length;
-  const pendingCount = mockRequests.filter((r) => r.status === "Pending Manager").length;
-  const approvedCount = mockRequests.filter((r) => r.status === "Approved").length;
-  const rejectedCount = mockRequests.filter((r) => r.status === "Rejected").length;
+  const allRequestsCount = requests.length;
+  const pendingCount = requests.filter((r) => r.status === "Pending Manager").length;
+  const approvedCount = requests.filter((r) => r.status === "Approved").length;
+  const rejectedCount = requests.filter((r) => r.status === "Rejected").length;
 
-  const filteredRequests = mockRequests.filter((request) => {
+  const filteredRequests = requests.filter((request) => {
     if (statusFilter === "all") return true;
     if (statusFilter === "pending_manager") return request.status === "Pending Manager";
     if (statusFilter === "approved") return request.status === "Approved";
