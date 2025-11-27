@@ -20,36 +20,48 @@ import { toast } from "sonner";
 const Vehicles = () => {
   const { data: vehicles, isLoading, error } = useVehiclesQuery();
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "parking" | "moving" | "maintenance">("all");
 
   const filteredVehicles = useMemo(() => {
     if (!vehicles) return [];
-    if (!searchTerm) return vehicles;
+    
+    let filtered = vehicles;
 
-    const search = searchTerm.toLowerCase();
-    return vehicles.filter((vehicle) => {
-      const licensePlate = vehicle.license_plate?.toLowerCase() || "";
-      const nickname = vehicle.nickname?.toLowerCase() || "";
-      const make = vehicle.make_name?.toLowerCase() || "";
-      const model = vehicle.model_name?.toLowerCase() || "";
-      const year = vehicle.model_year?.toString() || "";
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(v => v.motion_status?.toLowerCase() === statusFilter);
+    }
 
-      return (
-        licensePlate.includes(search) ||
-        nickname.includes(search) ||
-        make.includes(search) ||
-        model.includes(search) ||
-        year.includes(search)
-      );
-    });
-  }, [vehicles, searchTerm]);
+    // Apply search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter((vehicle) => {
+        const licensePlate = vehicle.license_plate?.toLowerCase() || "";
+        const nickname = vehicle.nickname?.toLowerCase() || "";
+        const make = vehicle.make_name?.toLowerCase() || "";
+        const model = vehicle.model_name?.toLowerCase() || "";
+        const year = vehicle.model_year?.toString() || "";
+
+        return (
+          licensePlate.includes(search) ||
+          nickname.includes(search) ||
+          make.includes(search) ||
+          model.includes(search) ||
+          year.includes(search)
+        );
+      });
+    }
+
+    return filtered;
+  }, [vehicles, searchTerm, statusFilter]);
 
   // Calculate KPIs
   const totalVehicles = vehicles?.length || 0;
   const availableVehicles = vehicles?.filter(v => 
     v.motion_status?.toLowerCase() === "parking"
   )?.length || 0;
-  const assignedVehicles = 0; // Placeholder - would need assignment data
-  const maintenanceVehicles = vehicles?.filter(v => v.motion_status === "maintenance")?.length || 0;
+  const assignedVehicles = vehicles?.filter(v => v.motion_status?.toLowerCase() === "moving")?.length || 0;
+  const maintenanceVehicles = vehicles?.filter(v => v.motion_status?.toLowerCase() === "maintenance")?.length || 0;
 
   const handleExportToExcel = () => {
     if (!filteredVehicles.length) {
@@ -119,7 +131,10 @@ const Vehicles = () => {
       <div className="container mx-auto px-4 py-6">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card className="border-2 border-primary">
+          <Card 
+            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "all" ? "border-2 border-primary" : ""}`}
+            onClick={() => setStatusFilter("all")}
+          >
             <CardContent className="pt-6 text-center">
               <Car className="h-8 w-8 text-primary mx-auto mb-3" />
               <div className="text-4xl font-bold mb-1">{totalVehicles}</div>
@@ -127,7 +142,10 @@ const Vehicles = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "parking" ? "border-2 border-primary" : ""}`}
+            onClick={() => setStatusFilter("parking")}
+          >
             <CardContent className="pt-6 text-center">
               <div className="h-8 w-8 rounded-full bg-green-500 mx-auto mb-3 flex items-center justify-center">
                 <Circle className="h-4 w-4 text-white fill-white" />
@@ -137,7 +155,10 @@ const Vehicles = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "moving" ? "border-2 border-primary" : ""}`}
+            onClick={() => setStatusFilter("moving")}
+          >
             <CardContent className="pt-6 text-center">
               <Users className="h-8 w-8 text-blue-600 mx-auto mb-3" />
               <div className="text-4xl font-bold text-blue-600 mb-1">{assignedVehicles}</div>
@@ -145,7 +166,10 @@ const Vehicles = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "maintenance" ? "border-2 border-primary" : ""}`}
+            onClick={() => setStatusFilter("maintenance")}
+          >
             <CardContent className="pt-6 text-center">
               <Wrench className="h-8 w-8 text-orange-600 mx-auto mb-3" />
               <div className="text-4xl font-bold text-orange-600 mb-1">{maintenanceVehicles}</div>
@@ -176,7 +200,10 @@ const Vehicles = () => {
             <div className="flex items-center gap-2 mb-4">
               <Car className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-bold">
-                All Vehicles ({filteredVehicles.length})
+                {statusFilter === "all" ? "All Vehicles" : 
+                 statusFilter === "parking" ? "Available Vehicles" :
+                 statusFilter === "moving" ? "Assigned Vehicles" :
+                 "Maintenance Vehicles"} ({filteredVehicles.length})
               </h2>
             </div>
 
