@@ -121,6 +121,22 @@ const Employees = () => {
           </Card>
         </div>
 
+        {/* Search Bar */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search employees by name, email, driver code, phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Drivers List</CardTitle>
@@ -135,16 +151,6 @@ const Employees = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="mb-4 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                type="text"
-                placeholder="Search employees by name, email, driver code, phone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
             {isLoading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
