@@ -32,7 +32,7 @@ export function TripsTable({ trips }: TripsTableProps) {
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 30; // Show more items per page
+  const itemsPerPage = 10;
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
