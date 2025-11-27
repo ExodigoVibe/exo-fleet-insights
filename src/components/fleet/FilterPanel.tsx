@@ -19,9 +19,10 @@ interface FilterPanelProps {
   onFiltersChange: (filters: FleetFilters) => void;
   drivers: string[];
   licensePlates: string[];
+  loading?: boolean;
 }
 
-export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates }: FilterPanelProps) {
+export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, loading = false }: FilterPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleReset = () => {
@@ -71,6 +72,7 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates }
                 onChange={(e) =>
                   onFiltersChange({ ...filters, dateFrom: e.target.value })
                 }
+                disabled={loading}
               />
             </div>
             <div className="space-y-2">
@@ -82,6 +84,7 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates }
                 onChange={(e) =>
                   onFiltersChange({ ...filters, dateTo: e.target.value })
                 }
+                disabled={loading}
               />
             </div>
             <div className="space-y-2">
@@ -94,8 +97,9 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates }
                     drivers: value === "all" ? [] : [value],
                   })
                 }
+                disabled={loading}
               >
-                <SelectTrigger>
+                <SelectTrigger disabled={loading}>
                   <SelectValue placeholder="All Drivers" />
                 </SelectTrigger>
                 <SelectContent>
@@ -118,8 +122,9 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates }
                     licensePlates: value === "all" ? [] : [value],
                   })
                 }
+                disabled={loading}
               >
-                <SelectTrigger>
+                <SelectTrigger disabled={loading}>
                   <SelectValue placeholder="All Vehicles" />
                 </SelectTrigger>
                 <SelectContent>
@@ -150,6 +155,7 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates }
                 })
               }
               className="w-full"
+              disabled={loading}
             />
           </div>
         </CardContent>
