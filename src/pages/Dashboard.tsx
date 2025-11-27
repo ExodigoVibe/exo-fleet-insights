@@ -90,17 +90,35 @@ const Dashboard = () => {
 
   // Enrich trips with vehicle location addresses
   const enrichedTrips = useMemo(() => {
-    if (vehicleLocations.length === 0) return allTrips;
+    console.log("Vehicle Locations Data:", vehicleLocations);
+    console.log(`Total vehicle locations: ${vehicleLocations.length}`);
+    
+    if (vehicleLocations.length === 0) {
+      console.log("No vehicle locations available, returning trips without addresses");
+      return allTrips;
+    }
     
     // Create a lookup map for vehicle locations by license plate
     const locationMap = new Map(
-      vehicleLocations.map(loc => [loc.license_plate, loc.address || ""])
+      vehicleLocations.map(loc => {
+        console.log(`Mapping location for ${loc.license_plate}: ${loc.address}`);
+        return [loc.license_plate, loc.address || ""];
+      })
     );
     
-    return allTrips.map(trip => ({
+    console.log("Location Map size:", locationMap.size);
+    
+    const enriched = allTrips.map(trip => ({
       ...trip,
       vehicle_location_address: locationMap.get(trip.license_plate) || "",
     }));
+    
+    console.log("Sample enriched trips (first 3):", enriched.slice(0, 3).map(t => ({
+      license_plate: t.license_plate,
+      vehicle_location_address: t.vehicle_location_address
+    })));
+    
+    return enriched;
   }, [allTrips, vehicleLocations]);
 
   const filteredTrips = useMemo(() => filterTrips(enrichedTrips, filters), [enrichedTrips, filters]);
