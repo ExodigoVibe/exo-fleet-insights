@@ -195,9 +195,8 @@ serve(async (req) => {
         schema,
         warehouse,
         role,
-        // Ensure we get all rows (e.g. all 19k trips) in a single result set
-        // and avoid the default 10k row truncation.
-        resultSetMaxRows: 50000,
+        // Snowflake automatically handles large result sets through partitioning
+        // The partition fetching logic below will retrieve all rows
       }),
     });
 
