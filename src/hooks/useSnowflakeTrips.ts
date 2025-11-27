@@ -32,36 +32,35 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
   const [loadedCount, setLoadedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
-  const fetchTrips = async (fromDate: string, toDate: string) => {
-    let isCancelled = false;
+  useEffect(() => {
+    let cancelled = false;
+    
+    const loadTrips = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        setTrips([]);
+        setLoadedCount(0);
 
-    try {
-      setLoading(true);
-      setError(null);
-      setTrips([]);
-      setLoadedCount(0);
+        const query = `
+          SELECT * 
+          FROM BUSINESS_DB.ITURAN.TRIPS 
+          WHERE START_TIMESTAMP >= '${dateFrom} 00:00:00' 
+            AND START_TIMESTAMP <= '${dateTo} 23:59:59'
+          ORDER BY START_TIMESTAMP DESC
+          LIMIT 10000
+        `;
 
-      // Fetch all trips - we'll filter by date in the application layer
-      // since we're not certain of the exact column name in Snowflake
-      const query = `
-        SELECT * 
-        FROM BUSINESS_DB.ITURAN.TRIPS 
-        WHERE START_TIMESTAMP >= '${fromDate} 00:00:00' 
-          AND START_TIMESTAMP <= '${toDate} 23:59:59'
-        ORDER BY START_TIMESTAMP DESC
-        LIMIT 10000
-      `;
+        const { data, error: functionError } = await supabase.functions.invoke(
+          "snowflake-query",
+          {
+            body: {
+              query,
+            },
+          }
+        );
 
-      const { data, error: functionError } = await supabase.functions.invoke(
-        "snowflake-query",
-        {
-          body: {
-            query,
-          },
-        }
-      );
-
-        if (isCancelled) return;
+        if (cancelled) return;
 
         if (functionError) throw functionError;
         if (!data) throw new Error("No data returned from Snowflake");
@@ -78,7 +77,6 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
         setTotalCount(total);
 
         const mapRowToTrip = (row: any[]): Trip => {
-          // NOTE: Adjust column names here to match your Snowflake TRIPS table schema
           const startTimestamp =
             row[columnMap["START_TIMESTAMP"]] ||
             row[columnMap["START_TIME"]] ||
@@ -102,7 +100,6 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
               0
           );
 
-          // Fallback: if duration is missing/zero but we have timestamps, compute it from start/end.
           if (
             (!durationSeconds || Number.isNaN(durationSeconds)) &&
             startTimestamp &&
@@ -238,21 +235,19 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
           };
         };
 
-        // First, synchronously map the initial subset so the UI can render quickly.
         const initialCount = Math.min(INITIAL_DISPLAY_COUNT, rows.length);
         const initialRows = rows.slice(0, initialCount);
         const initialTrips = initialRows.map(mapRowToTrip);
 
-        if (isCancelled) return;
+        if (cancelled) return;
 
         setTrips(initialTrips);
         setLoadedCount(initialTrips.length);
 
-        // Then, process the remaining rows in background-sized chunks to avoid blocking the UI.
         let currentIndex = initialCount;
 
         const processNextChunk = () => {
-          if (isCancelled || currentIndex >= rows.length) {
+          if (cancelled || currentIndex >= rows.length) {
             setLoading(false);
             return;
           }
@@ -267,26 +262,28 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
           currentIndex += CHUNK_SIZE;
           setLoadedCount(currentIndex);
 
-          // Yield back to the event loop so the UI stays responsive.
           setTimeout(processNextChunk, 0);
         };
 
         processNextChunk();
-    } catch (err) {
-      if (isCancelled) return;
-      console.error("Error fetching trips from Snowflake:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch trips"
-      );
-      setLoading(false);
-    }
-  };
+      } catch (err) {
+        if (cancelled) return;
+        console.error("Error fetching trips from Snowflake:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch trips"
+        );
+        setLoading(false);
+      }
+    };
 
-  useEffect(() => {
-    fetchTrips(dateFrom, dateTo);
+    loadTrips();
+
+    return () => {
+      cancelled = true;
+    };
   }, [dateFrom, dateTo]);
 
-  return { trips, loading, error, loadedCount, totalCount, refetch: fetchTrips };
+  return { trips, loading, error, loadedCount, totalCount, refetch: async () => {} };
 }
 
 
