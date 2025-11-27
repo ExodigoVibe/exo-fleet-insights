@@ -20,7 +20,7 @@ import { toast } from "sonner";
 const Vehicles = () => {
   const { data: vehicles, isLoading, error } = useVehiclesQuery();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "parking" | "moving" | "maintenance">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "parking" | "moving" | "other">("all");
 
   const filteredVehicles = useMemo(() => {
     if (!vehicles) return [];
@@ -28,8 +28,14 @@ const Vehicles = () => {
     let filtered = vehicles;
 
     // Apply status filter
-    if (statusFilter !== "all") {
+    if (statusFilter === "parking" || statusFilter === "moving") {
       filtered = filtered.filter(v => v.motion_status?.toLowerCase() === statusFilter);
+    } else if (statusFilter === "other") {
+      // Show all vehicles that are NOT parking or moving
+      filtered = filtered.filter(v => {
+        const status = v.motion_status?.toLowerCase();
+        return status !== "parking" && status !== "moving";
+      });
     }
 
     // Apply search filter
@@ -61,7 +67,10 @@ const Vehicles = () => {
     v.motion_status?.toLowerCase() === "parking"
   )?.length || 0;
   const assignedVehicles = vehicles?.filter(v => v.motion_status?.toLowerCase() === "moving")?.length || 0;
-  const maintenanceVehicles = vehicles?.filter(v => v.motion_status?.toLowerCase() === "maintenance")?.length || 0;
+  const maintenanceVehicles = vehicles?.filter(v => {
+    const status = v.motion_status?.toLowerCase();
+    return status !== "parking" && status !== "moving";
+  })?.length || 0;
 
   const handleExportToExcel = () => {
     if (!filteredVehicles.length) {
@@ -167,8 +176,8 @@ const Vehicles = () => {
           </Card>
 
           <Card 
-            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "maintenance" ? "border-2 border-primary" : ""}`}
-            onClick={() => setStatusFilter("maintenance")}
+            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "other" ? "border-2 border-primary" : ""}`}
+            onClick={() => setStatusFilter("other")}
           >
             <CardContent className="pt-6 text-center">
               <Wrench className="h-8 w-8 text-orange-600 mx-auto mb-3" />
