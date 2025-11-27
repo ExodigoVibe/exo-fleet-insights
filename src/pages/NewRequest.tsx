@@ -101,6 +101,7 @@ export default function NewRequest() {
           <Button
             variant="outline"
             onClick={() => navigate("/requests")}
+            className="hover:bg-muted"
           >
             Back to Requests
           </Button>
@@ -431,7 +432,7 @@ export default function NewRequest() {
                         <Button
                           type="button"
                           variant="outline"
-                          className="gap-2"
+                          className="gap-2 hover:bg-muted"
                           onClick={() => document.getElementById('license-upload')?.click()}
                         >
                           <Upload className="h-4 w-4" />
@@ -468,10 +469,11 @@ export default function NewRequest() {
                 type="button"
                 variant="outline"
                 onClick={() => navigate("/requests")}
+                className="hover:bg-muted"
               >
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button type="submit" className="bg-primary hover:bg-primary/90">
                 Submit Request
               </Button>
             </div>
