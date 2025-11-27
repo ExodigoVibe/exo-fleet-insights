@@ -8,7 +8,6 @@ import { SnowflakeTest } from "@/components/SnowflakeTest";
 import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
 import { useTripsQuery } from "@/hooks/queries/useTripsQuery";
-import { useVehicleLocationsQuery } from "@/hooks/queries/useVehicleLocationsQuery";
 import {
   filterTrips,
   calculateVehicleUsageMetrics,
@@ -24,11 +23,9 @@ import { toast } from "sonner";
 const Dashboard = () => {
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
-  const { data: locationsData, isLoading: locationsLoading, error: locationsError } = useVehicleLocationsQuery();
   
   const snowflakeDrivers = driversData ?? [];
   const snowflakeVehicles = vehiclesData ?? [];
-  const vehicleLocations = locationsData ?? [];
   
   const allVehicles = useMemo(
     () => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []),
@@ -88,40 +85,7 @@ const Dashboard = () => {
   const allTrips: Trip[] = tripsData?.trips ?? [];
   const totalCount = tripsData?.totalCount ?? 0;
 
-  // Enrich trips with vehicle location addresses
-  const enrichedTrips = useMemo(() => {
-    console.log("Vehicle Locations Data:", vehicleLocations);
-    console.log(`Total vehicle locations: ${vehicleLocations.length}`);
-    
-    if (vehicleLocations.length === 0) {
-      console.log("No vehicle locations available, returning trips without addresses");
-      return allTrips;
-    }
-    
-    // Create a lookup map for vehicle locations by license plate
-    const locationMap = new Map(
-      vehicleLocations.map(loc => {
-        console.log(`Mapping location for ${loc.license_plate}: ${loc.address}`);
-        return [loc.license_plate, loc.address || ""];
-      })
-    );
-    
-    console.log("Location Map size:", locationMap.size);
-    
-    const enriched = allTrips.map(trip => ({
-      ...trip,
-      vehicle_location_address: locationMap.get(trip.license_plate) || "",
-    }));
-    
-    console.log("Sample enriched trips (first 3):", enriched.slice(0, 3).map(t => ({
-      license_plate: t.license_plate,
-      vehicle_location_address: t.vehicle_location_address
-    })));
-    
-    return enriched;
-  }, [allTrips, vehicleLocations]);
-
-  const filteredTrips = useMemo(() => filterTrips(enrichedTrips, filters), [enrichedTrips, filters]);
+  const filteredTrips = useMemo(() => filterTrips(allTrips, filters), [allTrips, filters]);
   const vehicleMetrics = useMemo(
     () => calculateVehicleUsageMetrics(filteredTrips, allVehicles),
     [filteredTrips, allVehicles]

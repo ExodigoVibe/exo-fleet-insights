@@ -30,7 +30,6 @@ export interface Trip {
     safety_events_count: number;
   };
   trip_status: string;
-  vehicle_location_address?: string;
 }
 
 export interface Vehicle {

@@ -149,7 +149,6 @@ export function TripsTable({ trips, loading = false }: TripsTableProps) {
                 <TableHead>
                   <SortButton field="safety_grade">Safety</SortButton>
                 </TableHead>
-                <TableHead>Address</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -185,9 +184,6 @@ export function TripsTable({ trips, loading = false }: TripsTableProps) {
                     >
                       {trip.safety.safety_grade.toFixed(0)}
                     </span>
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate" title={trip.vehicle_location_address}>
-                    {trip.vehicle_location_address || "-"}
                   </TableCell>
                 </TableRow>
               ))}
