@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import VehicleDetail from "./pages/VehicleDetail";
 import Vehicles from "./pages/Vehicles";
 import Employees from "./pages/Employees";
+import Requests from "./pages/Requests";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,7 @@ const App = () => (
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/vehicle-fleet" element={<Vehicles />} />
                 <Route path="/employees" element={<Employees />} />
+                <Route path="/requests" element={<Requests />} />
                 <Route path="/vehicle/:licensePlate" element={<VehicleDetail />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
