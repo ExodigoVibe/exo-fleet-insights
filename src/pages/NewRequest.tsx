@@ -101,7 +101,7 @@ export default function NewRequest() {
           <Button
             variant="outline"
             onClick={() => navigate("/requests")}
-            className="hover:bg-gray-100"
+            className="hover:bg-gray-100 hover:text-foreground"
           >
             Back to Requests
           </Button>
@@ -205,7 +205,7 @@ export default function NewRequest() {
                             <Button
                               variant="outline"
                               className={cn(
-                                "w-full pl-3 text-left font-normal",
+                                "w-full pl-3 text-left font-normal hover:bg-gray-100 hover:text-foreground",
                                 !field.value && "text-muted-foreground"
                               )}
                             >
@@ -249,7 +249,7 @@ export default function NewRequest() {
                             <Button
                               variant="outline"
                               className={cn(
-                                "w-full pl-3 text-left font-normal",
+                                "w-full pl-3 text-left font-normal hover:bg-gray-100 hover:text-foreground",
                                 !field.value && "text-muted-foreground"
                               )}
                             >
@@ -432,7 +432,7 @@ export default function NewRequest() {
                         <Button
                           type="button"
                           variant="outline"
-                          className="gap-2 hover:bg-gray-100"
+                          className="gap-2 hover:bg-gray-100 hover:text-foreground"
                           onClick={() => document.getElementById('license-upload')?.click()}
                         >
                           <Upload className="h-4 w-4" />
@@ -469,7 +469,7 @@ export default function NewRequest() {
                 type="button"
                 variant="outline"
                 onClick={() => navigate("/requests")}
-                className="hover:bg-gray-100"
+                className="hover:bg-gray-100 hover:text-foreground"
               >
                 Cancel
               </Button>
