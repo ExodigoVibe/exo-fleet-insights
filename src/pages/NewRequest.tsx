@@ -1,0 +1,363 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { format } from "date-fns";
+import { CalendarIcon, FileText, Car } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const formSchema = z.object({
+  usage_type: z.enum(["single_use", "permanent_driver"]),
+  start_date: z.date({
+    required_error: "Start date is required",
+  }),
+  end_date: z.date({
+    required_error: "End date is required",
+  }),
+  purpose: z.string().min(1, "Purpose of trip is required").max(500),
+  full_name: z.string().min(1, "Full name is required").max(100),
+  job_title: z.string().min(1, "Job title is required").max(100),
+  department: z.string().min(1, "Department is required").max(100),
+  phone_number: z.string().min(1, "Phone number is required").max(20),
+}).refine((data) => data.end_date >= data.start_date, {
+  message: "End date must be after or equal to start date",
+  path: ["end_date"],
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+export default function NewRequest() {
+  const navigate = useNavigate();
+  const [usageType, setUsageType] = useState<"single_use" | "permanent_driver">("single_use");
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      usage_type: "single_use",
+      purpose: "",
+      full_name: "",
+      job_title: "",
+      department: "",
+      phone_number: "",
+    },
+  });
+
+  const onSubmit = async (data: FormValues) => {
+    console.log("Form submitted:", data);
+    toast.success("Request submitted successfully");
+    // TODO: Save to database
+    navigate("/requests");
+  };
+
+  const requirements = {
+    single_use: [
+      "Sign Exodigo Car Policy",
+      "Upload driver's license photo",
+      "Department manager approval",
+      "Vehicle coordinator approval and code issuance",
+    ],
+    permanent_driver: [
+      "Sign Exodigo Car Policy",
+      "Upload driver's license photo",
+      "Complete defensive driving course",
+      "Department manager approval",
+      "HR approval",
+      "Vehicle coordinator approval and code issuance",
+    ],
+  };
+
+  return (
+    <div className="min-h-screen bg-background p-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            onClick={() => navigate("/requests")}
+          >
+            Back to Requests
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">New Vehicle Request</h1>
+            <p className="text-muted-foreground">Choose usage type and fill out the required details</p>
+          </div>
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-6 text-center">Select Usage Type</h2>
+              
+              <FormField
+                control={form.control}
+                name="usage_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            field.onChange("single_use");
+                            setUsageType("single_use");
+                          }}
+                          className={cn(
+                            "p-4 border-2 rounded-lg flex items-center justify-center gap-2 transition-all",
+                            field.value === "single_use"
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <FileText className="h-5 w-5" />
+                          <span className="font-medium">Single Use</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            field.onChange("permanent_driver");
+                            setUsageType("permanent_driver");
+                          }}
+                          className={cn(
+                            "p-4 border-2 rounded-lg flex items-center justify-center gap-2 transition-all",
+                            field.value === "permanent_driver"
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <Car className="h-5 w-5" />
+                          <span className="font-medium">Permanent Driver</span>
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  Requirements for {usageType === "single_use" ? "Single Use" : "Permanent Driver"}:
+                </h3>
+                <ul className="space-y-1">
+                  {requirements[usageType].map((req, index) => (
+                    <li key={index} className="text-sm text-blue-800 flex items-start gap-2">
+                      <span className="text-blue-600">•</span>
+                      <span>{req}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <FormField
+                  control={form.control}
+                  name="start_date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 text-primary" />
+                        Start Date
+                      </FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "dd/MM/yyyy")
+                              ) : (
+                                <span>dd/mm/yyyy</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="end_date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 text-primary" />
+                        End Date
+                      </FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "dd/MM/yyyy")
+                              ) : (
+                                <span>dd/mm/yyyy</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="purpose"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      Purpose of Trip
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter the purpose of your trip"
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </Card>
+
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Your Information</h3>
+              
+              <div className="grid grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="full_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your full name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="job_title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Job Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your job title" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Department</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your department" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone_number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your phone number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Card>
+
+            <div className="flex justify-end gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/requests")}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">
+                Submit Request
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+    </div>
+  );
+}

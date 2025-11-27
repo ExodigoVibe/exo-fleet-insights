@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Download, Plus, User, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,6 +27,7 @@ interface VehicleRequest {
 }
 
 export default function Requests() {
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<RequestStatus>("all");
 
   const requests: VehicleRequest[] = [];
@@ -95,7 +97,7 @@ export default function Requests() {
             >
               Excel <Download className="h-4 w-4" />
             </Button>
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={() => navigate("/requests/new")}>
               <Plus className="h-4 w-4" /> New Request
             </Button>
           </div>
