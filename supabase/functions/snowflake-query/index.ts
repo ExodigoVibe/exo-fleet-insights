@@ -224,8 +224,27 @@ serve(async (req) => {
           const prJson = await pr.json();
           if (prJson.data) {
             const metadata = prJson.resultSetMetaData?.rowType || [];
-            const rows = prJson.data.map((row: any[]) => row);
-            return new Response(JSON.stringify({ columns: metadata, rows, rowCount: rows.length }), {
+            let allRows = prJson.data.map((row: any[]) => row);
+            
+            // Handle partitioned results for large datasets
+            if (prJson.resultSetMetaData?.partitionInfo) {
+              console.log("[Pagination] Detected partitioned result set, fetching additional partitions...");
+              const partitions = prJson.resultSetMetaData.partitionInfo;
+              
+              for (let p = 0; p < partitions.length; p++) {
+                const partitionUrl = `${snowflakeUrl}/${result.statementHandle}?partition=${p}`;
+                const partResp = await fetch(partitionUrl, { headers: { Authorization: `Bearer ${jwtToken}` } });
+                if (partResp.ok) {
+                  const partData = await partResp.json();
+                  if (partData.data) {
+                    allRows = allRows.concat(partData.data.map((row: any[]) => row));
+                    console.log(`[Pagination] Fetched partition ${p + 1}/${partitions.length}, total rows: ${allRows.length}`);
+                  }
+                }
+              }
+            }
+            
+            return new Response(JSON.stringify({ columns: metadata, rows: allRows, rowCount: allRows.length }), {
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
@@ -238,8 +257,28 @@ serve(async (req) => {
     }
 
     const metadata = result.resultSetMetaData?.rowType || [];
-    const rows = result.data ? result.data.map((row: any[]) => row) : [];
-    return new Response(JSON.stringify({ columns: metadata, rows, rowCount: rows.length }), {
+    let allRows = result.data ? result.data.map((row: any[]) => row) : [];
+    
+    // Handle partitioned results for large datasets (30k+ rows)
+    if (result.resultSetMetaData?.partitionInfo) {
+      console.log("[Pagination] Detected partitioned result set, fetching additional partitions...");
+      const partitions = result.resultSetMetaData.partitionInfo;
+      
+      for (let p = 0; p < partitions.length; p++) {
+        const partitionUrl = `${snowflakeUrl}/${result.statementHandle}?partition=${p}`;
+        const partResp = await fetch(partitionUrl, { headers: { Authorization: `Bearer ${jwtToken}` } });
+        if (partResp.ok) {
+          const partData = await partResp.json();
+          if (partData.data) {
+            allRows = allRows.concat(partData.data.map((row: any[]) => row));
+            console.log(`[Pagination] Fetched partition ${p + 1}/${partitions.length}, total rows: ${allRows.length}`);
+          }
+        }
+      }
+    }
+    
+    console.log(`[Result] Returning ${allRows.length} total rows from Snowflake`);
+    return new Response(JSON.stringify({ columns: metadata, rows: allRows, rowCount: allRows.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
