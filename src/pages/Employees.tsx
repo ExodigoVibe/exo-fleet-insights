@@ -13,35 +13,49 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Users, Search, Download, Car, Clock } from "lucide-react";
+import { Users, Search, Download, UserCheck, UserX } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
 const Employees = () => {
   const { data: drivers, isLoading, error } = useDriversQuery();
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "blocked">("all");
 
   const filteredDrivers = useMemo(() => {
     if (!drivers) return [];
-    if (!searchTerm) return drivers;
+    
+    let filtered = drivers;
 
-    const search = searchTerm.toLowerCase();
-    return drivers.filter((driver) => {
-      const fullName = `${driver.first_name} ${driver.last_name}`.toLowerCase();
-      const driverCode = driver.driver_code.toString();
-      const email = driver.email?.toLowerCase() || "";
-      const phone = driver.phone?.toLowerCase() || "";
-      const cellular = driver.cellular?.toLowerCase() || "";
+    // Apply status filter
+    if (statusFilter === "active") {
+      filtered = filtered.filter(d => !d.is_blocked);
+    } else if (statusFilter === "blocked") {
+      filtered = filtered.filter(d => d.is_blocked);
+    }
 
-      return (
-        fullName.includes(search) ||
-        driverCode.includes(search) ||
-        email.includes(search) ||
-        phone.includes(search) ||
-        cellular.includes(search)
-      );
-    });
-  }, [drivers, searchTerm]);
+    // Apply search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter((driver) => {
+        const fullName = `${driver.first_name} ${driver.last_name}`.toLowerCase();
+        const driverCode = driver.driver_code.toString();
+        const email = driver.email?.toLowerCase() || "";
+        const phone = driver.phone?.toLowerCase() || "";
+        const cellular = driver.cellular?.toLowerCase() || "";
+
+        return (
+          fullName.includes(search) ||
+          driverCode.includes(search) ||
+          email.includes(search) ||
+          phone.includes(search) ||
+          cellular.includes(search)
+        );
+      });
+    }
+
+    return filtered;
+  }, [drivers, searchTerm, statusFilter]);
 
   const handleExportToExcel = () => {
     if (!filteredDrivers.length) {
@@ -96,7 +110,10 @@ const Employees = () => {
       <div className="container mx-auto px-4 py-6">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="border-2 border-primary">
+          <Card 
+            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "all" ? "border-2 border-primary" : ""}`}
+            onClick={() => setStatusFilter("all")}
+          >
             <CardContent className="pt-6 text-center">
               <Users className="h-8 w-8 text-primary mx-auto mb-3" />
               <div className="text-4xl font-bold mb-1">{drivers?.length || 0}</div>
@@ -104,19 +121,25 @@ const Employees = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "active" ? "border-2 border-primary" : ""}`}
+            onClick={() => setStatusFilter("active")}
+          >
             <CardContent className="pt-6 text-center">
-              <Car className="h-8 w-8 text-green-600 mx-auto mb-3" />
-              <div className="text-4xl font-bold text-green-600 mb-1">0</div>
-              <div className="text-sm text-muted-foreground">Permanent Drivers</div>
+              <UserCheck className="h-8 w-8 text-green-600 mx-auto mb-3" />
+              <div className="text-4xl font-bold text-green-600 mb-1">{drivers?.filter(d => !d.is_blocked).length || 0}</div>
+              <div className="text-sm text-muted-foreground">Active Drivers</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card 
+            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "blocked" ? "border-2 border-primary" : ""}`}
+            onClick={() => setStatusFilter("blocked")}
+          >
             <CardContent className="pt-6 text-center">
-              <Clock className="h-8 w-8 text-purple-600 mx-auto mb-3" />
-              <div className="text-4xl font-bold text-purple-600 mb-1">0</div>
-              <div className="text-sm text-muted-foreground">Temporary Drivers</div>
+              <UserX className="h-8 w-8 text-destructive mx-auto mb-3" />
+              <div className="text-4xl font-bold text-destructive mb-1">{drivers?.filter(d => d.is_blocked).length || 0}</div>
+              <div className="text-sm text-muted-foreground">Blocked Drivers</div>
             </CardContent>
           </Card>
         </div>
@@ -139,14 +162,16 @@ const Employees = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Employees List ({drivers?.length || 0})</CardTitle>
+            <CardTitle>Employees List ({filteredDrivers.length})</CardTitle>
             <CardDescription>
               {isLoading ? (
                 "Loading drivers..."
               ) : error ? (
                 <span className="text-destructive">Failed to load drivers</span>
+              ) : statusFilter !== "all" ? (
+                `Showing ${statusFilter} drivers`
               ) : (
-                ''
+                `Total: ${drivers?.length || 0} drivers`
               )}
             </CardDescription>
           </CardHeader>
