@@ -162,13 +162,19 @@ export function TripsTable({ trips, loading = false }: TripsTableProps) {
                   <TableCell>{trip.license_plate}</TableCell>
                   <TableCell>{trip.driver_name}</TableCell>
                   <TableCell>
-                    {new Date(trip.start_location.timestamp).toLocaleTimeString()}
+                    {new Date(trip.start_location.timestamp).toLocaleTimeString([], { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
                     {trip.start_location.location.address.location || "—"}
                   </TableCell>
                   <TableCell>
-                    {new Date(trip.end_location.timestamp).toLocaleTimeString()}
+                    {new Date(trip.end_location.timestamp).toLocaleTimeString([], { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
                     {trip.end_location.location.address.location || "—"}
