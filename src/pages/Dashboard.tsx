@@ -60,7 +60,7 @@ const Dashboard = () => {
   }, [vehiclesError]);
 
   const [filters, setFilters] = useState<FleetFilters>({
-    dateFrom: new Date("2025-11-12").toISOString().split("T")[0], // make is to be 12/11/2025
+    dateFrom: new Date("2025-11-24").toISOString().split("T")[0],
     dateTo: new Date().toISOString().split("T")[0],
     drivers: [],
     vehicles: [],
