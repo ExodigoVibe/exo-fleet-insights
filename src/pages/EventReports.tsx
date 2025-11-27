@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Download, AlertTriangle, ExternalLink } from "lucide-react";
+import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,7 @@ interface EventReport {
 
 export default function EventReports() {
   const mockReports: EventReport[] = [];
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
   const handleExportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
@@ -84,7 +86,11 @@ export default function EventReports() {
             >
               Excel <Download className="h-4 w-4" />
             </Button>
-            <Button variant="destructive" className="gap-2">
+            <Button 
+              variant="destructive" 
+              className="gap-2"
+              onClick={() => setReportDialogOpen(true)}
+            >
               <AlertTriangle className="h-4 w-4" /> Report Event
             </Button>
           </div>
@@ -160,6 +166,11 @@ export default function EventReports() {
           </Table>
         </div>
       </Card>
+
+      <ReportEventDialog 
+        open={reportDialogOpen} 
+        onOpenChange={setReportDialogOpen} 
+      />
     </div>
   );
 }
