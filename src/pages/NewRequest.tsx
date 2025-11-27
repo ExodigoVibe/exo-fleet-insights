@@ -85,12 +85,12 @@ export default function NewRequest() {
       "Vehicle coordinator approval and code issuance",
     ],
     permanent_driver: [
-      "Sign Exodigo Car Policy",
-      "Upload driver's license photo",
-      "Complete defensive driving course",
       "Department manager approval",
-      "HR approval",
-      "Vehicle coordinator approval and code issuance",
+      "Sign Exodigo Car Policy",
+      "Sign Driver's File form",
+      "Upload driver's license photo",
+      "Upload traffic history check",
+      "Vehicle coordinator approval and permanent code issuance",
     ],
   };
 
@@ -161,14 +161,25 @@ export default function NewRequest() {
                 )}
               />
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">
+              <div className={cn(
+                "border rounded-lg p-4",
+                usageType === "single_use" 
+                  ? "bg-blue-50 border-blue-200" 
+                  : "bg-teal-50 border-teal-200"
+              )}>
+                <h3 className={cn(
+                  "font-semibold mb-2",
+                  usageType === "single_use" ? "text-blue-900" : "text-teal-900"
+                )}>
                   Requirements for {usageType === "single_use" ? "Single Use" : "Permanent Driver"}:
                 </h3>
                 <ul className="space-y-1">
                   {requirements[usageType].map((req, index) => (
-                    <li key={index} className="text-sm text-blue-800 flex items-start gap-2">
-                      <span className="text-blue-600">•</span>
+                    <li key={index} className={cn(
+                      "text-sm flex items-start gap-2",
+                      usageType === "single_use" ? "text-blue-800" : "text-teal-800"
+                    )}>
+                      <span className={usageType === "single_use" ? "text-blue-600" : "text-teal-600"}>•</span>
                       <span>{req}</span>
                     </li>
                   ))}
@@ -292,104 +303,112 @@ export default function NewRequest() {
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Your Information</h3>
               
-              <div className="grid grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="full_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your full name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="full_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter your full name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="job_title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Job Title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your job title" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="job_title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Job Title</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter your job title" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="department"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Department</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your department" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="department"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Department</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter your department" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="phone_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your phone number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="phone_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter your phone number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email Address</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="Enter your email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Address</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="Enter your email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="department_manager"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Department Manager</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter department manager name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="department_manager"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Department Manager</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter department manager name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="manager_email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Manager's Email Address</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="Enter manager's email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="manager_email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Manager's Email Address</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="Enter manager's email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             </Card>
 
