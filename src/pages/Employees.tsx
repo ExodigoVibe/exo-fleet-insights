@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Users, Search, Download } from "lucide-react";
+import { Users, Search, Download, Car, Clock } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
@@ -94,6 +94,33 @@ const Employees = () => {
       </div>
 
       <div className="container mx-auto px-4 py-6">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="border-2 border-primary">
+            <CardContent className="pt-6 text-center">
+              <Users className="h-8 w-8 text-primary mx-auto mb-3" />
+              <div className="text-4xl font-bold mb-1">{drivers?.length || 0}</div>
+              <div className="text-sm text-muted-foreground">Total Employees</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <Car className="h-8 w-8 text-green-600 mx-auto mb-3" />
+              <div className="text-4xl font-bold text-green-600 mb-1">0</div>
+              <div className="text-sm text-muted-foreground">Permanent Drivers</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <Clock className="h-8 w-8 text-purple-600 mx-auto mb-3" />
+              <div className="text-4xl font-bold text-purple-600 mb-1">0</div>
+              <div className="text-sm text-muted-foreground">Temporary Drivers</div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card>
           <CardHeader>
             <CardTitle>Drivers List</CardTitle>
