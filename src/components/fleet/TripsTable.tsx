@@ -119,9 +119,6 @@ export function TripsTable({ trips, loading = false }: TripsTableProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Filtered Trips</CardTitle>
-          <span className="text-xs text-muted-foreground">
-            Showing trips that match the current date range and filters.
-          </span>
         </div>
       </CardHeader>
       <CardContent>
