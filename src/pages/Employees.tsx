@@ -12,7 +12,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Users, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Search, Download } from "lucide-react";
+import * as XLSX from "xlsx";
+import { toast } from "sonner";
 
 const Employees = () => {
   const { data: drivers, isLoading, error } = useDriversQuery();
@@ -40,18 +43,52 @@ const Employees = () => {
     });
   }, [drivers, searchTerm]);
 
+  const handleExportToExcel = () => {
+    if (!filteredDrivers.length) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const exportData = filteredDrivers.map((driver) => ({
+      "Driver ID": driver.driver_id,
+      "Name": `${driver.first_name} ${driver.last_name}`,
+      "Driver Code": driver.driver_code || "-",
+      "Email": driver.email || "-",
+      "Phone Number": driver.phone || driver.cellular || "-",
+      "Status": driver.is_blocked ? "Blocked" : "Not Blocked",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Employees");
+
+    XLSX.writeFile(workbook, `employees_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success(`Exported ${filteredDrivers.length} employees to Excel`);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-3">
-            <Users className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Employees</h1>
-              <p className="text-muted-foreground mt-1">
-                Manage driver information and contacts
-              </p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Users className="h-8 w-8 text-primary" />
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Employees</h1>
+                <p className="text-muted-foreground mt-1">
+                  Manage driver information and contacts
+                </p>
+              </div>
             </div>
+            <Button
+              onClick={handleExportToExcel}
+              disabled={isLoading || !filteredDrivers.length}
+              variant="outline"
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export to Excel
+            </Button>
           </div>
         </div>
       </div>
