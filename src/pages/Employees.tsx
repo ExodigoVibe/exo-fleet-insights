@@ -100,8 +100,7 @@ const Employees = () => {
                       <TableHead>Name</TableHead>
                       <TableHead>Driver Code</TableHead>
                       <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Cellular</TableHead>
+                      <TableHead>Phone Number</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -114,8 +113,7 @@ const Employees = () => {
                         </TableCell>
                         <TableCell>{driver.driver_code || "-"}</TableCell>
                         <TableCell>{driver.email || "-"}</TableCell>
-                        <TableCell>{driver.phone || "-"}</TableCell>
-                        <TableCell>{driver.cellular || "-"}</TableCell>
+                        <TableCell>{driver.phone || driver.cellular || "-"}</TableCell>
                         <TableCell>
                           {driver.is_blocked ? (
                             <Badge variant="destructive">Blocked</Badge>
