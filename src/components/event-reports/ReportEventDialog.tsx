@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Info, Car, FileText, Users, Upload, Send } from "lucide-react";
+import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,6 +60,7 @@ interface ReportEventDialogProps {
 
 export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps) {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const { vehicles, loading: isLoadingVehicles } = useSnowflakeVehicles();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -126,9 +128,18 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                             <SelectValue placeholder="Select a vehicle..." />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="vehicle1">Vehicle 1 - ABC123</SelectItem>
-                          <SelectItem value="vehicle2">Vehicle 2 - XYZ789</SelectItem>
+                        <SelectContent className="bg-background z-50">
+                          {isLoadingVehicles ? (
+                            <SelectItem value="loading" disabled>Loading vehicles...</SelectItem>
+                          ) : vehicles.length === 0 ? (
+                            <SelectItem value="none" disabled>No vehicles available</SelectItem>
+                          ) : (
+                            vehicles.map((vehicle) => (
+                              <SelectItem key={vehicle.license_plate} value={vehicle.license_plate}>
+                                {vehicle.license_plate} - {vehicle.nickname || vehicle.model_name}
+                              </SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
