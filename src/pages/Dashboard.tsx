@@ -17,11 +17,14 @@ import {
   getUniqueLicensePlates,
 } from "@/utils/fleetCalculations";
 import { FleetFilters, Trip } from "@/types/fleet";
-import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
+import { Activity, Clock, TrendingUp, Car, Timer, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useInitialDateRange } from "@/hooks/useInitialData";
+import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
+import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
   const { dateFrom, dateTo } = useInitialDateRange();
@@ -98,10 +101,21 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-foreground">Fleet Usage Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Analyze vehicle utilization and driver performance
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Fleet Usage Dashboard</h1>
+              <p className="text-muted-foreground mt-1">
+                Analyze vehicle utilization and driver performance
+              </p>
+            </div>
+            <Button 
+              variant="destructive" 
+              className="gap-2"
+              onClick={() => setReportDialogOpen(true)}
+            >
+              <AlertTriangle className="h-4 w-4" /> Report Event
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -176,6 +190,11 @@ const Dashboard = () => {
 
         <TripsTable trips={filteredTrips} loading={tripsLoading} />
       </div>
+
+      <ReportEventDialog 
+        open={reportDialogOpen} 
+        onOpenChange={setReportDialogOpen} 
+      />
     </div>
   );
 };
