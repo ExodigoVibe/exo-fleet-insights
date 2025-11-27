@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
 import {
   Table,
@@ -10,10 +11,34 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Users, Search } from "lucide-react";
 
 const Employees = () => {
   const { data: drivers, isLoading, error } = useDriversQuery();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredDrivers = useMemo(() => {
+    if (!drivers) return [];
+    if (!searchTerm) return drivers;
+
+    const search = searchTerm.toLowerCase();
+    return drivers.filter((driver) => {
+      const fullName = `${driver.first_name} ${driver.last_name}`.toLowerCase();
+      const driverCode = driver.driver_code.toString();
+      const email = driver.email?.toLowerCase() || "";
+      const phone = driver.phone?.toLowerCase() || "";
+      const cellular = driver.cellular?.toLowerCase() || "";
+
+      return (
+        fullName.includes(search) ||
+        driverCode.includes(search) ||
+        email.includes(search) ||
+        phone.includes(search) ||
+        cellular.includes(search)
+      );
+    });
+  }, [drivers, searchTerm]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,11 +66,21 @@ const Employees = () => {
               ) : error ? (
                 <span className="text-destructive">Failed to load drivers</span>
               ) : (
-                `Total: ${drivers?.length || 0} drivers`
+                `Total: ${drivers?.length || 0} drivers${searchTerm ? ` (${filteredDrivers.length} matching)` : ""}`
               )}
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search employees by name, email, driver code, phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
             {isLoading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
@@ -56,7 +91,7 @@ const Employees = () => {
               <div className="text-center py-8 text-muted-foreground">
                 Failed to load drivers data
               </div>
-            ) : drivers && drivers.length > 0 ? (
+            ) : filteredDrivers.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -71,7 +106,7 @@ const Employees = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {drivers.map((driver) => (
+                    {filteredDrivers.map((driver) => (
                       <TableRow key={driver.driver_id}>
                         <TableCell className="font-medium">{driver.driver_id}</TableCell>
                         <TableCell>
@@ -92,6 +127,10 @@ const Employees = () => {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+            ) : searchTerm ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No drivers matching "{searchTerm}"
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
