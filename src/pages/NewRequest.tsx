@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-import { CalendarIcon, FileText, Car } from "lucide-react";
+import { CalendarIcon, FileText, Car, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,10 @@ const formSchema = z.object({
   job_title: z.string().min(1, "Job title is required").max(100),
   department: z.string().min(1, "Department is required").max(100),
   phone_number: z.string().min(1, "Phone number is required").max(20),
+  email: z.string().email("Invalid email address").max(255),
+  department_manager: z.string().min(1, "Department manager is required").max(100),
+  manager_email: z.string().email("Invalid email address").max(255),
+  license_file: z.any().optional(),
 }).refine((data) => data.end_date >= data.start_date, {
   message: "End date must be after or equal to start date",
   path: ["end_date"],
@@ -49,6 +53,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function NewRequest() {
   const navigate = useNavigate();
   const [usageType, setUsageType] = useState<"single_use" | "permanent_driver">("single_use");
+  const [licenseFile, setLicenseFile] = useState<File | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -59,6 +64,9 @@ export default function NewRequest() {
       job_title: "",
       department: "",
       phone_number: "",
+      email: "",
+      department_manager: "",
+      manager_email: "",
     },
   });
 
@@ -340,6 +348,99 @@ export default function NewRequest() {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="Enter your email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="department_manager"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Department Manager</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter department manager name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="manager_email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Manager's Email Address</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="Enter manager's email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Required Forms</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-3">Driver's License</h4>
+                  <div className="border-2 border-dashed border-border rounded-lg p-8">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                        <FileText className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div className="text-center">
+                        <p className="font-medium">Upload Driver's License Photo</p>
+                        <p className="text-sm text-muted-foreground">PDF or image file</p>
+                      </div>
+                      <label htmlFor="license-upload">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="gap-2"
+                          onClick={() => document.getElementById('license-upload')?.click()}
+                        >
+                          <Upload className="h-4 w-4" />
+                          Upload File
+                        </Button>
+                      </label>
+                      <input
+                        id="license-upload"
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setLicenseFile(file);
+                            form.setValue("license_file", file);
+                            toast.success(`File "${file.name}" uploaded successfully`);
+                          }
+                        }}
+                      />
+                      {licenseFile && (
+                        <p className="text-sm text-primary font-medium">
+                          Selected: {licenseFile.name}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </Card>
 
