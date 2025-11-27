@@ -17,9 +17,12 @@ import {
   getUniqueLicensePlates,
 } from "@/utils/fleetCalculations";
 import { FleetFilters, Trip } from "@/types/fleet";
-import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
+import { Activity, Clock, TrendingUp, Car, Timer, Menu, Home } from "lucide-react";
 import { toast } from "sonner";
 import { useInitialDateRange } from "@/hooks/useInitialData";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { NavLink } from "@/components/NavLink";
 
 const Dashboard = () => {
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
@@ -98,10 +101,36 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-foreground">Fleet Usage Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Analyze vehicle utilization and driver performance
-          </p>
+          <div className="flex items-center gap-4">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="shrink-0">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64">
+                <SheetHeader>
+                  <SheetTitle>Navigation</SheetTitle>
+                </SheetHeader>
+                <nav className="mt-6 flex flex-col gap-2">
+                  <NavLink 
+                    to="/" 
+                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-accent transition-colors"
+                    activeClassName="bg-accent text-accent-foreground font-medium"
+                  >
+                    <Home className="h-5 w-5" />
+                    <span>Dashboard</span>
+                  </NavLink>
+                </nav>
+              </SheetContent>
+            </Sheet>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Fleet Usage Dashboard</h1>
+              <p className="text-muted-foreground mt-1">
+                Analyze vehicle utilization and driver performance
+              </p>
+            </div>
+          </div>
         </div>
       </header>
 
