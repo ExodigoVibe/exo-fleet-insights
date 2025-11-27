@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -46,8 +46,7 @@ const formSchema = z.object({
   eventDateTime: z.date({ required_error: "Date and time is required" }),
   location: z.string().min(1, "Location is required").max(200),
   description: z.string().min(10, "Please provide a detailed description").max(1000),
-  severitySlight: z.boolean().default(false),
-  severityExtensive: z.boolean().default(false),
+  severity: z.enum(["slight", "extensive"]),
   thirdPartyInvolved: z.boolean().default(false),
 });
 
@@ -69,8 +68,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
       employeeName: "",
       location: "",
       description: "",
-      severitySlight: false,
-      severityExtensive: false,
+      severity: "slight",
       thirdPartyInvolved: false,
     },
   });
@@ -88,6 +86,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
     onOpenChange(false);
     form.reset();
     setUploadedFiles([]);
+    form.setValue("severity", "slight");
   };
 
   return (
@@ -241,46 +240,40 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                 )}
               />
 
-              <div className="space-y-3">
-                <FormLabel>Severity of Damages</FormLabel>
-                <div className="flex gap-6">
-                  <FormField
-                    control={form.control}
-                    name="severitySlight"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal cursor-pointer">
-                          Slight Damage
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="severityExtensive"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal cursor-pointer">
-                          Extensive Damage
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
+              <FormField
+                control={form.control}
+                name="severity"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Severity of Damages</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex gap-6"
+                      >
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="slight" />
+                          </FormControl>
+                          <FormLabel className="font-normal cursor-pointer">
+                            Slight Damage
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="extensive" />
+                          </FormControl>
+                          <FormLabel className="font-normal cursor-pointer">
+                            Extensive Damage
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             {/* Photos of Damage Section */}
