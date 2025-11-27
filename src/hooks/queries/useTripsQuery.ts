@@ -177,7 +177,18 @@ async function fetchTripsFromSnowflake(
 
   const trips = rows.map(mapRowToTrip);
 
-  return { trips, totalCount };
+  // Deduplicate trips based on trip_id and start_timestamp
+  const uniqueTrips = trips.reduce((acc, trip) => {
+    const key = `${trip.trip_id}-${trip.start_location.timestamp}`;
+    if (!acc.has(key)) {
+      acc.set(key, trip);
+    }
+    return acc;
+  }, new Map<string, Trip>());
+
+  const deduplicatedTrips = Array.from(uniqueTrips.values());
+
+  return { trips: deduplicatedTrips, totalCount };
 }
 
 export function useTripsQuery(dateFrom: string, dateTo: string) {
