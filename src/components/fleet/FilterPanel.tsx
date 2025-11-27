@@ -13,7 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FleetFilters } from "@/types/fleet";
-import { useInitialDateRange } from "@/hooks/useInitialData";
 
 interface FilterPanelProps {
   filters: FleetFilters;
@@ -25,7 +24,6 @@ interface FilterPanelProps {
 
 export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, loading = false }: FilterPanelProps) {
   const [pendingFilters, setPendingFilters] = useState<FleetFilters>(filters);
-  const { dateFrom, dateTo } = useInitialDateRange();
 
   useEffect(() => {
     setPendingFilters(filters);
@@ -33,8 +31,8 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
 
   const handleReset = () => {
     const defaultFilters: FleetFilters = {
-      dateFrom,
-      dateTo,
+      dateFrom: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      dateTo: new Date().toISOString().split("T")[0],
       drivers: [],
       vehicles: [],
       licensePlates: [],

@@ -19,12 +19,10 @@ import {
 import { FleetFilters, Trip } from "@/types/fleet";
 import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
 import { toast } from "sonner";
-import { useInitialDateRange } from "@/hooks/useInitialData";
 
 const Dashboard = () => {
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
-  const { dateFrom, dateTo } = useInitialDateRange();
   
   const snowflakeDrivers = driversData ?? [];
   const snowflakeVehicles = vehiclesData ?? [];
@@ -66,8 +64,8 @@ const Dashboard = () => {
   }, [vehiclesError]);
 
   const [filters, setFilters] = useState<FleetFilters>({
-    dateFrom,
-    dateTo,
+    dateFrom: new Date("2025-11-24").toISOString().split("T")[0],
+    dateTo: new Date().toISOString().split("T")[0],
     drivers: [],
     vehicles: [],
     licensePlates: [],
@@ -84,7 +82,7 @@ const Dashboard = () => {
   } = useTripsQuery(filters.dateFrom, filters.dateTo);
   
   // Use real Snowflake trips only
-  const allTrips: Trip[] = useMemo(() => tripsData?.trips ?? [], [tripsData]);
+  const allTrips: Trip[] = tripsData?.trips ?? [];
   const totalCount = tripsData?.totalCount ?? 0;
 
   const filteredTrips = useMemo(() => filterTrips(allTrips, filters), [allTrips, filters]);
