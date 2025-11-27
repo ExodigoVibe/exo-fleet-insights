@@ -16,14 +16,14 @@ import { formatDuration } from "@/utils/fleetCalculations";
 import { ArrowLeft, Activity, Clock, TrendingUp, Gauge, Shield } from "lucide-react";
 import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
 import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
+import { useInitialDateRange } from "@/hooks/useInitialData";
 
 const VehicleDetail = () => {
   const { licensePlate } = useParams<{ licensePlate: string }>();
   const { vehicles: allVehicles } = useSnowflakeVehicles();
   
   // Get trips for the last 90 days for vehicle detail view
-  const dateFrom = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-  const dateTo = new Date().toISOString().split("T")[0];
+  const { dateFrom, dateTo } = useInitialDateRange();
   
   const { trips: allTrips, loading: tripsLoading, loadedCount, totalCount } = useSnowflakeTrips({
     dateFrom,
