@@ -139,14 +139,14 @@ const Employees = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Drivers List</CardTitle>
+            <CardTitle>Employees List ({drivers?.length || 0})</CardTitle>
             <CardDescription>
               {isLoading ? (
                 "Loading drivers..."
               ) : error ? (
                 <span className="text-destructive">Failed to load drivers</span>
               ) : (
-                `Total: ${drivers?.length || 0} drivers${searchTerm ? ` (${filteredDrivers.length} matching)` : ""}`
+                ''
               )}
             </CardDescription>
           </CardHeader>
