@@ -16,13 +16,13 @@ const AuthCallback = () => {
       if (error) {
         console.error('Azure auth error:', error);
         toast.error('Authentication failed');
-        navigate('/auth');
+        navigate('/login');
         return;
       }
 
       if (!code) {
         toast.error('No authorization code received');
-        navigate('/auth');
+        navigate('/login');
         return;
       }
 
@@ -48,7 +48,7 @@ const AuthCallback = () => {
       } catch (error) {
         console.error('Token exchange error:', error);
         toast.error('Failed to complete authentication');
-        navigate('/auth');
+        navigate('/login');
       } finally {
         setIsProcessing(false);
       }
