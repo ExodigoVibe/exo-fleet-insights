@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import VehicleDetail from "./pages/VehicleDetail";
+import Vehicles from "./pages/Vehicles";
 import Employees from "./pages/Employees";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
@@ -26,6 +27,7 @@ const App = () => (
             <Layout>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/vehicle-fleet" element={<Vehicles />} />
                 <Route path="/employees" element={<Employees />} />
                 <Route path="/vehicle/:licensePlate" element={<VehicleDetail />} />
                 <Route path="*" element={<NotFound />} />
