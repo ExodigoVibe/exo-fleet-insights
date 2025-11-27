@@ -1,0 +1,347 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Info, Car, FileText, Users, Upload, Send } from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const formSchema = z.object({
+  vehicleId: z.string().min(1, "Please select a vehicle"),
+  employeeName: z.string().min(1, "Employee name is required").max(100),
+  eventDateTime: z.date({ required_error: "Date and time is required" }),
+  location: z.string().min(1, "Location is required").max(200),
+  description: z.string().min(10, "Please provide a detailed description").max(1000),
+  severitySlight: z.boolean().default(false),
+  severityExtensive: z.boolean().default(false),
+  thirdPartyInvolved: z.boolean().default(false),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+interface ReportEventDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps) {
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      vehicleId: "",
+      employeeName: "",
+      location: "",
+      description: "",
+      severitySlight: false,
+      severityExtensive: false,
+      thirdPartyInvolved: false,
+    },
+  });
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setUploadedFiles([...uploadedFiles, ...Array.from(e.target.files)]);
+    }
+  };
+
+  const onSubmit = (data: FormValues) => {
+    console.log("Form data:", data);
+    console.log("Uploaded files:", uploadedFiles);
+    toast.success("Event report submitted successfully");
+    onOpenChange(false);
+    form.reset();
+    setUploadedFiles([]);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+            Reporting an Incident
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3 mb-6">
+          <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-blue-900">
+            Please fill out this form with as much detail as possible. Your accuracy helps us resolve the situation quickly and efficiently.
+          </p>
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {/* Vehicle & Basic Info Section */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Car className="h-5 w-5 text-primary" />
+                Vehicle & Basic Info
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="vehicleId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vehicle Involved</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a vehicle..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="vehicle1">Vehicle 1 - ABC123</SelectItem>
+                          <SelectItem value="vehicle2">Vehicle 2 - XYZ789</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="employeeName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Employee Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="eventDateTime"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Date and Time of Event</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal hover:bg-gray-100 hover:text-foreground",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "dd/MM/yyyy, HH:mm")
+                              ) : (
+                                <span>27/11/2025, 14:55</span>
+                              )}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location of Event</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter location (street, city, etc.)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Event Details Section */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Event Details
+              </h3>
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Detailed Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe what happened, road conditions, weather, etc."
+                        className="min-h-[120px] resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-3">
+                <FormLabel>Severity of Damages</FormLabel>
+                <div className="flex gap-6">
+                  <FormField
+                    control={form.control}
+                    name="severitySlight"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">
+                          Slight Damage
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="severityExtensive"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">
+                          Extensive Damage
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Photos of Damage Section */}
+            <div className="space-y-4">
+              <FormLabel>Photos of Damage</FormLabel>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
+                <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-lg font-medium mb-2">Upload Images</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Click or drag to upload photos of the incident
+                </p>
+                <label htmlFor="file-upload">
+                  <Button type="button" variant="outline" className="hover:bg-gray-100 hover:text-foreground" asChild>
+                    <span>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload File
+                    </span>
+                  </Button>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </label>
+                {uploadedFiles.length > 0 && (
+                  <p className="text-sm text-muted-foreground mt-4">
+                    {uploadedFiles.length} file(s) uploaded
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Third Party Involvement Section */}
+            <div className="border-t pt-6">
+              <FormField
+                control={form.control}
+                name="thirdPartyInvolved"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-primary" />
+                      <FormLabel className="text-lg font-semibold cursor-pointer">
+                        Third Party Involvement
+                      </FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end pt-6">
+              <Button
+                type="submit"
+                className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white px-8"
+              >
+                Submit Report
+                <Send className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
