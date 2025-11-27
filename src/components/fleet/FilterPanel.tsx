@@ -56,7 +56,7 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
           Filters
         </CardTitle>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={handleReset}>
+          <Button variant="ghost" size="sm" onClick={handleReset} disabled={loading}>
             <X className="h-4 w-4 mr-1" />
             Reset
           </Button>
