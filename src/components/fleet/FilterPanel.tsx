@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Filter, X, Check } from "lucide-react";
+import { Filter, X, Check, Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -61,8 +61,14 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
             Reset
           </Button>
           <Button variant="default" size="sm" onClick={handleApply} disabled={loading}>
-            <Check className="h-4 w-4 mr-1" />
-            Apply
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <Check className="h-4 w-4 mr-1" />
+                Apply
+              </>
+            )}
           </Button>
         </div>
       </CardHeader>
