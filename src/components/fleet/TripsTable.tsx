@@ -45,15 +45,24 @@ export function TripsTable({ trips, loading = false }: TripsTableProps) {
   };
 
   const sortedTrips = useMemo(() => {
-    const tripsWithDerivedFields = trips.map((trip) => {
-      const date = new Date(trip.start_location.timestamp).toISOString().split("T")[0];
-      const durationInMinutes = trip.duration_in_seconds / 60;
-      return {
-        ...trip,
-        _date: date,
-        _duration_in_minutes: durationInMinutes,
-      };
-    });
+    const tripsWithDerivedFields = trips
+      .filter((trip) => {
+        // Filter out trips with zero duration and same start/end time
+        if (trip.duration_in_seconds === 0 && 
+            trip.start_location.timestamp === trip.end_location.timestamp) {
+          return false;
+        }
+        return true;
+      })
+      .map((trip) => {
+        const date = new Date(trip.start_location.timestamp).toISOString().split("T")[0];
+        const durationInMinutes = trip.duration_in_seconds / 60;
+        return {
+          ...trip,
+          _date: date,
+          _duration_in_minutes: durationInMinutes,
+        };
+      });
 
     const sorted = [...tripsWithDerivedFields].sort((a, b) => {
       const modifier = sortDirection === "asc" ? 1 : -1;
