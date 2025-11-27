@@ -5,9 +5,9 @@ import { VehicleUtilizationChart } from "@/components/fleet/VehicleUtilizationCh
 import { DailyUsageChart } from "@/components/fleet/DailyUsageChart";
 import { TripsTable } from "@/components/fleet/TripsTable";
 import { SnowflakeTest } from "@/components/SnowflakeTest";
-import { useSnowflakeDrivers } from "@/hooks/useSnowflakeDrivers";
-import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
-import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
+import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
+import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
+import { useTripsQuery } from "@/hooks/queries/useTripsQuery";
 import {
   filterTrips,
   calculateVehicleUsageMetrics,
@@ -21,8 +21,12 @@ import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
 import { toast } from "sonner";
 
 const Dashboard = () => {
-  const { drivers: snowflakeDrivers, loading: driversLoading, error: driversError } = useSnowflakeDrivers();
-  const { vehicles: snowflakeVehicles, loading: vehiclesLoading, error: vehiclesError } = useSnowflakeVehicles();
+  const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
+  const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
+  
+  const snowflakeDrivers = driversData ?? [];
+  const snowflakeVehicles = vehiclesData ?? [];
+  
   const allVehicles = useMemo(
     () => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []),
     [snowflakeVehicles]
@@ -49,13 +53,13 @@ const Dashboard = () => {
   // Show error toasts
   useEffect(() => {
     if (driversError) {
-      toast.error(`Failed to load drivers: ${driversError}`);
+      toast.error(`Failed to load drivers: ${driversError instanceof Error ? driversError.message : String(driversError)}`);
     }
   }, [driversError]);
 
   useEffect(() => {
     if (vehiclesError) {
-      toast.error(`Failed to load vehicles: ${vehiclesError}`);
+      toast.error(`Failed to load vehicles: ${vehiclesError instanceof Error ? vehiclesError.message : String(vehiclesError)}`);
     }
   }, [vehiclesError]);
 
@@ -70,20 +74,16 @@ const Dashboard = () => {
     tripStatus: [],
   });
 
-  // Pass date filters to useSnowflakeTrips to filter at database level
+  // Pass date filters to useTripsQuery to filter at database level
   const {
-    trips: snowflakeTrips,
-    loading: tripsLoading,
+    data: tripsData,
+    isLoading: tripsLoading,
     error: tripsError,
-    loadedCount,
-    totalCount,
-  } = useSnowflakeTrips({
-    dateFrom: filters.dateFrom,
-    dateTo: filters.dateTo,
-  });
+  } = useTripsQuery(filters.dateFrom, filters.dateTo);
   
   // Use real Snowflake trips only
-  const allTrips: Trip[] = snowflakeTrips;
+  const allTrips: Trip[] = tripsData?.trips ?? [];
+  const totalCount = tripsData?.totalCount ?? 0;
 
   const filteredTrips = useMemo(() => filterTrips(allTrips, filters), [allTrips, filters]);
   const vehicleMetrics = useMemo(
@@ -118,16 +118,11 @@ const Dashboard = () => {
         <div className="text-xs text-muted-foreground flex justify-between items-center">
           {tripsLoading ? (
             <span>
-              Loading trips from Snowflake (
-              {loadedCount.toLocaleString()}
-              /
-              {(totalCount || loadedCount).toLocaleString()}
-              {" "}
-              rows processed)...
+              Loading trips from Snowflake...
             </span>
           ) : tripsError ? (
             <span className="text-destructive">
-              Failed to load trips from Snowflake: {tripsError}
+              Failed to load trips from Snowflake: {tripsError instanceof Error ? tripsError.message : String(tripsError)}
             </span>
           ) : (
             <span>
@@ -135,7 +130,7 @@ const Dashboard = () => {
               {" "}
               {allTrips.length.toLocaleString()}
               {" "}
-              trips from Snowflake.
+              trips from Snowflake (cached for 5 minutes).
             </span>
           )}
         </div>
