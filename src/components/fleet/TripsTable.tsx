@@ -153,7 +153,7 @@ export function TripsTable({ trips, loading = false }: TripsTableProps) {
             </TableHeader>
             <TableBody>
               {paginatedTrips.map((trip) => (
-                <TableRow key={trip.trip_id}>
+                <TableRow key={`${trip.trip_id}-${trip.start_location.timestamp}`}>
                   <TableCell className="font-medium">
                     {new Date(trip.start_location.timestamp).toLocaleDateString()}
                   </TableCell>
