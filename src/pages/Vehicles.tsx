@@ -45,7 +45,9 @@ const Vehicles = () => {
 
   // Calculate KPIs
   const totalVehicles = vehicles?.length || 0;
-  const availableVehicles = vehicles?.filter(v => v.motion_status === "stopped")?.length || 0;
+  const availableVehicles = vehicles?.filter(v => 
+    v.motion_status?.toLowerCase() === "parking"
+  )?.length || 0;
   const assignedVehicles = 0; // Placeholder - would need assignment data
   const maintenanceVehicles = vehicles?.filter(v => v.motion_status === "maintenance")?.length || 0;
 
@@ -74,7 +76,7 @@ const Vehicles = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
-      case "stopped":
+      case "parking":
         return <Badge className="bg-green-600 hover:bg-green-700">Available</Badge>;
       case "maintenance":
         return <Badge className="bg-orange-600 hover:bg-orange-700">Maintenance</Badge>;
