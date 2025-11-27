@@ -15,6 +15,7 @@ import { formatDuration } from "@/utils/fleetCalculations";
 
 interface TripsTableProps {
   trips: Trip[];
+  loading?: boolean;
 }
 
 type SortField =
@@ -28,7 +29,7 @@ type SortField =
 
 type SortDirection = "asc" | "desc";
 
-export function TripsTable({ trips }: TripsTableProps) {
+export function TripsTable({ trips, loading = false }: TripsTableProps) {
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -103,6 +104,7 @@ export function TripsTable({ trips }: TripsTableProps) {
       size="sm"
       className="h-8 hover:bg-muted/50"
       onClick={() => handleSort(field)}
+      disabled={loading}
     >
       {children}
       <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -199,7 +201,7 @@ export function TripsTable({ trips }: TripsTableProps) {
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
+              disabled={loading || currentPage === 1}
             >
               <ChevronLeft className="h-4 w-4" />
               Previous
@@ -208,7 +210,7 @@ export function TripsTable({ trips }: TripsTableProps) {
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
+              disabled={loading || currentPage === totalPages}
             >
               Next
               <ChevronRight className="h-4 w-4" />
