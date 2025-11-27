@@ -85,7 +85,7 @@ const Employees = () => {
                           {driver.is_blocked ? (
                             <Badge variant="destructive">Blocked</Badge>
                           ) : (
-                            <Badge variant="default" className="bg-green-600">Active</Badge>
+                            <Badge variant="default" className="bg-green-600">Not Blocked</Badge>
                           )}
                         </TableCell>
                       </TableRow>
