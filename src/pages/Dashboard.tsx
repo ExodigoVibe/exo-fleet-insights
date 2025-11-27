@@ -8,6 +8,7 @@ import { SnowflakeTest } from "@/components/SnowflakeTest";
 import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
 import { useTripsQuery } from "@/hooks/queries/useTripsQuery";
+import { useVehicleLocationsQuery } from "@/hooks/queries/useVehicleLocationsQuery";
 import {
   filterTrips,
   calculateVehicleUsageMetrics,
@@ -23,9 +24,11 @@ import { toast } from "sonner";
 const Dashboard = () => {
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
+  const { data: locationsData, isLoading: locationsLoading, error: locationsError } = useVehicleLocationsQuery();
   
   const snowflakeDrivers = driversData ?? [];
   const snowflakeVehicles = vehiclesData ?? [];
+  const vehicleLocations = locationsData ?? [];
   
   const allVehicles = useMemo(
     () => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []),
@@ -85,7 +88,22 @@ const Dashboard = () => {
   const allTrips: Trip[] = tripsData?.trips ?? [];
   const totalCount = tripsData?.totalCount ?? 0;
 
-  const filteredTrips = useMemo(() => filterTrips(allTrips, filters), [allTrips, filters]);
+  // Enrich trips with vehicle location addresses
+  const enrichedTrips = useMemo(() => {
+    if (vehicleLocations.length === 0) return allTrips;
+    
+    // Create a lookup map for vehicle locations by license plate
+    const locationMap = new Map(
+      vehicleLocations.map(loc => [loc.license_plate, loc.address || ""])
+    );
+    
+    return allTrips.map(trip => ({
+      ...trip,
+      vehicle_location_address: locationMap.get(trip.license_plate) || "",
+    }));
+  }, [allTrips, vehicleLocations]);
+
+  const filteredTrips = useMemo(() => filterTrips(enrichedTrips, filters), [enrichedTrips, filters]);
   const vehicleMetrics = useMemo(
     () => calculateVehicleUsageMetrics(filteredTrips, allVehicles),
     [filteredTrips, allVehicles]
