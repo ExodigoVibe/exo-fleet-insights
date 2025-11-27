@@ -178,7 +178,7 @@ const Dashboard = () => {
           <DailyUsageChart metrics={dailyMetrics} />
         </div>
 
-        <TripsTable trips={filteredTrips} />
+        <TripsTable trips={filteredTrips} loading={tripsLoading} />
       </main>
     </div>
   );
