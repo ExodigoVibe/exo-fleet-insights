@@ -112,6 +112,7 @@ const Dashboard = () => {
           onFiltersChange={setFilters}
           drivers={driverOptions}
           licensePlates={licensePlateOptions}
+          loading={tripsLoading}
         />
 
         <div className="text-xs text-muted-foreground flex justify-between items-center">
