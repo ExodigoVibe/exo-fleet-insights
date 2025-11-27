@@ -230,7 +230,8 @@ serve(async (req) => {
               console.log("[Pagination] Detected partitioned result set, fetching additional partitions...");
               const partitions = prJson.resultSetMetaData.partitionInfo;
               
-              for (let p = 0; p < partitions.length; p++) {
+              // Start from partition 1 since partition 0 is already in prJson.data
+              for (let p = 1; p < partitions.length; p++) {
                 const partitionUrl = `${snowflakeUrl}/${result.statementHandle}?partition=${p}`;
                 const partResp = await fetch(partitionUrl, { headers: { Authorization: `Bearer ${jwtToken}` } });
                 if (partResp.ok) {
@@ -263,7 +264,8 @@ serve(async (req) => {
       console.log("[Pagination] Detected partitioned result set, fetching additional partitions...");
       const partitions = result.resultSetMetaData.partitionInfo;
       
-      for (let p = 0; p < partitions.length; p++) {
+      // Start from partition 1 since partition 0 is already in result.data
+      for (let p = 1; p < partitions.length; p++) {
         const partitionUrl = `${snowflakeUrl}/${result.statementHandle}?partition=${p}`;
         const partResp = await fetch(partitionUrl, { headers: { Authorization: `Bearer ${jwtToken}` } });
         if (partResp.ok) {
