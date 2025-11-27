@@ -96,16 +96,16 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b bg-card">
+      <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold text-foreground">Fleet Usage Dashboard</h1>
           <p className="text-muted-foreground mt-1">
             Analyze vehicle utilization and driver performance
           </p>
         </div>
-      </div>
+      </header>
 
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <main className="container mx-auto px-4 py-6 space-y-6">
         {/* <SnowflakeTest /> */}
         
         <FilterPanel
@@ -175,7 +175,7 @@ const Dashboard = () => {
         </div>
 
         <TripsTable trips={filteredTrips} loading={tripsLoading} />
-      </div>
+      </main>
     </div>
   );
 };
