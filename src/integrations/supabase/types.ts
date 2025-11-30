@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      event_reports: {
+        Row: {
+          created_at: string
+          description: string | null
+          employee_name: string
+          event_date: string
+          id: string
+          location: string
+          photo_urls: string[] | null
+          severity: string
+          status: string
+          third_party_insurance: string | null
+          third_party_involved: boolean | null
+          third_party_license_plate: string | null
+          third_party_name: string | null
+          third_party_phone: string | null
+          updated_at: string
+          vehicle_license_plate: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          employee_name: string
+          event_date: string
+          id?: string
+          location: string
+          photo_urls?: string[] | null
+          severity: string
+          status?: string
+          third_party_insurance?: string | null
+          third_party_involved?: boolean | null
+          third_party_license_plate?: string | null
+          third_party_name?: string | null
+          third_party_phone?: string | null
+          updated_at?: string
+          vehicle_license_plate: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          employee_name?: string
+          event_date?: string
+          id?: string
+          location?: string
+          photo_urls?: string[] | null
+          severity?: string
+          status?: string
+          third_party_insurance?: string | null
+          third_party_involved?: boolean | null
+          third_party_license_plate?: string | null
+          third_party_name?: string | null
+          third_party_phone?: string | null
+          updated_at?: string
+          vehicle_license_plate?: string
+        }
+        Relationships: []
+      }
       form_templates: {
         Row: {
           created_at: string | null
