@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
 import { CalendarIcon, FileText, Car, Upload } from "lucide-react";
+import { useCreateVehicleRequest } from "@/hooks/queries/useVehicleRequestsQuery";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ export default function NewRequest() {
   const navigate = useNavigate();
   const [usageType, setUsageType] = useState<"single_use" | "permanent_driver">("single_use");
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
+  const createRequest = useCreateVehicleRequest();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,10 +73,26 @@ export default function NewRequest() {
   });
 
   const onSubmit = async (data: FormValues) => {
-    console.log("Form submitted:", data);
-    toast.success("Request submitted successfully");
-    // TODO: Save to database
-    navigate("/requests");
+    try {
+      await createRequest.mutateAsync({
+        full_name: data.full_name,
+        department: data.department,
+        job_title: data.job_title,
+        phone_number: data.phone_number,
+        email: data.email,
+        usage_type: data.usage_type,
+        start_date: format(data.start_date, "yyyy-MM-dd"),
+        end_date: format(data.end_date, "yyyy-MM-dd"),
+        purpose: data.purpose,
+        department_manager: data.department_manager,
+        manager_email: data.manager_email,
+        priority: "medium",
+      });
+      
+      navigate("/requests");
+    } catch (error) {
+      console.error("Failed to submit request:", error);
+    }
   };
 
   const requirements = {
