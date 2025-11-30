@@ -48,7 +48,6 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
           WHERE START_TIMESTAMP >= '${dateFrom} 00:00:00' 
             AND START_TIMESTAMP <= '${dateTo} 23:59:59'
           ORDER BY START_TIMESTAMP DESC
-          LIMIT 10000
         `;
 
         const { data, error: functionError } = await supabase.functions.invoke(
