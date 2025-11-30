@@ -12,7 +12,6 @@ const AuthCallback = () => {
     const handleCallback = async () => {
       const code = searchParams.get("code");
       const error = searchParams.get("error");
-      navigate("/");
 
       if (error) {
         console.error("Azure auth error:", error);
