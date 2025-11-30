@@ -143,6 +143,7 @@ export default function VehicleProfile() {
                 <SelectItem value="available">Available</SelectItem>
                 <SelectItem value="assigned">Assigned</SelectItem>
                 <SelectItem value="maintenance">Maintenance</SelectItem>
+                <SelectItem value="retired">Retired</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex justify-center">
