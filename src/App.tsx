@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import VehicleDetail from "./pages/VehicleDetail";
 import Vehicles from "./pages/Vehicles";
@@ -28,19 +29,21 @@ const App = () => (
           <Route path="/login" element={<Auth />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="*" element={
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/vehicle-fleet" element={<Vehicles />} />
-                <Route path="/employees" element={<Employees />} />
-                <Route path="/requests" element={<Requests />} />
-                <Route path="/requests/new" element={<NewRequest />} />
-                <Route path="/event-reports" element={<EventReports />} />
-                <Route path="/form-templates" element={<FormTemplates />} />
-                <Route path="/vehicle/:licensePlate" element={<VehicleDetail />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/vehicle-fleet" element={<Vehicles />} />
+                  <Route path="/employees" element={<Employees />} />
+                  <Route path="/requests" element={<Requests />} />
+                  <Route path="/requests/new" element={<NewRequest />} />
+                  <Route path="/event-reports" element={<EventReports />} />
+                  <Route path="/form-templates" element={<FormTemplates />} />
+                  <Route path="/vehicle/:licensePlate" element={<VehicleDetail />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Layout>
+            </ProtectedRoute>
           } />
         </Routes>
       </BrowserRouter>
