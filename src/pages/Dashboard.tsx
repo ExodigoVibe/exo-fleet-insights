@@ -83,6 +83,7 @@ const Dashboard = () => {
     trips: allTrips,
     loading: tripsLoading,
     error: tripsError,
+    loadedCount,
     totalCount,
   } = useSnowflakeTrips({
     dateFrom: filters.dateFrom,
@@ -131,7 +132,7 @@ const Dashboard = () => {
         <div className="text-xs text-muted-foreground flex justify-between items-center">
           {tripsLoading ? (
             <span>
-              Loading trips from Snowflake...
+              Loading trips from Snowflake... {loadedCount.toLocaleString()}/{totalCount.toLocaleString()}
             </span>
           ) : tripsError ? (
             <span className="text-destructive">
@@ -143,7 +144,7 @@ const Dashboard = () => {
               {" "}
               {allTrips.length.toLocaleString()}
               {" "}
-              trips from Snowflake (cached for 5 minutes).
+              trips from Snowflake.
             </span>
           )}
         </div>
