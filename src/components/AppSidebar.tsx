@@ -10,10 +10,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import { useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
-import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
 import { Badge } from "@/components/ui/badge";
 import { useEventReportsQuery } from "@/hooks/queries/useEventReportsQuery";
 
@@ -27,7 +25,6 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const { open } = useSidebar();
   const { data: requests = [] } = useVehicleRequestsQuery();
   const { data: eventReports = [] } = useEventReportsQuery();
 
@@ -46,12 +43,10 @@ export function AppSidebar() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <Car className="h-6 w-6 text-primary-foreground" />
           </div>
-          {open && (
-            <div className="flex flex-col">
-              <span className="text-base font-semibold text-foreground">FleetFlow</span>
-              <span className="text-xs text-muted-foreground">Vehicle Management</span>
-            </div>
-          )}
+          <div className="flex flex-col">
+            <span className="text-base font-semibold text-foreground">FleetFlow</span>
+            <span className="text-xs text-muted-foreground">Vehicle Management</span>
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -69,7 +64,7 @@ export function AppSidebar() {
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <item.icon className="h-4 w-4" />
-                      {open && <span>{item.title}</span>}
+                      {<span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -84,25 +79,21 @@ export function AppSidebar() {
             <div className="space-y-3 px-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-foreground">Pending Requests</span>
-                {open && (
                   <Badge 
                     variant="outline" 
                     className="bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-900"
                   >
                     {pendingRequestsCount}
                   </Badge>
-                )}
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-foreground">Pending Event Reports</span>
-                {open && (
                   <Badge 
                     variant="outline" 
                     className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-900"
                   >
                     {pendingEventReportsCount}
                   </Badge>
-                )}
               </div>
             </div>
           </SidebarGroupContent>
