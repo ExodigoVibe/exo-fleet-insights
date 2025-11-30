@@ -11,8 +11,18 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Temporarily bypass auth check - Azure SSO to be implemented later
-    setIsChecking(false);
+    const checkAuth = () => {
+      const azureUser = localStorage.getItem("azureUser");
+      
+      if (!azureUser) {
+        navigate("/login");
+        return;
+      }
+      
+      setIsChecking(false);
+    };
+
+    checkAuth();
   }, [navigate]);
 
   return <>{children}</>;
