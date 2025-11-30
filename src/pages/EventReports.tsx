@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Download, AlertTriangle, ExternalLink } from "lucide-react";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
-import { useEventReportsQuery } from "@/hooks/queries/useEventReportsQuery";
+import { ViewEventDialog } from "@/components/event-reports/ViewEventDialog";
+import { useEventReportsQuery, EventReport } from "@/hooks/queries/useEventReportsQuery";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +18,14 @@ import * as XLSX from "xlsx";
 
 export default function EventReports() {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<EventReport | null>(null);
   const { data: reports = [], isLoading } = useEventReportsQuery();
+
+  const handleViewReport = (report: EventReport) => {
+    setSelectedReport(report);
+    setViewDialogOpen(true);
+  };
 
   const handleExportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
@@ -150,6 +158,7 @@ export default function EventReports() {
                         variant="ghost"
                         size="sm"
                         className="text-blue-600 hover:text-blue-700 hover:bg-transparent gap-1"
+                        onClick={() => handleViewReport(report)}
                       >
                         <ExternalLink className="h-4 w-4" />
                         View
@@ -166,6 +175,12 @@ export default function EventReports() {
       <ReportEventDialog 
         open={reportDialogOpen} 
         onOpenChange={setReportDialogOpen} 
+      />
+
+      <ViewEventDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        report={selectedReport}
       />
     </div>
   );
