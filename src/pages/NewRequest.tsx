@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { CalendarIcon, FileText, Car, Upload } from "lucide-react";
-import { useCreateVehicleRequest } from "@/hooks/queries/useVehicleRequestsQuery";
+import { useCreateVehicleRequest, useUpdateVehicleRequest, useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -53,9 +53,13 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function NewRequest() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = !!id;
   const [usageType, setUsageType] = useState<"single_use" | "permanent_driver">("single_use");
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
   const createRequest = useCreateVehicleRequest();
+  const updateRequest = useUpdateVehicleRequest();
+  const { data: requests = [] } = useVehicleRequestsQuery();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -72,9 +76,31 @@ export default function NewRequest() {
     },
   });
 
+  useEffect(() => {
+    if (isEditMode && requests.length > 0) {
+      const request = requests.find((r) => r.id === id);
+      if (request) {
+        form.reset({
+          usage_type: request.usage_type as "single_use" | "permanent_driver",
+          start_date: parseISO(request.start_date),
+          end_date: request.end_date ? parseISO(request.end_date) : undefined,
+          purpose: request.purpose || "",
+          full_name: request.full_name,
+          job_title: request.job_title || "",
+          department: request.department,
+          phone_number: request.phone_number || "",
+          email: request.email || "",
+          department_manager: request.department_manager || "",
+          manager_email: request.manager_email || "",
+        });
+        setUsageType(request.usage_type as "single_use" | "permanent_driver");
+      }
+    }
+  }, [isEditMode, id, requests, form]);
+
   const onSubmit = async (data: FormValues) => {
     try {
-      await createRequest.mutateAsync({
+      const requestData = {
         full_name: data.full_name,
         department: data.department,
         job_title: data.job_title,
@@ -86,8 +112,14 @@ export default function NewRequest() {
         purpose: data.purpose,
         department_manager: data.department_manager,
         manager_email: data.manager_email,
-        priority: "medium",
-      });
+        priority: "medium" as const,
+      };
+
+      if (isEditMode && id) {
+        await updateRequest.mutateAsync({ ...requestData, id });
+      } else {
+        await createRequest.mutateAsync(requestData);
+      }
       
       navigate("/requests");
     } catch (error) {
@@ -124,7 +156,7 @@ export default function NewRequest() {
             Back to Requests
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">New Vehicle Request</h1>
+            <h1 className="text-3xl font-bold">{isEditMode ? "Edit Vehicle Request" : "New Vehicle Request"}</h1>
             <p className="text-muted-foreground">Choose usage type and fill out the required details</p>
           </div>
         </div>
@@ -492,7 +524,7 @@ export default function NewRequest() {
                 Cancel
               </Button>
               <Button type="submit" className="bg-primary hover:bg-primary/90">
-                Submit Request
+                {isEditMode ? "Update Request" : "Submit Request"}
               </Button>
             </div>
           </form>

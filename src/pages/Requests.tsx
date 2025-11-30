@@ -234,7 +234,12 @@ export default function Requests() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-transparent">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-blue-600 hover:text-blue-700 hover:bg-transparent"
+                          onClick={() => navigate(`/requests/edit/${request.id}`)}
+                        >
                           Edit
                         </Button>
                         <Button 
