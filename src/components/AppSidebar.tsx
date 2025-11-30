@@ -26,7 +26,6 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
-  const { open } = useSidebar();
   const { data: requests = [] } = useVehicleRequestsQuery();
   const { data: vehicles = [] } = useVehiclesQuery();
 
@@ -38,18 +37,16 @@ export function AppSidebar() {
   ).length;
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="none">
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-3 px-2 py-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <Car className="h-6 w-6 text-primary-foreground" />
           </div>
-          {open && (
-            <div className="flex flex-col">
-              <span className="text-base font-semibold text-foreground">FleetFlow</span>
-              <span className="text-xs text-muted-foreground">Vehicle Management</span>
-            </div>
-          )}
+          <div className="flex flex-col">
+            <span className="text-base font-semibold text-foreground">FleetFlow</span>
+            <span className="text-xs text-muted-foreground">Vehicle Management</span>
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -67,7 +64,7 @@ export function AppSidebar() {
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <item.icon className="h-4 w-4" />
-                      {open && <span>{item.title}</span>}
+                      <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -82,25 +79,21 @@ export function AppSidebar() {
             <div className="space-y-3 px-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-foreground">Pending Requests</span>
-                {open && (
-                  <Badge 
-                    variant="outline" 
-                    className="bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-900"
-                  >
-                    {pendingRequestsCount}
-                  </Badge>
-                )}
+                <Badge 
+                  variant="outline" 
+                  className="bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-900"
+                >
+                  {pendingRequestsCount}
+                </Badge>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-foreground">Active Vehicles</span>
-                {open && (
-                  <Badge 
-                    variant="outline" 
-                    className="bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-950 dark:text-teal-400 dark:border-teal-900"
-                  >
-                    {activeVehiclesCount}
-                  </Badge>
-                )}
+                <Badge 
+                  variant="outline" 
+                  className="bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-950 dark:text-teal-400 dark:border-teal-900"
+                >
+                  {activeVehiclesCount}
+                </Badge>
               </div>
             </div>
           </SidebarGroupContent>
