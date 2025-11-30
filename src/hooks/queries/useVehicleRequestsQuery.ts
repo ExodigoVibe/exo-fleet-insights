@@ -38,6 +38,10 @@ export interface CreateVehicleRequestData {
   priority?: "low" | "medium" | "high";
 }
 
+export interface UpdateVehicleRequestData extends CreateVehicleRequestData {
+  id: string;
+}
+
 export const useVehicleRequestsQuery = () => {
   return useQuery({
     queryKey: ["vehicle-requests"],
@@ -78,6 +82,39 @@ export const useCreateVehicleRequest = () => {
       toast({
         title: "Error",
         description: `Failed to submit vehicle request: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUpdateVehicleRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: UpdateVehicleRequestData) => {
+      const { id, ...updateData } = data;
+      const { data: request, error } = await supabase
+        .from("vehicle_requests")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return request;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicle-requests"] });
+      toast({
+        title: "Success",
+        description: "Vehicle request updated successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update vehicle request: ${error.message}`,
         variant: "destructive",
       });
     },
