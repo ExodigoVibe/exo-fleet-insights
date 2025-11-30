@@ -11,6 +11,7 @@ import Vehicles from "./pages/Vehicles";
 import Employees from "./pages/Employees";
 import Requests from "./pages/Requests";
 import NewRequest from "./pages/NewRequest";
+import RequestDetail from "./pages/RequestDetail";
 import EventReports from "./pages/EventReports";
 import FormTemplates from "./pages/FormTemplates";
 import Roles from "./pages/Roles";
@@ -41,6 +42,7 @@ const App = () => (
                     <Route path="/requests" element={<Requests />} />
                     <Route path="/requests/new" element={<NewRequest />} />
                     <Route path="/requests/edit/:id" element={<NewRequest />} />
+                    <Route path="/requests/:id" element={<RequestDetail />} />
                     <Route path="/event-reports" element={<EventReports />} />
                     <Route path="/form-templates" element={<FormTemplates />} />
                     <Route path="/roles" element={<Roles />} />

@@ -195,7 +195,11 @@ export default function Requests() {
                 </TableRow>
               ) : (
                 filteredRequests.map((request) => (
-                  <TableRow key={request.id}>
+                  <TableRow 
+                    key={request.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => navigate(`/requests/${request.id}`)}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
@@ -238,7 +242,10 @@ export default function Requests() {
                           variant="ghost" 
                           size="sm" 
                           className="text-blue-600 hover:text-blue-700 hover:bg-transparent"
-                          onClick={() => navigate(`/requests/edit/${request.id}`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/requests/edit/${request.id}`);
+                          }}
                         >
                           Edit
                         </Button>
@@ -246,7 +253,10 @@ export default function Requests() {
                           variant="ghost" 
                           size="sm" 
                           className="text-red-600 hover:text-red-700 hover:bg-transparent"
-                          onClick={() => handleDelete(request.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(request.id);
+                          }}
                         >
                           Delete
                         </Button>
