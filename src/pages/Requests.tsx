@@ -4,6 +4,7 @@ import { Download, Plus, User, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useVehicleRequestsQuery, useDeleteVehicleRequest } from "@/hooks/queries/useVehicleRequestsQuery";
 import {
   Table,
   TableBody,
@@ -16,42 +17,38 @@ import * as XLSX from "xlsx";
 
 type RequestStatus = "all" | "pending_manager" | "approved" | "rejected";
 
-interface VehicleRequest {
-  id: string;
-  employee_name: string;
-  employee_department: string;
-  type: string;
-  date: string;
-  status: string;
-  priority: string;
-}
-
 export default function Requests() {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<RequestStatus>("all");
+  const { data: requests = [], isLoading } = useVehicleRequestsQuery();
+  const deleteRequest = useDeleteVehicleRequest();
 
-  const requests: VehicleRequest[] = [];
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this request?")) {
+      await deleteRequest.mutateAsync(id);
+    }
+  };
 
   const allRequestsCount = requests.length;
-  const pendingCount = requests.filter((r) => r.status === "Pending Manager").length;
-  const approvedCount = requests.filter((r) => r.status === "Approved").length;
-  const rejectedCount = requests.filter((r) => r.status === "Rejected").length;
+  const pendingCount = requests.filter((r) => r.status === "pending_manager").length;
+  const approvedCount = requests.filter((r) => r.status === "approved").length;
+  const rejectedCount = requests.filter((r) => r.status === "rejected").length;
 
   const filteredRequests = requests.filter((request) => {
     if (statusFilter === "all") return true;
-    if (statusFilter === "pending_manager") return request.status === "Pending Manager";
-    if (statusFilter === "approved") return request.status === "Approved";
-    if (statusFilter === "rejected") return request.status === "Rejected";
+    if (statusFilter === "pending_manager") return request.status === "pending_manager";
+    if (statusFilter === "approved") return request.status === "approved";
+    if (statusFilter === "rejected") return request.status === "rejected";
     return true;
   });
 
   const handleExportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
       filteredRequests.map((req) => ({
-        Employee: req.employee_name,
-        Department: req.employee_department,
-        Type: req.type,
-        Date: req.date,
+        Employee: req.full_name,
+        Department: req.department,
+        Type: req.usage_type === "single_use" ? "Single Use" : "Permanent Driver",
+        Date: new Date(req.start_date).toLocaleDateString(),
         Status: req.status,
         Priority: req.priority,
       }))
@@ -61,16 +58,29 @@ export default function Requests() {
     XLSX.writeFile(workbook, "vehicle_requests.xlsx");
   };
 
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case "Pending Manager":
-        return "secondary";
-      case "Approved":
-        return "default";
-      case "Rejected":
-        return "destructive";
+      case "pending_manager":
+        return "bg-amber-50 text-amber-700 border-amber-200";
+      case "approved":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "rejected":
+        return "bg-red-50 text-red-700 border-red-200";
       default:
-        return "outline";
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending_manager":
+        return "Pending Manager";
+      case "approved":
+        return "Approved";
+      case "rejected":
+        return "Rejected";
+      default:
+        return status;
     }
   };
 
@@ -171,7 +181,13 @@ export default function Requests() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRequests.length === 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    Loading requests...
+                  </TableCell>
+                </TableRow>
+              ) : filteredRequests.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
                     No requests found
@@ -186,22 +202,22 @@ export default function Requests() {
                           <User className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div>
-                          <div className="font-medium">{request.employee_name}</div>
+                          <div className="font-medium">{request.full_name}</div>
                           <div className="text-sm text-muted-foreground">
-                            {request.employee_department}
+                            {request.department}
                           </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                        {request.type}
+                        {request.usage_type === "single_use" ? "Single Use" : "Permanent Driver"}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{new Date(request.date).toLocaleDateString("en-US", {
+                        <span>{new Date(request.start_date).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
@@ -209,19 +225,24 @@ export default function Requests() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(request.status)} className="bg-amber-50 text-amber-700 border-amber-200">
-                        {request.status}
+                      <Badge variant="outline" className={getStatusBadgeColor(request.status)}>
+                        {getStatusLabel(request.status)}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <span className="font-medium">{request.priority}</span>
+                      <span className="font-medium">{request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}</span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-transparent">
                           Edit
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-red-600 hover:text-red-700 hover:bg-transparent"
+                          onClick={() => handleDelete(request.id)}
+                        >
                           Delete
                         </Button>
                       </div>

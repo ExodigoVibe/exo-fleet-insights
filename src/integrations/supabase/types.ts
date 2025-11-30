@@ -110,6 +110,66 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_requests: {
+        Row: {
+          created_at: string
+          department: string
+          department_manager: string | null
+          email: string | null
+          end_date: string | null
+          full_name: string
+          id: string
+          job_title: string | null
+          license_file_url: string | null
+          manager_email: string | null
+          phone_number: string | null
+          priority: string
+          purpose: string | null
+          start_date: string
+          status: string
+          updated_at: string
+          usage_type: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          department_manager?: string | null
+          email?: string | null
+          end_date?: string | null
+          full_name: string
+          id?: string
+          job_title?: string | null
+          license_file_url?: string | null
+          manager_email?: string | null
+          phone_number?: string | null
+          priority?: string
+          purpose?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string
+          usage_type: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          department_manager?: string | null
+          email?: string | null
+          end_date?: string | null
+          full_name?: string
+          id?: string
+          job_title?: string | null
+          license_file_url?: string | null
+          manager_email?: string | null
+          phone_number?: string | null
+          priority?: string
+          purpose?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+          usage_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
