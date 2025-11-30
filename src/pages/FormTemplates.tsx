@@ -117,7 +117,7 @@ export default function FormTemplates() {
                       {template.form_title}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="bg-secondary/30 text-foreground border-border">
+                      <Badge variant="outline" className="bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100">
                         {formatFormType(template.form_type)}
                       </Badge>
                     </TableCell>
