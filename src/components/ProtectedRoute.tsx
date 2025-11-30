@@ -16,11 +16,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session) {
-        navigate("/login");
-      } else {
-        setIsChecking(false);
-      }
+      // if (!session) {
+      //   navigate("/login");
+      // } else {
+      //   setIsChecking(false);
+      // }
     };
 
     checkAuth();
@@ -39,13 +39,13 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     };
   }, [navigate]);
 
-  // if (isChecking) {
-  //   return (
-  //     <div className="min-h-screen flex items-center justify-center">
-  //       <div className="text-muted-foreground">Loading...</div>
-  //     </div>
-  //   );
-  // }
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }
