@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useCreateFormTemplate } from "@/hooks/queries/useFormTemplatesQuery";
 import {
   Sheet,
   SheetContent,
@@ -55,6 +56,7 @@ interface NewTemplateSheetProps {
 
 export function NewTemplateSheet({ open, onOpenChange }: NewTemplateSheetProps) {
   const [fields, setFields] = useState<FormField[]>([]);
+  const createMutation = useCreateFormTemplate();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -68,9 +70,15 @@ export function NewTemplateSheet({ open, onOpenChange }: NewTemplateSheetProps) 
   });
 
   const onSubmit = async (data: FormValues) => {
-    console.log("Form data:", data);
-    console.log("Form fields:", fields);
-    // TODO: Save to database
+    await createMutation.mutateAsync({
+      form_title: data.formTitle,
+      description: data.description || null,
+      usage_type: data.usageType,
+      form_type: data.formType,
+      is_active: data.isActive,
+      form_fields: fields,
+    });
+    
     form.reset();
     setFields([]);
     onOpenChange(false);
