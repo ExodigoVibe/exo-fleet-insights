@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      form_templates: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          form_fields: Json | null
+          form_title: string
+          form_type: string
+          id: string
+          is_active: boolean | null
+          pdf_template_url: string | null
+          updated_at: string | null
+          usage_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          form_fields?: Json | null
+          form_title: string
+          form_type: string
+          id?: string
+          is_active?: boolean | null
+          pdf_template_url?: string | null
+          updated_at?: string | null
+          usage_type: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          form_fields?: Json | null
+          form_title?: string
+          form_type?: string
+          id?: string
+          is_active?: boolean | null
+          pdf_template_url?: string | null
+          updated_at?: string | null
+          usage_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
