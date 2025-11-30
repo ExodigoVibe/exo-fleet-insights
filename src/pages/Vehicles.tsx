@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
 import {
   Table,
@@ -18,6 +19,7 @@ import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
 const Vehicles = () => {
+  const navigate = useNavigate();
   const { data: vehicles, isLoading, error } = useVehiclesQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "parking" | "moving" | "other">("all");
@@ -240,7 +242,11 @@ const Vehicles = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredVehicles.map((vehicle) => (
-                      <TableRow key={vehicle.vehicle_id}>
+                      <TableRow 
+                        key={vehicle.vehicle_id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/vehicle/${vehicle.license_plate}`)}
+                      >
                         <TableCell className="font-medium">
                           {vehicle.license_plate}
                         </TableCell>

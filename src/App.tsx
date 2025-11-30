@@ -7,6 +7,7 @@ import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import VehicleDetail from "./pages/VehicleDetail";
+import VehicleProfile from "./pages/VehicleProfile";
 import Vehicles from "./pages/Vehicles";
 import Employees from "./pages/Employees";
 import EmployeeDetail from "./pages/EmployeeDetail";
@@ -48,7 +49,7 @@ const App = () => (
                     <Route path="/event-reports" element={<EventReports />} />
                     <Route path="/form-templates" element={<FormTemplates />} />
                     <Route path="/roles" element={<Roles />} />
-                    <Route path="/vehicle/:licensePlate" element={<VehicleDetail />} />
+                    <Route path="/vehicle/:licensePlate" element={<VehicleProfile />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Layout>
