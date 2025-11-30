@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { X, Save, Plus } from "lucide-react";
+import { X, Save, Plus, GripVertical, Trash2 } from "lucide-react";
 
 const formSchema = z.object({
   formTitle: z.string().min(1, "Form title is required").max(200),
@@ -40,13 +40,21 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+interface FormField {
+  id: number;
+  type: "text" | "textarea" | "date" | "dropdown" | "checkbox" | "signature";
+  label: string;
+  placeholder: string;
+  required: boolean;
+}
+
 interface NewTemplateSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function NewTemplateSheet({ open, onOpenChange }: NewTemplateSheetProps) {
-  const [fields, setFields] = useState<any[]>([]);
+  const [fields, setFields] = useState<FormField[]>([]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -69,7 +77,28 @@ export function NewTemplateSheet({ open, onOpenChange }: NewTemplateSheetProps) 
   };
 
   const handleAddField = () => {
-    setFields([...fields, { id: Date.now(), type: "text", label: "" }]);
+    setFields([
+      ...fields,
+      {
+        id: Date.now(),
+        type: "text",
+        label: "New Field",
+        placeholder: "",
+        required: false,
+      },
+    ]);
+  };
+
+  const handleDeleteField = (id: number) => {
+    setFields(fields.filter((field) => field.id !== id));
+  };
+
+  const handleUpdateField = (id: number, updates: Partial<FormField>) => {
+    setFields(
+      fields.map((field) =>
+        field.id === id ? { ...field, ...updates } : field
+      )
+    );
   };
 
   return (
@@ -251,13 +280,103 @@ export function NewTemplateSheet({ open, onOpenChange }: NewTemplateSheetProps) 
               )}
 
               {fields.length > 0 && (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {fields.map((field) => (
                     <div
                       key={field.id}
-                      className="p-4 border rounded-lg bg-muted/50"
+                      className="p-6 border rounded-lg bg-background space-y-4"
                     >
-                      <p className="text-sm">Field {field.id}</p>
+                      {/* Field Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
+                          <span className="font-medium">{field.type}</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteField(field.id)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      </div>
+
+                      {/* Field Configuration */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Field Label */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">
+                            Field Label
+                          </label>
+                          <Input
+                            value={field.label}
+                            onChange={(e) =>
+                              handleUpdateField(field.id, {
+                                label: e.target.value,
+                              })
+                            }
+                            placeholder="New Field"
+                          />
+                        </div>
+
+                        {/* Field Type */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">
+                            Field Type
+                          </label>
+                          <Select
+                            value={field.type}
+                            onValueChange={(value) =>
+                              handleUpdateField(field.id, {
+                                type: value as FormField["type"],
+                              })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="text">Text</SelectItem>
+                              <SelectItem value="textarea">Text Area</SelectItem>
+                              <SelectItem value="date">Date</SelectItem>
+                              <SelectItem value="dropdown">Dropdown</SelectItem>
+                              <SelectItem value="checkbox">Checkbox</SelectItem>
+                              <SelectItem value="signature">Signature</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Placeholder Text */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          Placeholder Text
+                        </label>
+                        <Input
+                          value={field.placeholder}
+                          onChange={(e) =>
+                            handleUpdateField(field.id, {
+                              placeholder: e.target.value,
+                            })
+                          }
+                          placeholder="Help text for field"
+                        />
+                      </div>
+
+                      {/* Required Field Toggle */}
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={field.required}
+                          onCheckedChange={(checked) =>
+                            handleUpdateField(field.id, { required: checked })
+                          }
+                        />
+                        <label className="text-sm font-medium">
+                          Required Field
+                        </label>
+                      </div>
                     </div>
                   ))}
                 </div>
