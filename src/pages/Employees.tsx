@@ -82,7 +82,6 @@ const Employees = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-card">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -104,7 +103,6 @@ const Employees = () => {
             </Button>
           </div>
         </div>
-      </div>
 
       <div className="container mx-auto px-4 py-6">
         {/* KPI Cards */}

@@ -99,7 +99,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="bg-card">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
@@ -117,7 +116,6 @@ const Dashboard = () => {
             </Button>
           </div>
         </div>
-      </div>
 
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* <SnowflakeTest /> */}
