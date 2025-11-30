@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useCreateFormTemplate } from "@/hooks/queries/useFormTemplatesQuery";
+import { useCreateFormTemplate, useUpdateFormTemplate, FormTemplate } from "@/hooks/queries/useFormTemplatesQuery";
 import {
   Sheet,
   SheetContent,
@@ -52,11 +52,13 @@ interface FormField {
 interface NewTemplateSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  template?: FormTemplate | null;
 }
 
-export function NewTemplateSheet({ open, onOpenChange }: NewTemplateSheetProps) {
+export function NewTemplateSheet({ open, onOpenChange, template }: NewTemplateSheetProps) {
   const [fields, setFields] = useState<FormField[]>([]);
   const createMutation = useCreateFormTemplate();
+  const updateMutation = useUpdateFormTemplate();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -69,15 +71,61 @@ export function NewTemplateSheet({ open, onOpenChange }: NewTemplateSheetProps) 
     },
   });
 
+  // Populate form when template is provided for editing
+  useEffect(() => {
+    if (template && open) {
+      form.reset({
+        formTitle: template.form_title,
+        description: template.description || "",
+        usageType: template.usage_type as "single_use" | "permanent" | "both",
+        formType: template.form_type as "custom" | "vehicle_procedure" | "driver_file" | "traffic_history",
+        isActive: template.is_active ?? true,
+      });
+      
+      // Set form fields if they exist
+      if (template.form_fields && Array.isArray(template.form_fields)) {
+        setFields(template.form_fields as FormField[]);
+      } else {
+        setFields([]);
+      }
+    } else if (!template && open) {
+      // Reset form for new template
+      form.reset({
+        formTitle: "",
+        description: "",
+        usageType: "single_use",
+        formType: "custom",
+        isActive: true,
+      });
+      setFields([]);
+    }
+  }, [template, open, form]);
+
   const onSubmit = async (data: FormValues) => {
-    await createMutation.mutateAsync({
-      form_title: data.formTitle,
-      description: data.description || null,
-      usage_type: data.usageType,
-      form_type: data.formType,
-      is_active: data.isActive,
-      form_fields: fields,
-    });
+    if (template) {
+      // Update existing template
+      await updateMutation.mutateAsync({
+        id: template.id,
+        data: {
+          form_title: data.formTitle,
+          description: data.description || null,
+          usage_type: data.usageType,
+          form_type: data.formType,
+          is_active: data.isActive,
+          form_fields: fields,
+        },
+      });
+    } else {
+      // Create new template
+      await createMutation.mutateAsync({
+        form_title: data.formTitle,
+        description: data.description || null,
+        usage_type: data.usageType,
+        form_type: data.formType,
+        is_active: data.isActive,
+        form_fields: fields,
+      });
+    }
     
     form.reset();
     setFields([]);
@@ -113,7 +161,9 @@ export function NewTemplateSheet({ open, onOpenChange }: NewTemplateSheetProps) 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-[700px] overflow-y-auto">
         <SheetHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
-          <SheetTitle className="text-2xl font-bold">New Template</SheetTitle>
+          <SheetTitle className="text-2xl font-bold">
+            {template ? "Edit Template" : "New Template"}
+          </SheetTitle>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"

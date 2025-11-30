@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { FileText, Plus, Pencil, Trash2 } from "lucide-react";
 import { NewTemplateSheet } from "@/components/form-templates/NewTemplateSheet";
-import { useFormTemplatesQuery, useDeleteFormTemplate } from "@/hooks/queries/useFormTemplatesQuery";
+import { useFormTemplatesQuery, useDeleteFormTemplate, FormTemplate } from "@/hooks/queries/useFormTemplatesQuery";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,11 +54,24 @@ const formatFormType = (type: string) => {
 
 export default function FormTemplates() {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
   const { data: templates, isLoading } = useFormTemplatesQuery();
   const deleteMutation = useDeleteFormTemplate();
 
   const handleDelete = async (id: string) => {
     await deleteMutation.mutateAsync(id);
+  };
+
+  const handleEdit = (template: FormTemplate) => {
+    setSelectedTemplate(template);
+    setSheetOpen(true);
+  };
+
+  const handleCloseSheet = (open: boolean) => {
+    setSheetOpen(open);
+    if (!open) {
+      setSelectedTemplate(null);
+    }
   };
 
   return (
@@ -130,6 +143,7 @@ export default function FormTemplates() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          onClick={() => handleEdit(template)}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -174,7 +188,11 @@ export default function FormTemplates() {
         </div>
       </div>
 
-      <NewTemplateSheet open={sheetOpen} onOpenChange={setSheetOpen} />
+      <NewTemplateSheet 
+        open={sheetOpen} 
+        onOpenChange={handleCloseSheet}
+        template={selectedTemplate}
+      />
     </div>
   );
 }
