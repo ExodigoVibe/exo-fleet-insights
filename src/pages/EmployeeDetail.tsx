@@ -1,18 +1,39 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, User, Briefcase, Shield, Mail, Phone, Building2, Key, FileText, AlertTriangle } from "lucide-react";
+import { ArrowLeft, User, Shield, Mail, Phone, Key, FileText, AlertTriangle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
 import { useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
+import { useEventReportsQuery } from "@/hooks/queries/useEventReportsQuery";
+import { useTripsQuery } from "@/hooks/queries/useTripsQuery";
 import { format } from "date-fns";
 
 export default function EmployeeDetail() {
   const { driverId } = useParams<{ driverId: string }>();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("requests");
+  
+  // Default date range: last 30 days
+  const dateTo = format(new Date(), "yyyy-MM-dd");
+  const dateFrom = format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd");
+  
   const { data: drivers = [], isLoading: driversLoading } = useDriversQuery();
   const { data: requests = [], isLoading: requestsLoading } = useVehicleRequestsQuery();
+  const { data: eventReports = [], isLoading: eventsLoading } = useEventReportsQuery();
+  const { data: tripsData, isLoading: tripsLoading } = useTripsQuery(dateFrom, dateTo);
 
+  const trips = tripsData?.trips || [];
   const driver = drivers.find((d) => d.driver_id === Number(driverId));
 
   // Find vehicle requests for this employee by matching email or name
@@ -23,6 +44,20 @@ export default function EmployeeDetail() {
     const emailMatch = driver.email && req.email && driver.email.toLowerCase() === req.email.toLowerCase();
     const nameMatch = driverFullName === requestFullName;
     return emailMatch || nameMatch;
+  });
+
+  // Find trips for this employee by matching driver code
+  const employeeTrips = trips.filter((trip) => {
+    if (!driver) return false;
+    return trip.driver_code === driver.driver_code;
+  });
+
+  // Find event reports for this employee by matching name
+  const employeeEvents = eventReports.filter((event) => {
+    if (!driver) return false;
+    const driverFullName = `${driver.first_name} ${driver.last_name}`.toLowerCase();
+    const eventEmployeeName = event.employee_name.toLowerCase();
+    return driverFullName === eventEmployeeName;
   });
 
   const getStatusBadgeColor = (status: string) => {
@@ -259,6 +294,178 @@ export default function EmployeeDetail() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">No signed forms found for this employee.</p>
+        </CardContent>
+      </Card>
+
+      {/* History */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-primary">
+            <Clock className="h-5 w-5" />
+            History
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="requests">
+                Requests ({employeeRequests.length})
+              </TabsTrigger>
+              <TabsTrigger value="car-usage">
+                Car Usage ({employeeTrips.length})
+              </TabsTrigger>
+              <TabsTrigger value="events">
+                Events ({employeeEvents.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="requests" className="mt-4">
+              {requestsLoading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading requests...
+                </div>
+              ) : employeeRequests.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No requests found
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Dates</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employeeRequests.map((request) => (
+                      <TableRow
+                        key={request.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/requests/${request.id}`)}
+                      >
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className="bg-purple-50 text-purple-700 border-purple-200"
+                          >
+                            {request.usage_type === "single_use" ? "Single Use" : "Permanent Driver"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(request.start_date), "MMM dd, yyyy")}
+                          {request.end_date && ` - ${format(new Date(request.end_date), "MMM dd, yyyy")}`}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={getStatusBadgeColor(request.status)}>
+                            {getStatusLabel(request.status)}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+
+            <TabsContent value="car-usage" className="mt-4">
+              {tripsLoading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading car usage...
+                </div>
+              ) : employeeTrips.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No car usage found
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Vehicle</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead>Distance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employeeTrips.slice(0, 10).map((trip) => (
+                      <TableRow key={trip.trip_id}>
+                        <TableCell className="font-medium">{trip.license_plate}</TableCell>
+                        <TableCell>
+                          {format(new Date(trip.start_location.timestamp), "MMM dd, yyyy HH:mm")}
+                        </TableCell>
+                        <TableCell>
+                          {Math.round(trip.duration_in_seconds / 60)} min
+                        </TableCell>
+                        <TableCell>
+                          {trip.distance ? `${trip.distance.toFixed(1)} km` : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+
+            <TabsContent value="events" className="mt-4">
+              {eventsLoading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading events...
+                </div>
+              ) : employeeEvents.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No events found
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employeeEvents.map((event) => (
+                      <TableRow key={event.id} className="cursor-pointer hover:bg-muted/50">
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={
+                              event.severity === "extensive"
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            }
+                          >
+                            {event.severity === "extensive" ? "Extensive" : "Slight"} Damage
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(event.event_date), "MMM dd, yyyy")}
+                        </TableCell>
+                        <TableCell>{event.location}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={
+                              event.status === "pending"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : event.status === "reviewed"
+                                ? "bg-blue-50 text-blue-700 border-blue-200"
+                                : "bg-gray-50 text-gray-700 border-gray-200"
+                            }
+                          >
+                            {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
