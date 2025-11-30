@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
 import {
   Table,
@@ -18,6 +19,7 @@ import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
 const Employees = () => {
+  const navigate = useNavigate();
   const { data: drivers, isLoading, error } = useDriversQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "blocked">("all");
@@ -198,7 +200,11 @@ const Employees = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredDrivers.map((driver) => (
-                      <TableRow key={driver.driver_id}>
+                      <TableRow 
+                        key={driver.driver_id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/employees/${driver.driver_id}`)}
+                      >
                         <TableCell className="font-medium">{driver.driver_id}</TableCell>
                         <TableCell>
                           {driver.first_name} {driver.last_name}
