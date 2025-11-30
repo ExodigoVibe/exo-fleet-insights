@@ -45,7 +45,7 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
         const query = `
         SELECT *
         FROM BUSINESS_DB.ITURAN.TRIPS
-        WHERE distance != 0
+        WHERE DISTANCE != 0
           AND START_TIMESTAMP >= '${dateFrom} 00:00:00'
           AND START_TIMESTAMP <= '${dateTo} 23:59:59'
         ORDER BY START_TIMESTAMP DESC
