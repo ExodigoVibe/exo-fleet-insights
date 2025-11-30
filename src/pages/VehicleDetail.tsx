@@ -84,7 +84,7 @@ const VehicleDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
+      <header className="bg-card">
         <div className="container mx-auto px-4 py-6">
           <Link to="/">
             <Button variant="ghost" className="mb-4">
