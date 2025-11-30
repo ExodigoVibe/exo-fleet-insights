@@ -27,9 +27,9 @@ export default function VehicleProfile() {
   const { data: drivers = [], isLoading: driversLoading } = useDriversQuery();
 
   const [assignment, setAssignment] = useState("");
-  const [mileage, setMileage] = useState("17000");
+  const [mileage, setMileage] = useState("");
   const [status, setStatus] = useState("maintenance");
-  const [nextServiceMileage, setNextServiceMileage] = useState("30000");
+  const [nextServiceMileage, setNextServiceMileage] = useState("");
 
   const vehicle = vehicles.find((v) => v.license_plate === licensePlate);
 
@@ -111,7 +111,7 @@ export default function VehicleProfile() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-center">
-              <div className="text-4xl font-bold">{parseInt(mileage).toLocaleString()}</div>
+              <div className="text-4xl font-bold">{mileage ? parseInt(mileage).toLocaleString() : '-'}</div>
               <div className="text-sm text-muted-foreground">kilometers</div>
             </div>
             <div className="flex gap-2">
@@ -120,6 +120,7 @@ export default function VehicleProfile() {
                 value={mileage}
                 onChange={(e) => setMileage(e.target.value)}
                 className="flex-1"
+                placeholder="Enter mileage"
               />
               <Button>Update</Button>
             </div>
@@ -245,11 +246,15 @@ export default function VehicleProfile() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Current Mileage</p>
-              <p className="text-2xl font-bold">{parseInt(mileage).toLocaleString()} km</p>
+              <p className="text-2xl font-bold">{mileage ? `${parseInt(mileage).toLocaleString()} km` : 'N/A'}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Mileage to Next Service</p>
-              <p className="text-2xl font-bold">13,000 km</p>
+              <p className="text-2xl font-bold">
+                {mileage && nextServiceMileage 
+                  ? `${(parseInt(nextServiceMileage) - parseInt(mileage)).toLocaleString()} km` 
+                  : 'N/A'}
+              </p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Last Service</p>
@@ -265,6 +270,7 @@ export default function VehicleProfile() {
                 value={nextServiceMileage}
                 onChange={(e) => setNextServiceMileage(e.target.value)}
                 className="flex-1"
+                placeholder="Enter service mileage"
               />
               <Button>Set</Button>
             </div>
@@ -295,45 +301,8 @@ export default function VehicleProfile() {
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell>Sep 23, 2025</TableCell>
-                <TableCell>
-                  <Select defaultValue="routine">
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="routine">Routine</SelectItem>
-                      <SelectItem value="repair">Repair</SelectItem>
-                      <SelectItem value="inspection">Inspection</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Input defaultValue="Maintenance event" />
-                </TableCell>
-                <TableCell>
-                  <Input type="date" defaultValue="2025-09-27" />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Aug 26, 2025</TableCell>
-                <TableCell>
-                  <Select defaultValue="routine">
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="routine">Routine</SelectItem>
-                      <SelectItem value="repair">Repair</SelectItem>
-                      <SelectItem value="inspection">Inspection</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Input defaultValue="Vehicle entered maintenance - details to be update" />
-                </TableCell>
-                <TableCell>
-                  <Input type="date" placeholder="dd/mm/yyyy" />
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                  No maintenance history found
                 </TableCell>
               </TableRow>
             </TableBody>
@@ -357,38 +326,9 @@ export default function VehicleProfile() {
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell>Sep 24, 2025</TableCell>
-                <TableCell>
-                  <Badge variant="outline">Assignment</Badge>
+                <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                  No car history found
                 </TableCell>
-                <TableCell>Assignment event</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Sep 23, 2025</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    Maintenance
-                  </Badge>
-                </TableCell>
-                <TableCell>Maintenance event</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Sep 20, 2025</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                    Accident
-                  </Badge>
-                </TableCell>
-                <TableCell>h</TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Aug 26, 2025</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    Maintenance
-                  </Badge>
-                </TableCell>
-                <TableCell>Vehicle entered maintenance - details to be updated</TableCell>
               </TableRow>
             </TableBody>
           </Table>
