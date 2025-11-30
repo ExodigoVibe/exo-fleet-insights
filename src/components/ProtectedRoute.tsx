@@ -12,8 +12,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session) {
         navigate("/login");
       } else {
@@ -24,7 +26,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
         navigate("/login");
       }
@@ -35,13 +39,13 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     };
   }, [navigate]);
 
-  if (isChecking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
+  // if (isChecking) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="text-muted-foreground">Loading...</div>
+  //     </div>
+  //   );
+  // }
 
   return <>{children}</>;
 }
