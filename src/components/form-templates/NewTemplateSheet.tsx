@@ -32,8 +32,8 @@ import { X, Save, Plus } from "lucide-react";
 const formSchema = z.object({
   formTitle: z.string().min(1, "Form title is required").max(200),
   description: z.string().max(1000).optional(),
-  usageType: z.enum(["single_use", "permanent"]),
-  formType: z.enum(["custom", "vehicle_request", "incident_report"]),
+  usageType: z.enum(["single_use", "permanent", "both"]),
+  formType: z.enum(["custom", "vehicle_procedure", "driver_file", "traffic_history"]),
   pdfTemplate: z.any().optional(),
   isActive: z.boolean().default(true),
 });
@@ -154,6 +154,7 @@ export function NewTemplateSheet({ open, onOpenChange }: NewTemplateSheetProps) 
                       <SelectContent>
                         <SelectItem value="single_use">Single Use</SelectItem>
                         <SelectItem value="permanent">Permanent Driver</SelectItem>
+                        <SelectItem value="both">Both</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -178,8 +179,9 @@ export function NewTemplateSheet({ open, onOpenChange }: NewTemplateSheetProps) 
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="custom">Custom</SelectItem>
-                        <SelectItem value="vehicle_request">Vehicle Request</SelectItem>
-                        <SelectItem value="incident_report">Incident Report</SelectItem>
+                        <SelectItem value="vehicle_procedure">Vehicle Procedure</SelectItem>
+                        <SelectItem value="driver_file">Driver File</SelectItem>
+                        <SelectItem value="traffic_history">Traffic History</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
