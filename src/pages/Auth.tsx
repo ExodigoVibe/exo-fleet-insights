@@ -10,26 +10,25 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAzureLogin = async () => {
-    // try {
-    //   setIsLoading(true);
+    try {
+      setIsLoading(true);
 
-    //   // Get the auth URL from the edge function
-    //   const { data, error } = await supabase.functions.invoke('azure-sso', {
-    //     method: 'GET',
-    //   });
+      // Get the auth URL from the edge function
+      const { data, error } = await supabase.functions.invoke("azure-sso", {
+        method: "GET",
+      });
 
-    //   if (error) throw error;
+      if (error) throw error;
 
-    //   if (data?.authUrl) {
-    //     // Redirect to Azure login
-    //     window.location.href = data.authUrl;
-    //   }
-    // } catch (error) {
-    //   console.error('Azure login error:', error);
-    //   toast.error('Failed to initiate Azure login');
-    //   setIsLoading(false);
-    // }
-    avigate("/");
+      if (data?.authUrl) {
+        // Redirect to Azure login
+        window.location.href = data.authUrl;
+      }
+    } catch (error) {
+      console.error("Azure login error:", error);
+      toast.error("Failed to initiate Azure login");
+      setIsLoading(false);
+    }
   };
 
   return (
