@@ -15,6 +15,7 @@ import {
 import { useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
 import { Badge } from "@/components/ui/badge";
+import { useEventReportsQuery } from "@/hooks/queries/useEventReportsQuery";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: FileText },
@@ -28,13 +29,14 @@ const menuItems = [
 export function AppSidebar() {
   const { open } = useSidebar();
   const { data: requests = [] } = useVehicleRequestsQuery();
-  const { data: vehicles = [] } = useVehiclesQuery();
+  const { data: eventReports = [] } = useEventReportsQuery();
+
 
   const pendingRequestsCount = requests.filter(
     (req) => req.status === "pending_manager"
   ).length;
-  const activeVehiclesCount = vehicles.filter(
-    (vehicle) => vehicle.motion_status === "moving"
+  const pendingEventReportsCount = eventReports.filter(
+    (report) =>  report.status === "pending"
   ).length;
 
   return (
@@ -85,20 +87,20 @@ export function AppSidebar() {
                 {open && (
                   <Badge 
                     variant="outline" 
-                    className="bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-400 dark:border-orange-900"
+                    className="bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-900"
                   >
                     {pendingRequestsCount}
                   </Badge>
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground">Active Vehicles</span>
+                <span className="text-sm text-foreground">Pending Event Reports</span>
                 {open && (
                   <Badge 
                     variant="outline" 
-                    className="bg-teal-100 text-teal-700 border-teal-200 dark:bg-teal-950 dark:text-teal-400 dark:border-teal-900"
+                    className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-900"
                   >
-                    {activeVehiclesCount}
+                    {pendingEventReportsCount}
                   </Badge>
                 )}
               </div>
