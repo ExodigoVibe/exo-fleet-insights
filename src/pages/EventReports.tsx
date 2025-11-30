@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Download, AlertTriangle, ExternalLink } from "lucide-react";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
+import { useEventReportsQuery } from "@/hooks/queries/useEventReportsQuery";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,24 +15,15 @@ import {
 } from "@/components/ui/table";
 import * as XLSX from "xlsx";
 
-interface EventReport {
-  id: string;
-  date: string;
-  employee: string;
-  location: string;
-  severity: "slight" | "moderate" | "extensive";
-  status: "pending" | "reviewed" | "closed";
-}
-
 export default function EventReports() {
-  const mockReports: EventReport[] = [];
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const { data: reports = [], isLoading } = useEventReportsQuery();
 
   const handleExportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      mockReports.map((report) => ({
-        Date: report.date,
-        Employee: report.employee,
+      reports.map((report) => ({
+        Date: new Date(report.event_date).toLocaleDateString(),
+        Employee: report.employee_name,
         Location: report.location,
         Severity: report.severity,
         Status: report.status,
@@ -46,8 +38,6 @@ export default function EventReports() {
     switch (severity) {
       case "slight":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "moderate":
-        return "bg-orange-100 text-orange-800 border-orange-200";
       case "extensive":
         return "bg-red-100 text-red-800 border-red-200";
       default:
@@ -101,7 +91,7 @@ export default function EventReports() {
         <div className="p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            Event Reports ({mockReports.length})
+            Event Reports ({reports.length})
           </h2>
           <Table>
             <TableHeader>
@@ -115,23 +105,29 @@ export default function EventReports() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockReports.length === 0 ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    Loading event reports...
+                  </TableCell>
+                </TableRow>
+              ) : reports.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
                     No event reports found
                   </TableCell>
                 </TableRow>
               ) : (
-                mockReports.map((report) => (
+                reports.map((report) => (
                   <TableRow key={report.id}>
                     <TableCell>
-                      {new Date(report.date).toLocaleDateString("en-US", {
+                      {new Date(report.event_date).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
                       })}
                     </TableCell>
-                    <TableCell>{report.employee}</TableCell>
+                    <TableCell>{report.employee_name}</TableCell>
                     <TableCell>{report.location}</TableCell>
                     <TableCell>
                       <Badge

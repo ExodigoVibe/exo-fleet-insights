@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Info, Car, FileText, Users, Upload, Send } from "lucide-react";
 import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
+import { useCreateEventReport } from "@/hooks/queries/useEventReportsQuery";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,6 +67,7 @@ interface ReportEventDialogProps {
 export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps) {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const { vehicles, loading: isLoadingVehicles } = useSnowflakeVehicles();
+  const createEventReport = useCreateEventReport();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -91,14 +93,29 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
     }
   };
 
-  const onSubmit = (data: FormValues) => {
-    console.log("Form data:", data);
-    console.log("Uploaded files:", uploadedFiles);
-    toast.success("Event report submitted successfully");
-    onOpenChange(false);
-    form.reset();
-    setUploadedFiles([]);
-    form.setValue("severity", "slight");
+  const onSubmit = async (data: FormValues) => {
+    try {
+      await createEventReport.mutateAsync({
+        vehicle_license_plate: data.vehicleId,
+        employee_name: data.employeeName,
+        event_date: data.eventDateTime.toISOString(),
+        location: data.location,
+        description: data.description,
+        severity: data.severity,
+        third_party_involved: data.thirdPartyInvolved,
+        third_party_name: data.thirdPartyCarOwner,
+        third_party_phone: data.thirdPartyPhone,
+        third_party_license_plate: data.thirdPartyLicensePlate,
+        third_party_insurance: data.thirdPartyInsurance,
+      });
+      
+      onOpenChange(false);
+      form.reset();
+      setUploadedFiles([]);
+      form.setValue("severity", "slight");
+    } catch (error) {
+      console.error("Failed to submit event report:", error);
+    }
   };
 
   return (
