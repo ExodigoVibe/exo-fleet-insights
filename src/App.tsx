@@ -11,6 +11,7 @@ import Employees from "./pages/Employees";
 import Requests from "./pages/Requests";
 import NewRequest from "./pages/NewRequest";
 import EventReports from "./pages/EventReports";
+import FormTemplates from "./pages/FormTemplates";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
@@ -35,6 +36,7 @@ const App = () => (
                 <Route path="/requests" element={<Requests />} />
                 <Route path="/requests/new" element={<NewRequest />} />
                 <Route path="/event-reports" element={<EventReports />} />
+                <Route path="/form-templates" element={<FormTemplates />} />
                 <Route path="/vehicle/:licensePlate" element={<VehicleDetail />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
