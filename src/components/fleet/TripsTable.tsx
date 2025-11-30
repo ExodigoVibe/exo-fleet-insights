@@ -46,10 +46,7 @@ export function TripsTable({ trips, loading = false, totalCount = 0 }: TripsTabl
   };
 
   const sortedTrips = useMemo(() => {
-    // Filter out trips with distance = 0
-    const filteredTrips = trips.filter((trip) => trip.distance > 0);
-    
-    const tripsWithDerivedFields = filteredTrips.map((trip) => {
+    const tripsWithDerivedFields = trips.map((trip) => {
       const date = new Date(trip.start_location.timestamp).toISOString().split("T")[0];
       const durationInMinutes = trip.duration_in_seconds / 60;
       return {

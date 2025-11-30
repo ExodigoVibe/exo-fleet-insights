@@ -43,11 +43,12 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
         setLoadedCount(0);
 
         const query = `
-          SELECT * 
-          FROM BUSINESS_DB.ITURAN.TRIPS 
-          WHERE START_TIMESTAMP >= '${dateFrom} 00:00:00' 
-            AND START_TIMESTAMP <= '${dateTo} 23:59:59'
-          ORDER BY START_TIMESTAMP DESC
+        SELECT *
+        FROM BUSINESS_DB.ITURAN.TRIPS
+        WHERE distance != 0
+          AND START_TIMESTAMP >= '${dateFrom} 00:00:00'
+          AND START_TIMESTAMP <= '${dateTo} 23:59:59'
+        ORDER BY START_TIMESTAMP DESC
         `;
 
         const { data, error: functionError } = await supabase.functions.invoke(
