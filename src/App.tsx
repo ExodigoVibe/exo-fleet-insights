@@ -13,6 +13,7 @@ import Requests from "./pages/Requests";
 import NewRequest from "./pages/NewRequest";
 import EventReports from "./pages/EventReports";
 import FormTemplates from "./pages/FormTemplates";
+import Roles from "./pages/Roles";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
@@ -42,6 +43,7 @@ const App = () => (
                     <Route path="/requests/edit/:id" element={<NewRequest />} />
                     <Route path="/event-reports" element={<EventReports />} />
                     <Route path="/form-templates" element={<FormTemplates />} />
+                    <Route path="/roles" element={<Roles />} />
                     <Route path="/vehicle/:licensePlate" element={<VehicleDetail />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>

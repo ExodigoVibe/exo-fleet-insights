@@ -1,4 +1,4 @@
-import { FileText, Wrench, Users, CheckSquare, AlertTriangle, Settings, Car } from "lucide-react";
+import { FileText, Wrench, Users, CheckSquare, AlertTriangle, Settings, Car, Shield } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -22,6 +22,7 @@ const menuItems = [
   { title: "Requests", url: "/requests", icon: CheckSquare },
   { title: "Event Reports", url: "/event-reports", icon: AlertTriangle },
   { title: "Form Templates", url: "/form-templates", icon: Settings },
+  { title: "Roles", url: "/roles", icon: Shield },
 ];
 
 export function AppSidebar() {
