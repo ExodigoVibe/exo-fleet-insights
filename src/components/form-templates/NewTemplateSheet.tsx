@@ -74,7 +74,7 @@ export function NewTemplateSheet({ open, onOpenChange }: NewTemplateSheetProps) 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-[500px] overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-[700px] overflow-y-auto">
         <SheetHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
           <SheetTitle className="text-2xl font-bold">New Template</SheetTitle>
           <div className="flex items-center gap-2">
