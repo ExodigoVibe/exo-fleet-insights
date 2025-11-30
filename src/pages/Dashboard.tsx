@@ -187,7 +187,7 @@ const Dashboard = () => {
           <DailyUsageChart metrics={dailyMetrics} />
         </div>
 
-        <TripsTable trips={filteredTrips} loading={tripsLoading} />
+        <TripsTable trips={filteredTrips} loading={tripsLoading} totalCount={totalCount}/>
       </div>
 
       <ReportEventDialog 

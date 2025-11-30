@@ -16,6 +16,7 @@ import { formatDuration } from "@/utils/fleetCalculations";
 interface TripsTableProps {
   trips: Trip[];
   loading?: boolean;
+  totalCount?: number;
 }
 
 type SortField =
@@ -29,7 +30,7 @@ type SortField =
 
 type SortDirection = "asc" | "desc";
 
-export function TripsTable({ trips, loading = false }: TripsTableProps) {
+export function TripsTable({ trips, loading = false, totalCount = 0 }: TripsTableProps) {
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -118,7 +119,7 @@ export function TripsTable({ trips, loading = false }: TripsTableProps) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Filtered Trips</CardTitle>
+          <CardTitle>Filtered Trips ({totalCount})</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
