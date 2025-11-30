@@ -7,7 +7,7 @@ import { TripsTable } from "@/components/fleet/TripsTable";
 import { SnowflakeTest } from "@/components/SnowflakeTest";
 import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
-import { useTripsQuery } from "@/hooks/queries/useTripsQuery";
+import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
 import {
   filterTrips,
   calculateVehicleUsageMetrics,
@@ -78,16 +78,16 @@ const Dashboard = () => {
     tripStatus: [],
   });
 
-  // Pass date filters to useTripsQuery to filter at database level
+  // Fetch trips from Snowflake
   const {
-    data: tripsData,
-    isLoading: tripsLoading,
+    trips: allTrips,
+    loading: tripsLoading,
     error: tripsError,
-  } = useTripsQuery(filters.dateFrom, filters.dateTo);
-  
-  // Use real Snowflake trips only
-  const allTrips: Trip[] = tripsData?.trips ?? [];
-  const totalCount = tripsData?.totalCount ?? 0;
+    totalCount,
+  } = useSnowflakeTrips({
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
+  });
 
   const filteredTrips = useMemo(() => filterTrips(allTrips, filters), [allTrips, filters]);
   const vehicleMetrics = useMemo(
@@ -135,7 +135,7 @@ const Dashboard = () => {
             </span>
           ) : tripsError ? (
             <span className="text-destructive">
-              Failed to load trips from Snowflake: {tripsError instanceof Error ? tripsError.message : String(tripsError)}
+              Failed to load trips from Snowflake: {tripsError}
             </span>
           ) : (
             <span>
