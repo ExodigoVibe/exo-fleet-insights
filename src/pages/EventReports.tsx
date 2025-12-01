@@ -143,7 +143,7 @@ export default function EventReports() {
                 </TableRow>
               ) : (
                 reports.map((report) => (
-                  <TableRow key={report.id}>
+                  <TableRow key={report.id} onClick={() => handleViewReport(report)} className="cursor-pointer hover:bg-muted">
                     <TableCell>
                       {new Date(report.event_date).toLocaleDateString("en-US", {
                         month: "short",
