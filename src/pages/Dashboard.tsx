@@ -198,7 +198,7 @@ const Dashboard = () => {
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  className="text-primary hover:text-primary"
+                  className="text-primary hover:bg-gray-100 hover:text-foreground"
                   onClick={() => navigate("/requests")}
                 >
                   View All <ArrowRight className="ml-2 h-4 w-4" />
@@ -220,7 +220,11 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   recentRequests.map((request) => (
-                    <div key={request.id} className="grid grid-cols-5 gap-4 py-3 items-center hover:bg-muted/50 rounded-lg transition-colors">
+                    <div 
+                      key={request.id} 
+                      className="grid grid-cols-5 gap-4 py-3 items-center hover:bg-muted/50 rounded-lg transition-colors cursor-pointer"
+                      onClick={() => navigate(`/requests/${request.id}`)}
+                    >
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <div>
@@ -252,13 +256,7 @@ const Dashboard = () => {
                         </Badge>
                       </div>
                       <div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => navigate(`/requests/${request.id}`)}
-                        >
-                          View
-                        </Button>
+                        {/* Empty column for Actions - click handled by row */}
                       </div>
                     </div>
                   ))
@@ -280,7 +278,7 @@ const Dashboard = () => {
                 <Button 
                   variant="ghost" 
                   size="sm"
-                  className="text-primary hover:text-primary"
+                  className="text-primary hover:bg-gray-100 hover:text-foreground"
                   onClick={() => navigate("/event-reports")}
                 >
                   View All <ArrowRight className="ml-2 h-4 w-4" />
@@ -302,7 +300,11 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   recentEventReports.map((report) => (
-                    <div key={report.id} className="grid grid-cols-5 gap-4 py-3 items-center hover:bg-muted/50 rounded-lg transition-colors">
+                    <div 
+                      key={report.id} 
+                      className="grid grid-cols-5 gap-4 py-3 items-center hover:bg-muted/50 rounded-lg transition-colors cursor-pointer"
+                      onClick={() => navigate(`/event-reports?reportId=${report.id}`)}
+                    >
                       <div className="flex items-center gap-2">
                         <Car className="h-4 w-4 text-muted-foreground" />
                         <div className="font-medium text-foreground">{report.vehicle_license_plate}</div>
