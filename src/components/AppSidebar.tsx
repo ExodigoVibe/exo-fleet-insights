@@ -1,4 +1,4 @@
-import { FileText, Wrench, Users, CheckSquare, AlertTriangle, Settings, Car, Shield, LogOut } from "lucide-react";
+import { FileText, Wrench, Users, CheckSquare, AlertTriangle, Settings, Car, Shield, LogOut, Route } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -29,6 +29,7 @@ import { useNavigate } from "react-router-dom";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: FileText },
+  { title: "Trips", url: "/trips", icon: Route },
   { title: "Vehicle Fleet", url: "/vehicle-fleet", icon: Wrench },
   { title: "Employees", url: "/employees", icon: Users },
   { title: "Requests", url: "/requests", icon: CheckSquare },

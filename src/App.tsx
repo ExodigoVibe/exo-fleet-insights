@@ -17,6 +17,7 @@ import RequestDetail from "./pages/RequestDetail";
 import EventReports from "./pages/EventReports";
 import FormTemplates from "./pages/FormTemplates";
 import Roles from "./pages/Roles";
+import Trips from "./pages/Trips";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
@@ -39,6 +40,7 @@ const App = () => (
                 <Layout>
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
+                    <Route path="/trips" element={<Trips />} />
                     <Route path="/vehicle-fleet" element={<Vehicles />} />
                     <Route path="/employees" element={<Employees />} />
                     <Route path="/employees/:driverId" element={<EmployeeDetail />} />
