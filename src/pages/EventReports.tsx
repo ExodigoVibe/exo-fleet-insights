@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Download, AlertTriangle, ExternalLink } from "lucide-react";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
 import { ViewEventDialog } from "@/components/event-reports/ViewEventDialog";
@@ -21,6 +22,21 @@ export default function EventReports() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<EventReport | null>(null);
   const { data: reports = [], isLoading } = useEventReportsQuery();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Check if there's a reportId in the URL and open the dialog
+  useEffect(() => {
+    const reportId = searchParams.get('reportId');
+    if (reportId && reports.length > 0) {
+      const report = reports.find(r => r.id === reportId);
+      if (report) {
+        setSelectedReport(report);
+        setViewDialogOpen(true);
+        // Remove the query param after opening the dialog
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, reports, setSearchParams]);
 
   const handleViewReport = (report: EventReport) => {
     setSelectedReport(report);
