@@ -14,6 +14,7 @@ interface UseSnowflakeTripsResult {
   error: string | null;
   loadedCount: number;
   totalCount: number;
+  loadedDateRange: { dateFrom: string; dateTo: string } | null;
   refetch: (dateFrom: string, dateTo: string) => Promise<void>;
 }
 
@@ -31,6 +32,7 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
   const [error, setError] = useState<string | null>(null);
   const [loadedCount, setLoadedCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [loadedDateRange, setLoadedDateRange] = useState<{ dateFrom: string; dateTo: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +43,7 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
         setError(null);
         setTrips([]);
         setLoadedCount(0);
+        setLoadedDateRange(null);
 
         const query = `
         SELECT *
@@ -243,6 +246,7 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
 
         setTrips(initialTrips);
         setLoadedCount(initialTrips.length);
+        setLoadedDateRange({ dateFrom, dateTo });
 
         let currentIndex = initialCount;
 
@@ -283,7 +287,7 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
     };
   }, [dateFrom, dateTo]);
 
-  return { trips, loading, error, loadedCount, totalCount, refetch: async () => {} };
+  return { trips, loading, error, loadedCount, totalCount, loadedDateRange, refetch: async () => {} };
 }
 
 
