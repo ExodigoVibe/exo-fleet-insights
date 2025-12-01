@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Download, Plus, User, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,9 +19,18 @@ type RequestStatus = "all" | "pending_manager" | "approved" | "rejected";
 
 export default function Requests() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<RequestStatus>("all");
   const { data: requests = [], isLoading } = useVehicleRequestsQuery();
   const deleteRequest = useDeleteVehicleRequest();
+
+  // Read filter from URL on mount
+  useEffect(() => {
+    const filterParam = searchParams.get("filter") as RequestStatus;
+    if (filterParam && ["all", "pending_manager", "approved", "rejected"].includes(filterParam)) {
+      setStatusFilter(filterParam);
+    }
+  }, [searchParams]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this request?")) {

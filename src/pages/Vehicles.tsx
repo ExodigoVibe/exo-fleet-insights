@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
 import {
   Table,
@@ -20,9 +20,18 @@ import { toast } from "sonner";
 
 const Vehicles = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: vehicles, isLoading, error } = useVehiclesQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "parking" | "moving" | "other">("all");
+
+  // Read filter from URL on mount
+  useEffect(() => {
+    const filterParam = searchParams.get("filter") as "all" | "parking" | "moving" | "other";
+    if (filterParam && ["all", "parking", "moving", "other"].includes(filterParam)) {
+      setStatusFilter(filterParam);
+    }
+  }, [searchParams]);
 
   const filteredVehicles = useMemo(() => {
     if (!vehicles) return [];
