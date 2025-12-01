@@ -39,6 +39,7 @@ const AuthCallback = () => {
           // Store user info in localStorage
           localStorage.setItem("azureUser", JSON.stringify(data.user));
           localStorage.setItem("azureAccessToken", data.accessToken);
+          localStorage.setItem("userRole", data.user.role);
 
           toast.success(`Welcome, ${data.user.name}!`);
           navigate("/");

@@ -90,15 +90,83 @@ serve(async (req) => {
       }
 
       const user = await userResponse.json();
+      const userEmail = user.mail || user.userPrincipalName;
 
-      console.log(`[azure-sso] Successfully authenticated user: ${user.mail || user.userPrincipalName}`);
+      console.log(`[azure-sso] Successfully authenticated user: ${userEmail}`);
+
+      // Import Supabase client
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      
+      if (!supabaseUrl || !supabaseServiceKey) {
+        console.error("[azure-sso] Supabase credentials not configured");
+        throw new Error("Supabase configuration missing");
+      }
+
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      // Check if user exists in user_roles table
+      const { data: existingUser, error: fetchError } = await supabase
+        .from("user_roles")
+        .select("*")
+        .eq("email", userEmail)
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== "PGRST116") {
+        console.error("[azure-sso] Error fetching user role:", fetchError);
+      }
+
+      let userRole = "employee";
+      let userId = existingUser?.user_id;
+
+      // Determine role: ortal.spitzer-hanoch@exodigo.ai is always admin
+      if (userEmail.toLowerCase() === "ortal.spitzer-hanoch@exodigo.ai") {
+        userRole = "admin";
+      } else if (existingUser) {
+        userRole = existingUser.role;
+      }
+
+      // If user doesn't exist, create with appropriate role
+      if (!existingUser) {
+        // Generate a UUID for the user
+        userId = crypto.randomUUID();
+
+        const { error: insertError } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: userId,
+            email: userEmail,
+            full_name: user.displayName,
+            role: userRole,
+          });
+
+        if (insertError) {
+          console.error("[azure-sso] Error creating user role:", insertError);
+        } else {
+          console.log(`[azure-sso] Created new user with role: ${userRole}`);
+        }
+      } else if (userEmail.toLowerCase() === "ortal.spitzer-hanoch@exodigo.ai" && existingUser.role !== "admin") {
+        // Update ortal's role to admin if it's not already
+        const { error: updateError } = await supabase
+          .from("user_roles")
+          .update({ role: "admin" })
+          .eq("email", userEmail);
+
+        if (updateError) {
+          console.error("[azure-sso] Error updating user role to admin:", updateError);
+        } else {
+          console.log(`[azure-sso] Updated ${userEmail} role to admin`);
+        }
+      }
 
       return new Response(
         JSON.stringify({
           user: {
-            id: user.id,
-            email: user.mail || user.userPrincipalName,
+            id: userId,
+            email: userEmail,
             name: user.displayName,
+            role: userRole,
           },
           accessToken: tokens.access_token,
         }),

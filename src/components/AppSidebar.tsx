@@ -15,7 +15,6 @@ import {
 import { useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
 import { Badge } from "@/components/ui/badge";
 import { useEventReportsQuery } from "@/hooks/queries/useEventReportsQuery";
-import { useUserRolesQuery } from "@/hooks/queries/useUserRolesQuery";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -23,19 +22,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 const menuItems = [
-  { title: "Dashboard", url: "/", icon: FileText },
-  { title: "Trips", url: "/trips", icon: Route },
-  { title: "Vehicle Fleet", url: "/vehicle-fleet", icon: Wrench },
-  { title: "Employees", url: "/employees", icon: Users },
-  { title: "Requests", url: "/requests", icon: CheckSquare },
-  { title: "Event Reports", url: "/event-reports", icon: AlertTriangle },
-  { title: "Form Templates", url: "/form-templates", icon: Settings },
-  { title: "Roles", url: "/roles", icon: Shield },
+  { title: "Dashboard", url: "/", icon: FileText, roles: ["admin", "coordinator", "employee"] },
+  { title: "Trips", url: "/trips", icon: Route, roles: ["admin", "coordinator", "employee"] },
+  { title: "Vehicle Fleet", url: "/vehicle-fleet", icon: Wrench, roles: ["admin", "coordinator"] },
+  { title: "Employees", url: "/employees", icon: Users, roles: ["admin", "coordinator"] },
+  { title: "Requests", url: "/requests", icon: CheckSquare, roles: ["admin", "coordinator", "employee"] },
+  { title: "Event Reports", url: "/event-reports", icon: AlertTriangle, roles: ["admin", "coordinator", "employee"] },
+  { title: "Form Templates", url: "/form-templates", icon: Settings, roles: ["admin", "coordinator"] },
+  { title: "Roles", url: "/roles", icon: Shield, roles: ["admin", "coordinator"] },
 ];
 
 export function AppSidebar() {
@@ -43,18 +41,27 @@ export function AppSidebar() {
   const { data: eventReports = [] } = useEventReportsQuery();
   const navigate = useNavigate();
 
-  // Fetch current user data from database
-  // Using the first user as default since auth is not yet implemented
-  const { data: users = [] } = useUserRolesQuery();
-  const currentUser = users.length > 0 ? {
-    name: users[0].full_name || users[0].email,
-    email: users[0].email,
-    initials: users[0].full_name?.charAt(0).toUpperCase() || users[0].email?.charAt(0).toUpperCase() || "U"
+  // Get current user from localStorage
+  const azureUserStr = localStorage.getItem("azureUser");
+  const userRole = localStorage.getItem("userRole") || "employee";
+  const azureUser = azureUserStr ? JSON.parse(azureUserStr) : null;
+
+  const currentUser = azureUser ? {
+    name: azureUser.name || azureUser.email,
+    email: azureUser.email,
+    initials: azureUser.name?.charAt(0).toUpperCase() || azureUser.email?.charAt(0).toUpperCase() || "U",
+    role: userRole,
   } : {
     name: "Guest User",
     email: "guest@example.com",
-    initials: "G"
+    initials: "G",
+    role: "employee",
   };
+
+  // Filter menu items based on user role
+  const filteredMenuItems = menuItems.filter(item => 
+    item.roles.includes(currentUser.role)
+  );
 
   const pendingRequestsCount = requests.filter(
     (req) => req.status === "pending_manager"
@@ -65,7 +72,9 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      localStorage.removeItem("azureUser");
+      localStorage.removeItem("azureAccessToken");
+      localStorage.removeItem("userRole");
       toast.success("Logged out successfully");
       navigate("/login");
     } catch (error) {
@@ -91,7 +100,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>NAVIGATION</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
