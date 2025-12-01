@@ -95,7 +95,12 @@ const Dashboard = () => {
     dateTo: filters.dateTo,
   });
 
-  const filteredTrips = useMemo(() => filterTrips(allTrips, filters), [allTrips, filters]);
+  // Don't filter trips while loading to avoid showing stale data with new filters
+  const filteredTrips = useMemo(() => {
+    if (tripsLoading) return [];
+    return filterTrips(allTrips, filters);
+  }, [allTrips, filters, tripsLoading]);
+  
   const vehicleMetrics = useMemo(
     () => calculateVehicleUsageMetrics(filteredTrips, allVehicles),
     [filteredTrips, allVehicles]
