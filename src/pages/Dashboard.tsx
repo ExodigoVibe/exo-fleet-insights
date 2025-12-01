@@ -90,28 +90,26 @@ const Dashboard = () => {
     error: tripsError,
     loadedCount,
     totalCount,
+    loadedDateRange,
   } = useSnowflakeTrips({
     dateFrom: filters.dateFrom,
     dateTo: filters.dateTo,
   });
 
-  // Don't filter trips while loading or if trips data doesn't match filter date range
+  // Only filter trips if they match the current filter date range
   const filteredTrips = useMemo(() => {
+    // Don't filter while loading
     if (tripsLoading || allTrips.length === 0) return [];
     
-    // Verify loaded trips match the current filter date range
-    const hasTripsInDateRange = allTrips.some(trip => {
-      const tripDate = new Date(trip.start_location.timestamp).toISOString().split("T")[0];
-      return tripDate >= filters.dateFrom && tripDate <= filters.dateTo;
-    });
-    
-    // Only filter if we have trips in the correct date range
-    if (!hasTripsInDateRange && allTrips.length > 0) {
+    // Ensure loaded trips match the current filter date range
+    if (!loadedDateRange || 
+        loadedDateRange.dateFrom !== filters.dateFrom || 
+        loadedDateRange.dateTo !== filters.dateTo) {
       return [];
     }
     
     return filterTrips(allTrips, filters);
-  }, [allTrips, filters, tripsLoading]);
+  }, [allTrips, filters, tripsLoading, loadedDateRange]);
   
   const vehicleMetrics = useMemo(
     () => calculateVehicleUsageMetrics(filteredTrips, allVehicles),
