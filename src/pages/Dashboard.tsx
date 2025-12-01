@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { KPICard } from "@/components/fleet/KPICard";
 import { FilterPanel } from "@/components/fleet/FilterPanel";
 import { VehicleUtilizationChart } from "@/components/fleet/VehicleUtilizationChart";
@@ -25,6 +26,7 @@ import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog"
 import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
@@ -145,18 +147,22 @@ const Dashboard = () => {
             <h2 className="text-xl font-semibold text-foreground">Requests</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <KPICard
-              title="Total Requests"
-              value={requestsRecap.total}
-              icon={FileText}
-              subtitle="All vehicle requests submitted"
-            />
-            <KPICard
-              title="Pending Requests"
-              value={requestsRecap.pending}
-              icon={Clock}
-              subtitle="Requests & reports awaiting action"
-            />
+            <div onClick={() => navigate("/requests?filter=all")} className="cursor-pointer">
+              <KPICard
+                title="Total Requests"
+                value={requestsRecap.total}
+                icon={FileText}
+                subtitle="All vehicle requests submitted"
+              />
+            </div>
+            <div onClick={() => navigate("/requests?filter=pending_manager")} className="cursor-pointer">
+              <KPICard
+                title="Pending Requests"
+                value={requestsRecap.pending}
+                icon={Clock}
+                subtitle="Requests & reports awaiting action"
+              />
+            </div>
           </div>
         </div>
 
@@ -167,24 +173,30 @@ const Dashboard = () => {
             <h2 className="text-xl font-semibold text-foreground">Vehicle Fleet</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <KPICard
-              title="Total Vehicles"
-              value={vehicleFleetRecap.total}
-              icon={Car}
-              subtitle="Entire fleet overview"
-            />
-            <KPICard
-              title="Available Vehicles"
-              value={vehicleFleetRecap.available}
-              icon={CheckCircle2}
-              subtitle="Ready for assignment"
-            />
-            <KPICard
-              title="In Maintenance"
-              value={vehicleFleetRecap.maintenance}
-              icon={Wrench}
-              subtitle="Currently being serviced"
-            />
+            <div onClick={() => navigate("/vehicles?filter=all")} className="cursor-pointer">
+              <KPICard
+                title="Total Vehicles"
+                value={vehicleFleetRecap.total}
+                icon={Car}
+                subtitle="Entire fleet overview"
+              />
+            </div>
+            <div onClick={() => navigate("/vehicles?filter=parking")} className="cursor-pointer">
+              <KPICard
+                title="Available Vehicles"
+                value={vehicleFleetRecap.available}
+                icon={CheckCircle2}
+                subtitle="Ready for assignment"
+              />
+            </div>
+            <div onClick={() => navigate("/vehicles?filter=other")} className="cursor-pointer">
+              <KPICard
+                title="In Maintenance"
+                value={vehicleFleetRecap.maintenance}
+                icon={Wrench}
+                subtitle="Currently being serviced"
+              />
+            </div>
           </div>
         </div>
 
