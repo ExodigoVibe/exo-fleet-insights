@@ -95,9 +95,21 @@ const Dashboard = () => {
     dateTo: filters.dateTo,
   });
 
-  // Don't filter trips while loading to avoid showing stale data with new filters
+  // Don't filter trips while loading or if trips data doesn't match filter date range
   const filteredTrips = useMemo(() => {
-    if (tripsLoading) return [];
+    if (tripsLoading || allTrips.length === 0) return [];
+    
+    // Verify loaded trips match the current filter date range
+    const hasTripsInDateRange = allTrips.some(trip => {
+      const tripDate = new Date(trip.start_location.timestamp).toISOString().split("T")[0];
+      return tripDate >= filters.dateFrom && tripDate <= filters.dateTo;
+    });
+    
+    // Only filter if we have trips in the correct date range
+    if (!hasTripsInDateRange && allTrips.length > 0) {
+      return [];
+    }
+    
     return filterTrips(allTrips, filters);
   }, [allTrips, filters, tripsLoading]);
   
