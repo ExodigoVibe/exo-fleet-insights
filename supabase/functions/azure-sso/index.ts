@@ -25,7 +25,7 @@ serve(async (req) => {
     }
 
     const origin = req.headers.get("origin") || req.headers.get("referer")?.split("/").slice(0, 3).join("/");
-    const redirectUri = `https://onboarding-road-tool.lovable.app/auth/callback`;
+    const redirectUri = `https://exo-fleet-analytics.lovable.app/auth/callback`;
 
     // Generate authorization URL (for login - GET request without body)
     if (req.method === "GET" || (req.method === "POST" && !(await req.clone().text()))) {
