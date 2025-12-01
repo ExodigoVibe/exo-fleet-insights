@@ -15,6 +15,7 @@ import {
 import { useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
 import { Badge } from "@/components/ui/badge";
 import { useEventReportsQuery } from "@/hooks/queries/useEventReportsQuery";
+import { useUserRolesQuery } from "@/hooks/queries/useUserRolesQuery";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -41,11 +42,17 @@ export function AppSidebar() {
   const { data: eventReports = [] } = useEventReportsQuery();
   const navigate = useNavigate();
 
-  // TODO: Replace with actual user data from Azure SSO when implemented
-  const currentUser = {
-    name: "ortal spitzer hanoch",
-    email: "ortal.spitzer-hanoch@exodigo.ai",
-    initials: "O"
+  // Fetch current user data from database
+  // Using the first user as default since auth is not yet implemented
+  const { data: users = [] } = useUserRolesQuery();
+  const currentUser = users.length > 0 ? {
+    name: users[0].full_name || users[0].email,
+    email: users[0].email,
+    initials: users[0].full_name?.charAt(0).toUpperCase() || users[0].email?.charAt(0).toUpperCase() || "U"
+  } : {
+    name: "Guest User",
+    email: "guest@example.com",
+    initials: "G"
   };
 
   const pendingRequestsCount = requests.filter(
