@@ -1,4 +1,4 @@
-import { FileText, Wrench, Users, CheckSquare, AlertTriangle, Settings, Car, Shield } from "lucide-react";
+import { FileText, Wrench, Users, CheckSquare, AlertTriangle, Settings, Car, Shield, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -10,10 +10,21 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
 import { Badge } from "@/components/ui/badge";
 import { useEventReportsQuery } from "@/hooks/queries/useEventReportsQuery";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: FileText },
@@ -28,7 +39,14 @@ const menuItems = [
 export function AppSidebar() {
   const { data: requests = [] } = useVehicleRequestsQuery();
   const { data: eventReports = [] } = useEventReportsQuery();
+  const navigate = useNavigate();
 
+  // TODO: Replace with actual user data from Azure SSO when implemented
+  const currentUser = {
+    name: "ortal spitzer hanoch",
+    email: "ortal.spitzer-hanoch@exodigo.ai",
+    initials: "O"
+  };
 
   const pendingRequestsCount = requests.filter(
     (req) => req.status === "pending_manager"
@@ -36,6 +54,16 @@ export function AppSidebar() {
   const pendingEventReportsCount = eventReports.filter(
     (report) =>  report.status === "pending"
   ).length;
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success("Logged out successfully");
+      navigate("/login");
+    } catch (error) {
+      toast.error("Failed to log out");
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -100,6 +128,34 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="border-t">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-3 px-2 py-3 hover:bg-muted/50 rounded-lg transition-colors w-full">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                  {currentUser.initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col items-start flex-1 min-w-0">
+                <span className="text-sm font-medium text-foreground truncate w-full">
+                  {currentUser.name}
+                </span>
+                <span className="text-xs text-muted-foreground truncate w-full">
+                  {currentUser.email}
+                </span>
+              </div>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
