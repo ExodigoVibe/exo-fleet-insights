@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { useInitialDateRange } from "@/hooks/useInitialData";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -148,20 +149,36 @@ const Dashboard = () => {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div onClick={() => navigate("/requests?filter=all")} className="cursor-pointer">
-              <KPICard
-                title="Total Requests"
-                value={requestsRecap.total}
-                icon={FileText}
-                subtitle="All vehicle requests submitted"
-              />
+              <Card className="transition-all hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">Total Requests</p>
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-3xl font-bold text-foreground">{requestsRecap.total}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground">All vehicle requests submitted</p>
+                    </div>
+                    <FileText className="h-8 w-8 text-blue-600" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             <div onClick={() => navigate("/requests?filter=pending_manager")} className="cursor-pointer">
-              <KPICard
-                title="Pending Requests"
-                value={requestsRecap.pending}
-                icon={Clock}
-                subtitle="Requests & reports awaiting action"
-              />
+              <Card className="transition-all hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">Pending Requests</p>
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-3xl font-bold text-foreground">{requestsRecap.pending}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Requests & reports awaiting action</p>
+                    </div>
+                    <Clock className="h-8 w-8 text-orange-500" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -174,28 +191,52 @@ const Dashboard = () => {
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             <div onClick={() => navigate("/vehicle-fleet?filter=all")} className="cursor-pointer">
-              <KPICard
-                title="Total Vehicles"
-                value={vehicleFleetRecap.total}
-                icon={Car}
-                subtitle="Entire fleet overview"
-              />
+              <Card className="transition-all hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">Total Vehicles</p>
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.total}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Entire fleet overview</p>
+                    </div>
+                    <Car className="h-8 w-8 text-gray-600" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             <div onClick={() => navigate("/vehicle-fleet?filter=parking")} className="cursor-pointer">
-              <KPICard
-                title="Available Vehicles"
-                value={vehicleFleetRecap.available}
-                icon={CheckCircle2}
-                subtitle="Ready for assignment"
-              />
+              <Card className="transition-all hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">Available Vehicles</p>
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.available}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Ready for assignment</p>
+                    </div>
+                    <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             <div onClick={() => navigate("/vehicle-fleet?filter=other")} className="cursor-pointer">
-              <KPICard
-                title="In Maintenance"
-                value={vehicleFleetRecap.maintenance}
-                icon={Wrench}
-                subtitle="Currently being serviced"
-              />
+              <Card className="transition-all hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">In Maintenance</p>
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.maintenance}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Currently being serviced</p>
+                    </div>
+                    <Wrench className="h-8 w-8 text-orange-500" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
