@@ -8,6 +8,7 @@ import { SnowflakeTest } from "@/components/SnowflakeTest";
 import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
 import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
+import { useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
 import {
   filterTrips,
   calculateVehicleUsageMetrics,
@@ -17,7 +18,7 @@ import {
   getUniqueLicensePlates,
 } from "@/utils/fleetCalculations";
 import { FleetFilters, Trip } from "@/types/fleet";
-import { Activity, Clock, TrendingUp, Car, Timer, AlertTriangle } from "lucide-react";
+import { Activity, Clock, TrendingUp, Car, Timer, AlertTriangle, FileText, Wrench, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useInitialDateRange } from "@/hooks/useInitialData";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
@@ -27,6 +28,7 @@ const Dashboard = () => {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
+  const { data: vehicleRequests } = useVehicleRequestsQuery();
   const { dateFrom, dateTo } = useInitialDateRange();
   const snowflakeDrivers = driversData ?? [];
   const snowflakeVehicles = vehiclesData ?? [];
@@ -98,6 +100,23 @@ const Dashboard = () => {
   const dailyMetrics = useMemo(() => calculateDailyMetrics(filteredTrips), [filteredTrips]);
   const kpis = useMemo(() => calculateKPIs(filteredTrips), [filteredTrips]);
 
+  // Calculate requests recap data
+  const requestsRecap = useMemo(() => {
+    const total = vehicleRequests?.length || 0;
+    const pending = vehicleRequests?.filter(r => r.status === 'pending_manager').length || 0;
+    return { total, pending };
+  }, [vehicleRequests]);
+
+  // Calculate vehicle fleet recap data
+  const vehicleFleetRecap = useMemo(() => {
+    const total = snowflakeVehicles.length;
+    const available = snowflakeVehicles.filter(v => v.motion_status === 'parking').length;
+    const maintenance = snowflakeVehicles.filter(v => 
+      v.motion_status !== 'parking' && v.motion_status !== 'moving'
+    ).length;
+    return { total, available, maintenance };
+  }, [snowflakeVehicles]);
+
   return (
     <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-6">
@@ -119,7 +138,60 @@ const Dashboard = () => {
         </div>
 
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* <SnowflakeTest /> */}
+        {/* Requests Recap Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold text-foreground">Requests</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <KPICard
+              title="Total Requests"
+              value={requestsRecap.total}
+              icon={FileText}
+              subtitle="All vehicle requests submitted"
+            />
+            <KPICard
+              title="Pending Requests"
+              value={requestsRecap.pending}
+              icon={Clock}
+              subtitle="Requests & reports awaiting action"
+            />
+          </div>
+        </div>
+
+        {/* Vehicle Fleet Recap Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Car className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold text-foreground">Vehicle Fleet</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <KPICard
+              title="Total Vehicles"
+              value={vehicleFleetRecap.total}
+              icon={Car}
+              subtitle="Entire fleet overview"
+            />
+            <KPICard
+              title="Available Vehicles"
+              value={vehicleFleetRecap.available}
+              icon={CheckCircle2}
+              subtitle="Ready for assignment"
+            />
+            <KPICard
+              title="In Maintenance"
+              value={vehicleFleetRecap.maintenance}
+              icon={Wrench}
+              subtitle="Currently being serviced"
+            />
+          </div>
+        </div>
+
+        {/* Fleet Usage Analytics Section */}
+        <div className="pt-4">
+          <h2 className="text-xl font-semibold text-foreground mb-4">Fleet Usage Analytics</h2>
+        </div>
         
         <FilterPanel
           filters={filters}
