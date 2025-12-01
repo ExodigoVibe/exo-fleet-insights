@@ -140,7 +140,7 @@ export function AppSidebar() {
       <SidebarFooter className="border-t">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-3 px-2 py-3 hover:bg-muted/50 rounded-lg transition-colors w-full">
+            <button className="flex items-center gap-3 px-2 py-3 hover:bg-gray-100 hover:text-foreground rounded-lg transition-colors w-full">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
                   {currentUser.initials}
@@ -154,7 +154,7 @@ export function AppSidebar() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer hover:bg-gray-100 hover:text-foreground">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>
