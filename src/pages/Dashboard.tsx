@@ -173,7 +173,7 @@ const Dashboard = () => {
             <h2 className="text-xl font-semibold text-foreground">Vehicle Fleet</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <div onClick={() => navigate("/vehicles?filter=all")} className="cursor-pointer">
+            <div onClick={() => navigate("/vehicle-fleet?filter=all")} className="cursor-pointer">
               <KPICard
                 title="Total Vehicles"
                 value={vehicleFleetRecap.total}
@@ -181,7 +181,7 @@ const Dashboard = () => {
                 subtitle="Entire fleet overview"
               />
             </div>
-            <div onClick={() => navigate("/vehicles?filter=parking")} className="cursor-pointer">
+            <div onClick={() => navigate("/vehicle-fleet?filter=parking")} className="cursor-pointer">
               <KPICard
                 title="Available Vehicles"
                 value={vehicleFleetRecap.available}
@@ -189,7 +189,7 @@ const Dashboard = () => {
                 subtitle="Ready for assignment"
               />
             </div>
-            <div onClick={() => navigate("/vehicles?filter=other")} className="cursor-pointer">
+            <div onClick={() => navigate("/vehicle-fleet?filter=other")} className="cursor-pointer">
               <KPICard
                 title="In Maintenance"
                 value={vehicleFleetRecap.maintenance}
