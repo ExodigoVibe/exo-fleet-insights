@@ -238,13 +238,27 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
           };
         };
 
+        // Use Map for deduplication with composite key: trip_id + timestamp
+        const tripMap = new Map<string, Trip>();
+
+        const addTripsToMap = (trips: Trip[]) => {
+          trips.forEach((trip) => {
+            const key = `${trip.trip_id}-${trip.start_location.timestamp}`;
+            if (!tripMap.has(key)) {
+              tripMap.set(key, trip);
+            }
+          });
+        };
+
         const initialCount = Math.min(INITIAL_DISPLAY_COUNT, rows.length);
         const initialRows = rows.slice(0, initialCount);
         const initialTrips = initialRows.map(mapRowToTrip);
+        
+        addTripsToMap(initialTrips);
 
         if (cancelled) return;
 
-        setTrips(initialTrips);
+        setTrips(Array.from(tripMap.values()));
         setLoadedCount(initialTrips.length);
         setLoadedDateRange({ dateFrom, dateTo });
 
@@ -261,8 +275,10 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
             currentIndex + CHUNK_SIZE
           );
           const nextTrips = nextRows.map(mapRowToTrip);
+          
+          addTripsToMap(nextTrips);
 
-          setTrips((prev) => [...prev, ...nextTrips]);
+          setTrips(Array.from(tripMap.values()));
           currentIndex += CHUNK_SIZE;
           setLoadedCount(currentIndex);
 
