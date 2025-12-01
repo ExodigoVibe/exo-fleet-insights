@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
 import { useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
-import { FileText, Wrench, CheckCircle2, AlertTriangle, Clock, Car } from "lucide-react";
+import { useEventReportsQuery } from "@/hooks/queries/useEventReportsQuery";
+import { FileText, Wrench, CheckCircle2, AlertTriangle, Clock, Car, Calendar, User, ArrowRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
 import { Button } from "@/components/ui/button";
@@ -15,6 +17,7 @@ const Dashboard = () => {
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
   const { data: vehicleRequests } = useVehicleRequestsQuery();
+  const { data: eventReports } = useEventReportsQuery();
   const snowflakeDrivers = driversData ?? [];
   const snowflakeVehicles = vehiclesData ?? [];
 
@@ -47,6 +50,20 @@ const Dashboard = () => {
     ).length;
     return { total, available, maintenance };
   }, [snowflakeVehicles]);
+
+  // Get recent requests (last 3)
+  const recentRequests = useMemo(() => {
+    return (vehicleRequests || [])
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 3);
+  }, [vehicleRequests]);
+
+  // Get recent event reports (last 5)
+  const recentEventReports = useMemo(() => {
+    return (eventReports || [])
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5);
+  }, [eventReports]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -167,6 +184,169 @@ const Dashboard = () => {
               </Card>
             </div>
           </div>
+        </div>
+
+        {/* Recent Requests Section */}
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-lg font-semibold text-foreground">Recent Requests</h2>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-primary hover:text-primary"
+                  onClick={() => navigate("/requests")}
+                >
+                  View All <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-5 gap-4 pb-3 border-b text-sm font-medium text-muted-foreground">
+                  <div>Employee</div>
+                  <div>Type</div>
+                  <div>Date</div>
+                  <div>Status</div>
+                  <div>Actions</div>
+                </div>
+                
+                {recentRequests.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No requests found
+                  </div>
+                ) : (
+                  recentRequests.map((request) => (
+                    <div key={request.id} className="grid grid-cols-5 gap-4 py-3 items-center hover:bg-muted/50 rounded-lg transition-colors">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <div className="font-medium text-foreground">{request.full_name}</div>
+                          <div className="text-xs text-muted-foreground">{request.department}</div>
+                        </div>
+                      </div>
+                      <div>
+                        <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-900">
+                          {request.usage_type === 'single_use' ? 'Single Use' : 'Permanent Driver'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-foreground">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        {new Date(request.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+                      <div>
+                        <Badge 
+                          variant="secondary"
+                          className={
+                            request.status === 'pending_manager' 
+                              ? 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-900'
+                              : request.status === 'approved'
+                              ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-900'
+                              : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-900'
+                          }
+                        >
+                          {request.status === 'pending_manager' ? 'Pending HOD' : request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                        </Badge>
+                      </div>
+                      <div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigate(`/requests/${request.id}`)}
+                        >
+                          View
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Event Reports Section */}
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <h2 className="text-lg font-semibold text-foreground">Recent Event Reports</h2>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-primary hover:text-primary"
+                  onClick={() => navigate("/event-reports")}
+                >
+                  View All <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-5 gap-4 pb-3 border-b text-sm font-medium text-muted-foreground">
+                  <div>Vehicle</div>
+                  <div>Employee</div>
+                  <div>Date</div>
+                  <div>Severity</div>
+                  <div>Status</div>
+                </div>
+                
+                {recentEventReports.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No event reports found
+                  </div>
+                ) : (
+                  recentEventReports.map((report) => (
+                    <div key={report.id} className="grid grid-cols-5 gap-4 py-3 items-center hover:bg-muted/50 rounded-lg transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Car className="h-4 w-4 text-muted-foreground" />
+                        <div className="font-medium text-foreground">{report.vehicle_license_plate}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <div className="text-sm text-foreground">{report.employee_name}</div>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-foreground">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        {new Date(report.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+                      <div>
+                        <Badge 
+                          variant="secondary"
+                          className={
+                            report.severity === 'slight'
+                              ? 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-900'
+                              : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-900'
+                          }
+                        >
+                          {report.severity === 'slight' ? 'Slight Damage' : 'Extensive Damage'}
+                        </Badge>
+                      </div>
+                      <div>
+                        <Badge 
+                          variant="secondary"
+                          className={
+                            report.status === 'pending'
+                              ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-900'
+                              : report.status === 'reviewed'
+                              ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-900'
+                              : 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-900'
+                          }
+                        >
+                          {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
       </div>
