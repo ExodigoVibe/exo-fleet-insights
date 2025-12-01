@@ -13,12 +13,29 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     const checkAuth = () => {
       const azureUser = localStorage.getItem("azureUser");
+      const userRole = localStorage.getItem("userRole");
+      const currentPath = window.location.pathname;
       
       if (!azureUser) {
         navigate("/login");
-      } else {
-        setIsChecking(false);
+        return;
       }
+
+      // Employee restricted pages
+      const employeeRestrictedPages = [
+        "/vehicle-fleet",
+        "/employees",
+        "/roles",
+        "/form-templates",
+      ];
+
+      // Check if employee is trying to access restricted page
+      if (userRole === "employee" && employeeRestrictedPages.includes(currentPath)) {
+        navigate("/");
+        return;
+      }
+
+      setIsChecking(false);
     };
 
     checkAuth();
