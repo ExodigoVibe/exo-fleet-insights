@@ -1,27 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { KPICard } from "@/components/fleet/KPICard";
-import { FilterPanel } from "@/components/fleet/FilterPanel";
-import { VehicleUtilizationChart } from "@/components/fleet/VehicleUtilizationChart";
-import { DailyUsageChart } from "@/components/fleet/DailyUsageChart";
-import { TripsTable } from "@/components/fleet/TripsTable";
-import { SnowflakeTest } from "@/components/SnowflakeTest";
 import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
-import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
 import { useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
-import {
-  filterTrips,
-  calculateVehicleUsageMetrics,
-  calculateDailyMetrics,
-  calculateKPIs,
-  getUniqueDrivers,
-  getUniqueLicensePlates,
-} from "@/utils/fleetCalculations";
-import { FleetFilters, Trip } from "@/types/fleet";
-import { Activity, Clock, TrendingUp, Car, Timer, AlertTriangle, FileText, Wrench, CheckCircle2 } from "lucide-react";
+import { FileText, Wrench, CheckCircle2, AlertTriangle, Clock, Car } from "lucide-react";
 import { toast } from "sonner";
-import { useInitialDateRange } from "@/hooks/useInitialData";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,32 +15,8 @@ const Dashboard = () => {
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
   const { data: vehicleRequests } = useVehicleRequestsQuery();
-  const { dateFrom, dateTo } = useInitialDateRange();
   const snowflakeDrivers = driversData ?? [];
   const snowflakeVehicles = vehiclesData ?? [];
-  
-  const allVehicles = useMemo(
-    () => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []),
-    [snowflakeVehicles]
-  );
-
-  // For filters, use the full master data from Snowflake drivers/vehicles
-  // so you always see all drivers and license plates immediately,
-  // independent of how many trips have been chunk-processed so far.
-  const driverOptions = useMemo(
-    () =>
-      snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`).sort(),
-    [snowflakeDrivers]
-  );
-
-  const licensePlateOptions = useMemo(
-    () =>
-      snowflakeVehicles
-        .map((v) => v.license_plate)
-        .filter(Boolean)
-        .sort(),
-    [snowflakeVehicles]
-  );
 
   // Show error toasts
   useEffect(() => {
@@ -71,52 +30,6 @@ const Dashboard = () => {
       toast.error(`Failed to load vehicles: ${vehiclesError instanceof Error ? vehiclesError.message : String(vehiclesError)}`);
     }
   }, [vehiclesError]);
-
-  const [filters, setFilters] = useState<FleetFilters>({
-    dateFrom: dateFrom,
-    dateTo: dateTo,
-    drivers: [],
-    vehicles: [],
-    licensePlates: [],
-    safetyGradeMin: 0,
-    safetyGradeMax: 100,
-    tripStatus: [],
-  });
-
-  // Fetch trips from Snowflake
-  const {
-    trips: allTrips,
-    loading: tripsLoading,
-    error: tripsError,
-    loadedCount,
-    totalCount,
-    loadedDateRange,
-  } = useSnowflakeTrips({
-    dateFrom: filters.dateFrom,
-    dateTo: filters.dateTo,
-  });
-
-  // Only filter trips if they match the current filter date range
-  const filteredTrips = useMemo(() => {
-    // Don't filter while loading
-    if (tripsLoading || allTrips.length === 0) return [];
-    
-    // Ensure loaded trips match the current filter date range
-    if (!loadedDateRange || 
-        loadedDateRange.dateFrom !== filters.dateFrom || 
-        loadedDateRange.dateTo !== filters.dateTo) {
-      return [];
-    }
-    
-    return filterTrips(allTrips, filters);
-  }, [allTrips, filters, tripsLoading, loadedDateRange]);
-  
-  const vehicleMetrics = useMemo(
-    () => calculateVehicleUsageMetrics(filteredTrips, allVehicles),
-    [filteredTrips, allVehicles]
-  );
-  const dailyMetrics = useMemo(() => calculateDailyMetrics(filteredTrips), [filteredTrips]);
-  const kpis = useMemo(() => calculateKPIs(filteredTrips), [filteredTrips]);
 
   // Calculate requests recap data
   const requestsRecap = useMemo(() => {
@@ -256,78 +169,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Fleet Usage Analytics Section */}
-        <div className="pt-4">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Fleet Usage Analytics</h2>
-        </div>
-        
-        <FilterPanel
-          filters={filters}
-          onFiltersChange={setFilters}
-          drivers={driverOptions}
-          licensePlates={licensePlateOptions}
-          loading={tripsLoading}
-        />
-
-        <div className="text-xs text-muted-foreground flex justify-between items-center">
-          {tripsLoading ? (
-            <span>
-              Loading trips from Snowflake... {loadedCount.toLocaleString()}/{totalCount.toLocaleString()}
-            </span>
-          ) : tripsError ? (
-            <span className="text-destructive">
-              Failed to load trips from Snowflake: {tripsError}
-            </span>
-          ) : (
-            <span>
-              Loaded
-              {" "}
-              {allTrips.length.toLocaleString()}
-              {" "}
-              trips from Snowflake.
-            </span>
-          )}
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          <KPICard
-            title="Active Driving Time"
-            value={`${kpis.totalActiveTimeHours.toFixed(1)}h`}
-            icon={Activity}
-            subtitle="Total time vehicles were actively driving"
-          />
-          <KPICard
-            title="Idle Time"
-            value={`${kpis.totalIdleTimeHours.toFixed(1)}h`}
-            icon={Clock}
-            subtitle="Total time engines were on but not moving"
-          />
-          <KPICard
-            title="Total Trips"
-            value={kpis.totalTrips.toLocaleString()}
-            icon={TrendingUp}
-            subtitle="Number of completed trips"
-          />
-          <KPICard
-            title="Active Vehicles"
-            value={kpis.activeVehicles}
-            icon={Car}
-            subtitle="Vehicles with at least one trip"
-          />
-          <KPICard
-            title="Avg Trip Duration"
-            value={`${kpis.avgTripDurationMinutes.toFixed(0)}m`}
-            icon={Timer}
-            subtitle="Average duration per trip"
-          />
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <VehicleUtilizationChart metrics={vehicleMetrics} />
-          <DailyUsageChart metrics={dailyMetrics} />
-        </div>
-
-        <TripsTable trips={filteredTrips} loading={tripsLoading} totalCount={totalCount}/>
       </div>
 
       <ReportEventDialog 
