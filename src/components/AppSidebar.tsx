@@ -145,12 +145,9 @@ export function AppSidebar() {
                   {currentUser.initials}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex flex-col items-start flex-1 min-w-0">
+              <div className="flex flex-col items-start">
                 <span className="text-sm font-medium text-foreground truncate w-full">
                   {currentUser.name}
-                </span>
-                <span className="text-xs text-muted-foreground truncate w-full">
-                  {currentUser.email}
                 </span>
               </div>
             </button>
