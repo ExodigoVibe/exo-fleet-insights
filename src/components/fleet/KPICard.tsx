@@ -34,9 +34,7 @@ export function KPICard({ title, value, icon: Icon, subtitle, trend }: KPICardPr
             </div>
             {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
           </div>
-          <div className="rounded-lg bg-primary/10 p-3">
-            <Icon className="h-6 w-6 text-primary" />
-          </div>
+          <Icon className="h-8 w-8" />
         </div>
       </CardContent>
     </Card>
