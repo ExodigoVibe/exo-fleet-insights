@@ -116,7 +116,7 @@ export function TripsTable({ trips, loading = false, totalCount = 0 }: TripsTabl
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Filtered Trips ({totalCount})</CardTitle>
+          <CardTitle>Filtered Trips ({trips.length})</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
