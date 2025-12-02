@@ -144,63 +144,65 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Vehicle Fleet Recap Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Car className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">Vehicle Fleet</h2>
+        {/* Vehicle Fleet Recap Section - Admin/Coordinator only */}
+        {hasAdminAccess && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Car className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold text-foreground">Vehicle Fleet</h2>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div onClick={() => navigate("/vehicle-fleet?filter=all")} className="cursor-pointer">
+                <Card className="transition-all hover:shadow-md">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Total Vehicles</p>
+                        <div className="flex items-baseline gap-2">
+                          <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.total}</h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Entire fleet overview</p>
+                      </div>
+                      <Car className="h-8 w-8 text-gray-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              <div onClick={() => navigate("/vehicle-fleet?filter=parking")} className="cursor-pointer">
+                <Card className="transition-all hover:shadow-md">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Available Vehicles</p>
+                        <div className="flex items-baseline gap-2">
+                          <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.available}</h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Ready for assignment</p>
+                      </div>
+                      <CheckCircle2 className="h-8 w-8 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              <div onClick={() => navigate("/vehicle-fleet?filter=other")} className="cursor-pointer">
+                <Card className="transition-all hover:shadow-md">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">In Maintenance</p>
+                        <div className="flex items-baseline gap-2">
+                          <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.maintenance}</h3>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Currently being serviced</p>
+                      </div>
+                      <Wrench className="h-8 w-8 text-orange-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div onClick={() => navigate("/vehicle-fleet?filter=all")} className="cursor-pointer">
-              <Card className="transition-all hover:shadow-md">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">Total Vehicles</p>
-                      <div className="flex items-baseline gap-2">
-                        <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.total}</h3>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Entire fleet overview</p>
-                    </div>
-                    <Car className="h-8 w-8 text-gray-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            <div onClick={() => navigate("/vehicle-fleet?filter=parking")} className="cursor-pointer">
-              <Card className="transition-all hover:shadow-md">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">Available Vehicles</p>
-                      <div className="flex items-baseline gap-2">
-                        <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.available}</h3>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Ready for assignment</p>
-                    </div>
-                    <CheckCircle2 className="h-8 w-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            <div onClick={() => navigate("/vehicle-fleet?filter=other")} className="cursor-pointer">
-              <Card className="transition-all hover:shadow-md">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">In Maintenance</p>
-                      <div className="flex items-baseline gap-2">
-                        <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.maintenance}</h3>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Currently being serviced</p>
-                    </div>
-                    <Wrench className="h-8 w-8 text-orange-500" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Recent Requests Section */}
         <div className="space-y-4">
