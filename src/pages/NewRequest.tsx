@@ -6,6 +6,7 @@ import * as z from "zod";
 import { format, parseISO } from "date-fns";
 import { CalendarIcon, FileText, Car, Upload } from "lucide-react";
 import { useCreateVehicleRequest, useUpdateVehicleRequest, useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,7 @@ export default function NewRequest() {
   const createRequest = useCreateVehicleRequest();
   const updateRequest = useUpdateVehicleRequest();
   const { data: requests = [] } = useVehicleRequestsQuery();
+  const { user } = useAuth();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -95,8 +97,12 @@ export default function NewRequest() {
         });
         setUsageType(request.usage_type as "single_use" | "permanent_driver");
       }
+    } else if (!isEditMode && user) {
+      // Auto-fill user data from SSO for new requests
+      form.setValue("full_name", user.name || "");
+      form.setValue("email", user.email || "");
     }
-  }, [isEditMode, id, requests, form]);
+  }, [isEditMode, id, requests, form, user]);
 
   const onSubmit = async (data: FormValues) => {
     try {

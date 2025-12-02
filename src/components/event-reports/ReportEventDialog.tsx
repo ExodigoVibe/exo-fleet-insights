@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Info, Car, FileText, Users, Upload, Send } from "lucide-react";
 import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
 import { useCreateEventReport } from "@/hooks/queries/useEventReportsQuery";
+import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,6 +69,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const { vehicles, loading: isLoadingVehicles } = useSnowflakeVehicles();
   const createEventReport = useCreateEventReport();
+  const { user } = useAuth();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -86,6 +88,13 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
       thirdPartyInsurance: "",
     },
   });
+
+  // Auto-fill employee name from SSO when dialog opens
+  useEffect(() => {
+    if (open && user) {
+      form.setValue("employeeName", user.name || "");
+    }
+  }, [open, user, form]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
