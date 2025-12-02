@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Download, Plus, User, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useVehicleRequestsQuery, useDeleteVehicleRequest } from "@/hooks/queries/useVehicleRequestsQuery";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Table,
   TableBody,
@@ -23,6 +24,13 @@ export default function Requests() {
   const [statusFilter, setStatusFilter] = useState<RequestStatus>("all");
   const { data: requests = [], isLoading } = useVehicleRequestsQuery();
   const deleteRequest = useDeleteVehicleRequest();
+  const { hasAdminAccess, user } = useAuth();
+
+  // Filter requests by user email for non-admin users
+  const userRequests = useMemo(() => {
+    if (hasAdminAccess || !user?.email) return requests;
+    return requests.filter((r) => r.email === user.email);
+  }, [requests, hasAdminAccess, user?.email]);
 
   // Read filter from URL on mount
   useEffect(() => {
@@ -38,12 +46,12 @@ export default function Requests() {
     }
   };
 
-  const allRequestsCount = requests.length;
-  const pendingCount = requests.filter((r) => r.status === "pending_manager").length;
-  const approvedCount = requests.filter((r) => r.status === "approved").length;
-  const rejectedCount = requests.filter((r) => r.status === "rejected").length;
+  const allRequestsCount = userRequests.length;
+  const pendingCount = userRequests.filter((r) => r.status === "pending_manager").length;
+  const approvedCount = userRequests.filter((r) => r.status === "approved").length;
+  const rejectedCount = userRequests.filter((r) => r.status === "rejected").length;
 
-  const filteredRequests = requests.filter((request) => {
+  const filteredRequests = userRequests.filter((request) => {
     if (statusFilter === "all") return true;
     if (statusFilter === "pending_manager") return request.status === "pending_manager";
     if (statusFilter === "approved") return request.status === "approved";
