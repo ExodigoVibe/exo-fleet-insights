@@ -54,6 +54,8 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
         ORDER BY START_TIMESTAMP DESC
         `;
 
+        console.log("[useSnowflakeTrips] Fetching trips for date range:", dateFrom, dateTo);
+        
         const { data, error: functionError } = await supabase.functions.invoke(
           "snowflake-query",
           {
@@ -62,6 +64,8 @@ export function useSnowflakeTrips({ dateFrom, dateTo }: UseSnowflakeTripsProps):
             },
           }
         );
+
+        console.log("[useSnowflakeTrips] Response:", { data, error: functionError });
 
         if (cancelled) return;
 
