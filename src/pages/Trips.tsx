@@ -115,6 +115,9 @@ const Trips = () => {
 
   // Only filter trips if they match the current filter date range
   const filteredTrips = useMemo(() => {
+    // Don't show trips if user has no matching drivers (non-admin with no driver match)
+    if (driverOptions.length === 0) return [];
+
     // Don't filter while loading
     if (tripsLoading || allTrips.length === 0) return [];
 
@@ -127,8 +130,14 @@ const Trips = () => {
       return [];
     }
 
-    return filterTrips(allTrips, filters);
-  }, [allTrips, filters, tripsLoading, loadedDateRange]);
+    // For non-admin users with a single driver match, auto-filter by that driver
+    const effectiveFilters = { ...filters };
+    if (!hasAdminAccess && driverOptions.length === 1 && filters.drivers.length === 0) {
+      effectiveFilters.drivers = [driverOptions[0]];
+    }
+
+    return filterTrips(allTrips, effectiveFilters);
+  }, [allTrips, filters, tripsLoading, loadedDateRange, driverOptions, hasAdminAccess]);
 
   const vehicleMetrics = useMemo(
     () => calculateVehicleUsageMetrics(filteredTrips, allVehicles),
@@ -208,7 +217,13 @@ const Trips = () => {
           <DailyUsageChart metrics={dailyMetrics} />
         </div>
 
-        <TripsTable trips={filteredTrips} loading={tripsLoading} totalCount={totalCount} />
+        {driverOptions.length > 0 ? (
+          <TripsTable trips={filteredTrips} loading={tripsLoading} totalCount={totalCount} />
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            No matching driver found for your account. Trip data is not available.
+          </div>
+        )}
       </div>
     </div>
   );
