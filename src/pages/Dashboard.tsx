@@ -54,12 +54,16 @@ const Dashboard = () => {
     }
   }, [vehiclesError]);
 
-  // Calculate requests recap data
+  // Calculate requests recap data - filter by user email for non-admin users
   const requestsRecap = useMemo(() => {
-    const total = vehicleRequests?.length || 0;
-    const pending = vehicleRequests?.filter((r) => r.status === 'pending_manager').length || 0;
+    let requests = vehicleRequests || [];
+    if (!hasAdminAccess && user?.email) {
+      requests = requests.filter((r) => r.email === user.email);
+    }
+    const total = requests.length;
+    const pending = requests.filter((r) => r.status === 'pending_manager').length;
     return { total, pending };
-  }, [vehicleRequests]);
+  }, [vehicleRequests, hasAdminAccess, user?.email]);
 
   // Calculate vehicle fleet recap data
   const vehicleFleetRecap = useMemo(() => {
