@@ -72,7 +72,7 @@ const Dashboard = () => {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Fleet Dashboard</h1>
               <p className="text-muted-foreground mt-1">
-                Analyze vehicle utilization and driver performance
+                Welcome to the Fleet Dashboard. Here you can view the status of the fleet and the requests.
               </p>
             </div>
             <Button 
