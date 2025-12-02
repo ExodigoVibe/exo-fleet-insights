@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import fleetBackground from "@/assets/fleet-background.jpg";
@@ -9,6 +10,7 @@ import fleetBackground from "@/assets/fleet-background.jpg";
 const Auth = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
 
   const handleAzureLogin = async () => {
     try {
@@ -30,6 +32,37 @@ const Auth = () => {
       toast.error("Failed to initiate Azure login");
       setIsLoading(false);
     }
+  };
+
+  const handleBasicLogin = async () => {
+    if (!email) {
+      toast.error("Please enter an email");
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Determine role based on email
+    let role = "employee";
+    if (email === "admin@admin.com") {
+      role = "admin";
+    } else if (email === "user@user.com") {
+      role = "employee";
+    }
+
+    // Create mock user object
+    const mockUser = {
+      id: email === "admin@admin.com" ? "admin-id" : "user-id",
+      email: email,
+      full_name: email === "admin@admin.com" ? "Admin User" : "Test User"
+    };
+
+    // Store in localStorage
+    localStorage.setItem("azureUser", JSON.stringify(mockUser));
+    localStorage.setItem("userRole", role);
+
+    toast.success(`Logged in as ${role}`);
+    navigate("/");
   };
 
   return (
@@ -64,6 +97,29 @@ const Auth = () => {
               </>
             )}
           </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-white/20" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background/95 px-2 text-white">Or for testing</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Input
+              type="email"
+              placeholder="Enter email (admin@admin.com or user@user.com)"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+              disabled={isLoading}
+            />
+            <Button onClick={handleBasicLogin} disabled={isLoading} variant="outline" className="w-full" size="lg">
+              Sign in with Basic Authentication
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
