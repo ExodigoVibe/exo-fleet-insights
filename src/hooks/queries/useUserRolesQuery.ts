@@ -14,31 +14,36 @@ export const useUserRolesQuery = () => {
   return useQuery({
     queryKey: ["user-roles"],
     queryFn: async () => {
-      // Fetch all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (profilesError) throw profilesError;
-
-      // Fetch all user roles
+      // Fetch all user roles first (source of truth)
       const { data: userRoles, error: rolesError } = await supabase
         .from("user_roles")
         .select("*");
 
       if (rolesError) throw rolesError;
 
+      // Fetch profiles only for users that have roles
+      const userIds = userRoles.map((r) => r.user_id);
+      
+      if (userIds.length === 0) return [];
+      
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", userIds)
+        .order("created_at", { ascending: false });
+
+      if (profilesError) throw profilesError;
+
       // Combine profiles with their roles
-      const usersWithRoles: UserWithRole[] = profiles.map((profile) => {
-        const roleRecord = userRoles.find((r) => r.user_id === profile.id);
+      const usersWithRoles: UserWithRole[] = userRoles.map((roleRecord) => {
+        const profile = profiles.find((p) => p.id === roleRecord.user_id);
         return {
-          id: profile.id,
-          email: profile.email,
-          full_name: profile.full_name,
-          created_at: profile.created_at || "",
-          role: roleRecord?.role || null,
-          role_id: roleRecord?.id,
+          id: roleRecord.user_id,
+          email: profile?.email || roleRecord.email || "",
+          full_name: profile?.full_name || roleRecord.full_name || "",
+          created_at: profile?.created_at || "",
+          role: roleRecord.role,
+          role_id: roleRecord.id,
         };
       });
 
