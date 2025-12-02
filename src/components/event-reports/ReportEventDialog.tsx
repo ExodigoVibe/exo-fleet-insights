@@ -107,7 +107,9 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
 
   const onSubmit = async (data: FormValues) => {
     try {
-      await createEventReport.mutateAsync({
+      console.log("Submitting event report with data:", data);
+      
+      const reportData = {
         vehicle_license_plate: data.vehicleId,
         employee_name: data.employeeName,
         event_date: data.eventDateTime.toISOString(),
@@ -115,18 +117,25 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
         description: data.description,
         severity: data.severity,
         third_party_involved: data.thirdPartyInvolved,
-        third_party_name: data.thirdPartyCarOwner,
-        third_party_phone: data.thirdPartyPhone,
-        third_party_license_plate: data.thirdPartyLicensePlate,
-        third_party_insurance: data.thirdPartyInsurance,
-      });
+        third_party_name: data.thirdPartyCarOwner || undefined,
+        third_party_phone: data.thirdPartyPhone || undefined,
+        third_party_license_plate: data.thirdPartyLicensePlate || undefined,
+        third_party_insurance: data.thirdPartyInsurance || undefined,
+      };
+
+      console.log("Formatted report data:", reportData);
+      console.log("Creating event report...");
       
+      await createEventReport.mutateAsync(reportData);
+      
+      console.log("Event report submitted successfully");
       onOpenChange(false);
       form.reset();
       setUploadedFiles([]);
       form.setValue("severity", "slight");
     } catch (error) {
       console.error("Failed to submit event report:", error);
+      toast.error("Failed to submit event report. Please try again.");
     }
   };
 
