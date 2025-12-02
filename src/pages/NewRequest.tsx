@@ -5,50 +5,45 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, parseISO } from "date-fns";
 import { CalendarIcon, FileText, Car, Upload } from "lucide-react";
-import { useCreateVehicleRequest, useUpdateVehicleRequest, useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
+import {
+  useCreateVehicleRequest,
+  useUpdateVehicleRequest,
+  useVehicleRequestsQuery,
+} from "@/hooks/queries/useVehicleRequestsQuery";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const formSchema = z.object({
-  usage_type: z.enum(["single_use", "permanent_driver"]),
-  start_date: z.date({
-    required_error: "Start date is required",
-  }),
-  end_date: z.date({
-    required_error: "End date is required",
-  }),
-  purpose: z.string().min(1, "Purpose of trip is required").max(500),
-  full_name: z.string().min(1, "Full name is required").max(100),
-  job_title: z.string().min(1, "Job title is required").max(100),
-  department: z.string().min(1, "Department is required").max(100),
-  phone_number: z.string().min(1, "Phone number is required").max(20),
-  email: z.string().email("Invalid email address").max(255),
-  department_manager: z.string().min(1, "Department manager is required").max(100),
-  manager_email: z.string().email("Invalid email address").max(255),
-  license_file: z.any().optional(),
-}).refine((data) => data.end_date >= data.start_date, {
-  message: "End date must be after or equal to start date",
-  path: ["end_date"],
-});
+const formSchema = z
+  .object({
+    usage_type: z.enum(["single_use", "permanent_driver"]),
+    start_date: z.date({
+      required_error: "Start date is required",
+    }),
+    end_date: z.date({
+      required_error: "End date is required",
+    }),
+    purpose: z.string().min(1, "Purpose of trip is required").max(500),
+    full_name: z.string().min(1, "Full name is required").max(100),
+    job_title: z.string().min(1, "Job title is required").max(100),
+    department: z.string().min(1, "Department is required").max(100),
+    phone_number: z.string().min(1, "Phone number is required").max(20),
+    email: z.string().email("Invalid email address").max(255),
+    department_manager: z.string().min(1, "Department manager is required").max(100),
+    manager_email: z.string().email("Invalid email address").max(255),
+    license_file: z.any().optional(),
+  })
+  .refine((data) => data.end_date >= data.start_date, {
+    message: "End date must be after or equal to start date",
+    path: ["end_date"],
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -62,6 +57,7 @@ export default function NewRequest() {
   const updateRequest = useUpdateVehicleRequest();
   const { data: requests = [] } = useVehicleRequestsQuery();
   const { user } = useAuth();
+  console.log({ user });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -126,7 +122,7 @@ export default function NewRequest() {
       } else {
         await createRequest.mutateAsync(requestData);
       }
-      
+
       navigate("/requests");
     } catch (error) {
       console.error("Failed to submit request:", error);
@@ -171,7 +167,7 @@ export default function NewRequest() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-6 text-center">Select Usage Type</h2>
-              
+
               <FormField
                 control={form.control}
                 name="usage_type"
@@ -189,7 +185,7 @@ export default function NewRequest() {
                             "p-4 border-2 rounded-lg flex items-center justify-center gap-2 transition-all",
                             field.value === "single_use"
                               ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
+                              : "border-border hover:border-primary/50",
                           )}
                         >
                           <FileText className="h-5 w-5" />
@@ -205,7 +201,7 @@ export default function NewRequest() {
                             "p-4 border-2 rounded-lg flex items-center justify-center gap-2 transition-all",
                             field.value === "permanent_driver"
                               ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
+                              : "border-border hover:border-primary/50",
                           )}
                         >
                           <Car className="h-5 w-5" />
@@ -218,24 +214,26 @@ export default function NewRequest() {
                 )}
               />
 
-              <div className={cn(
-                "border rounded-lg p-4",
-                usageType === "single_use" 
-                  ? "bg-blue-50 border-blue-200" 
-                  : "bg-teal-50 border-teal-200"
-              )}>
-                <h3 className={cn(
-                  "font-semibold mb-2",
-                  usageType === "single_use" ? "text-blue-900" : "text-teal-900"
-                )}>
+              <div
+                className={cn(
+                  "border rounded-lg p-4",
+                  usageType === "single_use" ? "bg-blue-50 border-blue-200" : "bg-teal-50 border-teal-200",
+                )}
+              >
+                <h3
+                  className={cn("font-semibold mb-2", usageType === "single_use" ? "text-blue-900" : "text-teal-900")}
+                >
                   Requirements for {usageType === "single_use" ? "Single Use" : "Permanent Driver"}:
                 </h3>
                 <ul className="space-y-1">
                   {requirements[usageType].map((req, index) => (
-                    <li key={index} className={cn(
-                      "text-sm flex items-start gap-2",
-                      usageType === "single_use" ? "text-blue-800" : "text-teal-800"
-                    )}>
+                    <li
+                      key={index}
+                      className={cn(
+                        "text-sm flex items-start gap-2",
+                        usageType === "single_use" ? "text-blue-800" : "text-teal-800",
+                      )}
+                    >
                       <span className={usageType === "single_use" ? "text-blue-600" : "text-teal-600"}>•</span>
                       <span>{req}</span>
                     </li>
@@ -262,14 +260,10 @@ export default function NewRequest() {
                               variant="outline"
                               className={cn(
                                 "w-full pl-3 text-left font-normal hover:bg-gray-100 hover:text-foreground",
-                                !field.value && "text-muted-foreground"
+                                !field.value && "text-muted-foreground",
                               )}
                             >
-                              {field.value ? (
-                                format(field.value, "dd/MM/yyyy")
-                              ) : (
-                                <span>dd/mm/yyyy</span>
-                              )}
+                              {field.value ? format(field.value, "dd/MM/yyyy") : <span>dd/mm/yyyy</span>}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -306,14 +300,10 @@ export default function NewRequest() {
                               variant="outline"
                               className={cn(
                                 "w-full pl-3 text-left font-normal hover:bg-gray-100 hover:text-foreground",
-                                !field.value && "text-muted-foreground"
+                                !field.value && "text-muted-foreground",
                               )}
                             >
-                              {field.value ? (
-                                format(field.value, "dd/MM/yyyy")
-                              ) : (
-                                <span>dd/mm/yyyy</span>
-                              )}
+                              {field.value ? format(field.value, "dd/MM/yyyy") : <span>dd/mm/yyyy</span>}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -345,11 +335,7 @@ export default function NewRequest() {
                       Purpose of Trip
                     </FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Enter the purpose of your trip"
-                        className="min-h-[80px]"
-                        {...field}
-                      />
+                      <Textarea placeholder="Enter the purpose of your trip" className="min-h-[80px]" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -359,7 +345,7 @@ export default function NewRequest() {
 
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Your Information</h3>
-              
+
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                   <FormField
@@ -471,7 +457,7 @@ export default function NewRequest() {
 
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Required Forms</h3>
-              
+
               <div className="space-y-4">
                 <div>
                   <h4 className="font-medium mb-3">Driver's License</h4>
@@ -489,7 +475,7 @@ export default function NewRequest() {
                           type="button"
                           variant="outline"
                           className="gap-2 hover:bg-gray-100 hover:text-foreground"
-                          onClick={() => document.getElementById('license-upload')?.click()}
+                          onClick={() => document.getElementById("license-upload")?.click()}
                         >
                           <Upload className="h-4 w-4" />
                           Upload File
@@ -509,11 +495,7 @@ export default function NewRequest() {
                           }
                         }}
                       />
-                      {licenseFile && (
-                        <p className="text-sm text-primary font-medium">
-                          Selected: {licenseFile.name}
-                        </p>
-                      )}
+                      {licenseFile && <p className="text-sm text-primary font-medium">Selected: {licenseFile.name}</p>}
                     </div>
                   </div>
                 </div>
