@@ -181,3 +181,35 @@ export const useApproveVehicleRequest = () => {
     },
   });
 };
+
+export const useUndoApproveVehicleRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from("vehicle_requests")
+        .update({ status: "pending_manager" })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicle-requests"] });
+      toast({
+        title: "Success",
+        description: "Approval undone successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to undo approval: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+};
