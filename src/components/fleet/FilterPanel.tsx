@@ -104,17 +104,17 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
             <div className="space-y-2">
               <Label htmlFor="driver">Driver</Label>
               <Select
-                value={pendingFilters.drivers[0] || "all"}
+                value={pendingFilters.drivers[0] || (drivers.length === 1 ? drivers[0] : "all")}
                 onValueChange={(value) =>
                   setPendingFilters({
                     ...pendingFilters,
                     drivers: value === "all" ? [] : [value],
                   })
                 }
-                disabled={loading}
+                disabled={loading || drivers.length <= 1}
               >
-                <SelectTrigger disabled={loading}>
-                  <SelectValue placeholder="All Drivers" />
+                <SelectTrigger disabled={loading || drivers.length <= 1}>
+                  <SelectValue placeholder={drivers.length === 0 ? "No matching driver" : drivers.length === 1 ? drivers[0] : "All Drivers"} />
                 </SelectTrigger>
                 {drivers.length > 1 ? (
                   <SelectContent>
@@ -125,10 +125,16 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
                       </SelectItem>
                     ))}
                   </SelectContent>
+                ) : drivers.length === 1 ? (
+                  <SelectContent>
+                    <SelectItem value={drivers[0]}>
+                      {drivers[0]}
+                    </SelectItem>
+                  </SelectContent>
                 ) : (
                   <SelectContent>
-                    <SelectItem value={drivers[0] || "none"} disabled={true}>
-                      {drivers[0] || "No Driver"}
+                    <SelectItem value="none" disabled>
+                      No matching driver
                     </SelectItem>
                   </SelectContent>
                 )}
