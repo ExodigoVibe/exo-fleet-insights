@@ -112,9 +112,14 @@ serve(async (req) => {
       });
 
       // Check if auth user exists
-      const { data: authUsers, error: authListError } = await supabaseAdmin.auth.admin.listUsers();
+      const { data: authUsersData, error: authListError } = await supabaseAdmin.auth.admin.listUsers();
       
-      let authUser = authUsers?.users.find(u => u.email === userEmail);
+      if (authListError) {
+        console.error("[azure-sso] Error listing users:", authListError);
+        throw authListError;
+      }
+      
+      let authUser = authUsersData.users.find(u => u.email === userEmail);
       
       // Create auth user if doesn't exist
       if (!authUser) {
@@ -134,6 +139,8 @@ serve(async (req) => {
 
         authUser = newAuthUser.user;
         console.log(`[azure-sso] Created new auth user for: ${userEmail}`);
+      } else {
+        console.log(`[azure-sso] Found existing auth user for: ${userEmail}`);
       }
 
       // Check if user exists in user_roles table
@@ -170,7 +177,7 @@ serve(async (req) => {
         }
       }
 
-      // Generate a session for the user using admin API
+      // Generate a session token for the user
       const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
         type: 'magiclink',
         email: userEmail,
@@ -181,7 +188,7 @@ serve(async (req) => {
         throw sessionError;
       }
 
-      console.log(`[azure-sso] Successfully authenticated user: ${userEmail}`);
+      console.log(`[azure-sso] Successfully generated session for: ${userEmail}`);
 
       return new Response(
         JSON.stringify({
@@ -192,7 +199,8 @@ serve(async (req) => {
             role: userRole,
           },
           accessToken: tokens.access_token,
-          magicLinkUrl: sessionData.properties.action_link,
+          hashedToken: sessionData.properties.hashed_token,
+          verifyType: sessionData.properties.verification_type,
         }),
         {
           headers: {
