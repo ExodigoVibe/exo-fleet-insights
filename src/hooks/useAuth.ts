@@ -20,7 +20,9 @@ export function useAuth() {
     if (azureUserStr && userRole) {
       const azureUser = JSON.parse(azureUserStr);
       setUser({
-        ...azureUser,
+        id: azureUser.id,
+        email: azureUser.email,
+        name: azureUser.full_name,
         role: userRole,
       });
     }
