@@ -58,6 +58,13 @@ export default function NewRequest() {
   const { data: requests = [], isLoading: isLoadingRequest } = useVehicleRequestsQuery();
   const { user, isLoading: isLoadingAuth } = useAuth();
 
+  // Debug: Log user data on component mount and when user changes
+  useEffect(() => {
+    console.log("NewRequest - User data:", user);
+    console.log("NewRequest - isLoadingAuth:", isLoadingAuth);
+    console.log("NewRequest - localStorage azureUser:", localStorage.getItem("azureUser"));
+  }, [user, isLoadingAuth]);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
