@@ -55,7 +55,7 @@ export default function NewRequest() {
   const [licenseFile, setLicenseFile] = useState<File | null>(null);
   const createRequest = useCreateVehicleRequest();
   const updateRequest = useUpdateVehicleRequest();
-  const { data: requests = [] } = useVehicleRequestsQuery();
+  const { data: requests = [], isLoading: isLoadingRequest } = useVehicleRequestsQuery();
   const { user, isLoading: isLoadingAuth } = useAuth();
 
   const form = useForm<FormValues>({
@@ -63,19 +63,19 @@ export default function NewRequest() {
     defaultValues: {
       usage_type: "single_use",
       purpose: "",
-      full_name: "",
+      full_name: user?.name || "",
       job_title: "",
       department: "",
       phone_number: "",
-      email: "",
+      email: user?.email || "",
       department_manager: "",
       manager_email: "",
     },
   });
 
-  // Load existing request data for edit mode
+  // Load existing request data for edit mode OR auto-fill for new requests
   useEffect(() => {
-    if (isEditMode && requests.length > 0) {
+    if (isEditMode && !isLoadingRequest && requests.length > 0) {
       const request = requests.find((r) => r.id === id);
       if (request) {
         form.reset({
@@ -93,27 +93,21 @@ export default function NewRequest() {
         });
         setUsageType(request.usage_type as "single_use" | "permanent_driver");
       }
+    } else if (!isEditMode && !isLoadingAuth && user) {
+      // Auto-fill user data from SSO for new requests
+      form.reset({
+        usage_type: "single_use",
+        purpose: "",
+        full_name: user.name || "",
+        job_title: "",
+        department: "",
+        phone_number: "",
+        email: user.email || "",
+        department_manager: "",
+        manager_email: "",
+      });
     }
-  }, [isEditMode, id, requests, form]);
-
-  // Auto-fill user data from SSO for new requests
-  useEffect(() => {
-    if (!isEditMode && !isLoadingAuth && user) {
-      console.log("Auto-filling with user data:", user);
-      
-      if (user.name) {
-        form.setValue("full_name", user.name);
-      }
-      if (user.email) {
-        form.setValue("email", user.email);
-      }
-      
-      // Show toast to confirm auto-fill
-      if (user.name || user.email) {
-        toast.success("Your information has been auto-filled from your profile");
-      }
-    }
-  }, [isEditMode, isLoadingAuth, user, form]);
+  }, [isEditMode, id, requests, isLoadingRequest, isLoadingAuth, user, form]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -164,16 +158,6 @@ export default function NewRequest() {
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Debug info - remove after testing */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs">
-            <strong>Debug Info:</strong> User loaded: {user ? 'Yes' : 'No'} | 
-            Name: {user?.name || 'N/A'} | 
-            Email: {user?.email || 'N/A'} |
-            Loading: {isLoadingAuth ? 'Yes' : 'No'}
-          </div>
-        )}
-        
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
