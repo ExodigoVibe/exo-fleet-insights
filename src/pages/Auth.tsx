@@ -54,7 +54,7 @@ const Auth = () => {
     const mockUser = {
       id: email === "admin@admin.com" ? "admin-id" : "user-id",
       email: email,
-      full_name: email === "admin@admin.com" ? "Admin User" : "Ortal Spitzer-Hanoch"
+      full_name: email === "admin@admin.com" ? "Admin User" : "Test User"
     };
 
     // Store in localStorage
