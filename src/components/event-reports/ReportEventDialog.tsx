@@ -8,37 +8,15 @@ import { useCreateEventReport } from "@/hooks/queries/useEventReportsQuery";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -70,6 +48,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
   const { vehicles, loading: isLoadingVehicles } = useSnowflakeVehicles();
   const createEventReport = useCreateEventReport();
   const { user } = useAuth();
+  console.log({ user });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -117,7 +96,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
         third_party_license_plate: data.thirdPartyLicensePlate,
         third_party_insurance: data.thirdPartyInsurance,
       });
-      
+
       onOpenChange(false);
       form.reset();
       setUploadedFiles([]);
@@ -131,15 +110,14 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            Reporting an Incident
-          </DialogTitle>
+          <DialogTitle className="text-2xl font-bold flex items-center gap-2">Reporting an Incident</DialogTitle>
         </DialogHeader>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3 mb-6">
           <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-blue-900">
-            Please fill out this form with as much detail as possible. Your accuracy helps us resolve the situation quickly and efficiently.
+            Please fill out this form with as much detail as possible. Your accuracy helps us resolve the situation
+            quickly and efficiently.
           </p>
         </div>
 
@@ -167,9 +145,13 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                         </FormControl>
                         <SelectContent className="bg-background z-50">
                           {isLoadingVehicles ? (
-                            <SelectItem value="loading" disabled>Loading vehicles...</SelectItem>
+                            <SelectItem value="loading" disabled>
+                              Loading vehicles...
+                            </SelectItem>
                           ) : vehicles.length === 0 ? (
-                            <SelectItem value="none" disabled>No vehicles available</SelectItem>
+                            <SelectItem value="none" disabled>
+                              No vehicles available
+                            </SelectItem>
                           ) : (
                             vehicles.map((vehicle) => (
                               <SelectItem key={vehicle.license_plate} value={vehicle.license_plate}>
@@ -211,14 +193,10 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                               variant="outline"
                               className={cn(
                                 "w-full pl-3 text-left font-normal hover:bg-gray-100 hover:text-foreground",
-                                !field.value && "text-muted-foreground"
+                                !field.value && "text-muted-foreground",
                               )}
                             >
-                              {field.value ? (
-                                format(field.value, "dd/MM/yyyy, HH:mm")
-                              ) : (
-                                <span>27/11/2025, 14:55</span>
-                              )}
+                              {field.value ? format(field.value, "dd/MM/yyyy, HH:mm") : <span>27/11/2025, 14:55</span>}
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -285,26 +263,18 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                   <FormItem className="space-y-3">
                     <FormLabel>Severity of Damages</FormLabel>
                     <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex gap-6"
-                      >
+                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-6">
                         <FormItem className="flex items-center space-x-2 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="slight" />
                           </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            Slight Damage
-                          </FormLabel>
+                          <FormLabel className="font-normal cursor-pointer">Slight Damage</FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-2 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="extensive" />
                           </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">
-                            Extensive Damage
-                          </FormLabel>
+                          <FormLabel className="font-normal cursor-pointer">Extensive Damage</FormLabel>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
@@ -320,9 +290,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
                 <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-lg font-medium mb-2">Upload Images</p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Click or drag to upload photos of the incident
-                </p>
+                <p className="text-sm text-muted-foreground mb-4">Click or drag to upload photos of the incident</p>
                 <label htmlFor="file-upload">
                   <Button type="button" variant="outline" className="hover:bg-gray-100 hover:text-foreground" asChild>
                     <span>
@@ -340,9 +308,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                   />
                 </label>
                 {uploadedFiles.length > 0 && (
-                  <p className="text-sm text-muted-foreground mt-4">
-                    {uploadedFiles.length} file(s) uploaded
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-4">{uploadedFiles.length} file(s) uploaded</p>
                 )}
               </div>
             </div>
@@ -356,15 +322,10 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                   <FormItem className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="h-5 w-5 text-primary" />
-                      <FormLabel className="text-lg font-semibold cursor-pointer">
-                        Third Party Involvement
-                      </FormLabel>
+                      <FormLabel className="text-lg font-semibold cursor-pointer">Third Party Involvement</FormLabel>
                     </div>
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
                   </FormItem>
                 )}
@@ -461,10 +422,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
 
             {/* Submit Button */}
             <div className="flex justify-end pt-6">
-              <Button
-                type="submit"
-                className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white px-8"
-              >
+              <Button type="submit" className="bg-[#1e3a8a] hover:bg-[#1e40af] text-white px-8">
                 Submit Report
                 <Send className="h-4 w-4 ml-2" />
               </Button>
