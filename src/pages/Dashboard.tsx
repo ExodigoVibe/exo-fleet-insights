@@ -34,7 +34,7 @@ const Dashboard = () => {
   } = useVehiclesQuery();
   const { data: vehicleRequests } = useVehicleRequestsQuery();
   const { data: eventReports } = useEventReportsQuery();
-  const { hasAdminAccess } = useAuth();
+  const { hasAdminAccess, user } = useAuth();
   const snowflakeDrivers = driversData ?? [];
   const snowflakeVehicles = vehiclesData ?? [];
   // Show error toasts
@@ -75,12 +75,16 @@ const Dashboard = () => {
     return { total, available, driving, maintenance };
   }, [snowflakeVehicles]);
 
-  // Get recent requests (last 3)
+  // Get recent requests (last 3) - filter by user email for non-admin users
   const recentRequests = useMemo(() => {
-    return (vehicleRequests || [])
+    let requests = vehicleRequests || [];
+    if (!hasAdminAccess && user?.email) {
+      requests = requests.filter((r) => r.email === user.email);
+    }
+    return requests
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 3);
-  }, [vehicleRequests]);
+  }, [vehicleRequests, hasAdminAccess, user?.email]);
 
   // Get recent event reports (last 5)
   const recentEventReports = useMemo(() => {
