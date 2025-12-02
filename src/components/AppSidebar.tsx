@@ -53,7 +53,7 @@ export function AppSidebar() {
   };
 
   const currentUser = {
-    name: user?.name || user?.email || "Guest User",
+    name: user?.name || user?.email || "",
     email: user?.email || "",
     initials: getUserInitials(),
     role: user?.role || "employee",
