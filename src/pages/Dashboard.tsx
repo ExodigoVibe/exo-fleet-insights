@@ -10,9 +10,11 @@ import { toast } from "sonner";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user, hasAdminAccess } = useAuth();
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
@@ -51,19 +53,33 @@ const Dashboard = () => {
     return { total, available, maintenance };
   }, [snowflakeVehicles]);
 
-  // Get recent requests (last 3)
+  // Get recent requests (last 3) - filtered by user email for non-admin
   const recentRequests = useMemo(() => {
-    return (vehicleRequests || [])
+    let filtered = vehicleRequests || [];
+    
+    // Filter by user's email for non-admin roles
+    if (!hasAdminAccess && user?.email) {
+      filtered = filtered.filter(r => r.email === user.email);
+    }
+    
+    return filtered
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 3);
-  }, [vehicleRequests]);
+  }, [vehicleRequests, hasAdminAccess, user?.email]);
 
-  // Get recent event reports (last 5)
+  // Get recent event reports (last 5) - filtered by user name for non-admin
   const recentEventReports = useMemo(() => {
-    return (eventReports || [])
+    let filtered = eventReports || [];
+    
+    // Filter by user's name for non-admin roles
+    if (!hasAdminAccess && user?.full_name) {
+      filtered = filtered.filter(r => r.employee_name === user.full_name);
+    }
+    
+    return filtered
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
-  }, [eventReports]);
+  }, [eventReports, hasAdminAccess, user?.full_name]);
 
   return (
     <div className="min-h-screen bg-background">

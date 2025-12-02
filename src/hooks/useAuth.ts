@@ -5,6 +5,7 @@ export interface User {
   id: string;
   email: string;
   full_name: string;
+  name?: string; // Alias for full_name from Azure SSO
   role: string;
 }
 
@@ -23,6 +24,7 @@ export function useAuth() {
         id: azureUser.id,
         email: azureUser.email,
         full_name: azureUser.full_name,
+        name: azureUser.name || azureUser.full_name, // Support both name and full_name
         role: userRole,
       });
     }
