@@ -119,6 +119,8 @@ export default function NewRequest() {
 
   const onSubmit = async (data: FormValues) => {
     try {
+      console.log("Submitting request with data:", data);
+      
       const requestData = {
         full_name: data.full_name,
         department: data.department,
@@ -134,15 +136,21 @@ export default function NewRequest() {
         priority: "medium" as const,
       };
 
+      console.log("Formatted request data:", requestData);
+
       if (isEditMode && id) {
+        console.log("Updating existing request with id:", id);
         await updateRequest.mutateAsync({ ...requestData, id });
       } else {
+        console.log("Creating new request");
         await createRequest.mutateAsync(requestData);
       }
 
+      console.log("Request submitted successfully, navigating to /requests");
       navigate("/requests");
     } catch (error) {
       console.error("Failed to submit request:", error);
+      toast.error("Failed to submit request. Please try again.");
     }
   };
 
