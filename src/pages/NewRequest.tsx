@@ -74,6 +74,7 @@ export default function NewRequest() {
     },
   });
 
+  // Load existing request data for edit mode
   useEffect(() => {
     if (isEditMode && requests.length > 0) {
       const request = requests.find((r) => r.id === id);
@@ -93,12 +94,24 @@ export default function NewRequest() {
         });
         setUsageType(request.usage_type as "single_use" | "permanent_driver");
       }
-    } else if (!isEditMode && user) {
-      // Auto-fill user data from SSO for new requests
-      form.setValue("full_name", user.name || "");
-      form.setValue("email", user.email || "");
     }
-  }, [isEditMode, id, requests, form, user]);
+  }, [isEditMode, id, requests, form]);
+
+  // Auto-fill user data from SSO for new requests
+  useEffect(() => {
+    if (!isEditMode && user?.name && user?.email) {
+      const currentName = form.getValues("full_name");
+      const currentEmail = form.getValues("email");
+      
+      // Only set if fields are currently empty
+      if (!currentName) {
+        form.setValue("full_name", user.name);
+      }
+      if (!currentEmail) {
+        form.setValue("email", user.email);
+      }
+    }
+  }, [isEditMode, user, form]);
 
   const onSubmit = async (data: FormValues) => {
     try {
