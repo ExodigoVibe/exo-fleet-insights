@@ -108,11 +108,13 @@ const Trips = () => {
     dateTo: filters.dateTo,
   });
 
-  // Get license plates associated with current user's trip history
-  const getUserLicensePlates = () => {
-    const uniquePlates = [...new Set(filteredTrips.map((trip) => trip.license_plate))];
-    return uniquePlates;
-  }
+  // Get license plates from ALL trips (stable, not affected by filtering)
+  const userHistoryLicensePlates = useMemo(() => {
+    if (tripsLoading || allTrips.length === 0) return [];
+    // For non-admin users, get plates from all their trips (before license plate filter is applied)
+    const uniquePlates = [...new Set(allTrips.map((trip) => trip.license_plate).filter(Boolean))];
+    return uniquePlates.sort();
+  }, [allTrips, tripsLoading]);
 
   // Only filter trips if they match the current filter date range
   const filteredTrips = useMemo(() => {
@@ -165,7 +167,7 @@ const Trips = () => {
           drivers={driverOptions}
           licensePlates={licensePlateOptions}
           loading={tripsLoading}
-          userHistoryLicensePlates={getUserLicensePlates()}
+          userHistoryLicensePlates={userHistoryLicensePlates}
         />
 
         <div className="text-xs text-muted-foreground flex justify-between items-center">

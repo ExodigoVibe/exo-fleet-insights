@@ -153,7 +153,7 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="licensePlate">License Plate</Label>
+              <Label htmlFor="licensePlate">License Plate ({plateOptions.length})</Label>
               <Select
                 value={selectedPlate}
                 onValueChange={(value) =>
@@ -165,11 +165,11 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
                 disabled={loading || plateOptions.length === 0}
               >
               <SelectTrigger>
-                <SelectValue placeholder="All Vehicles" />
+                <SelectValue placeholder={selectedPlate === "all" ? "Select Plate" : selectedPlate} />
               </SelectTrigger>
 
               <SelectContent>
-                <SelectItem value="all">All Vehicles ({plateOptions.length})</SelectItem>
+                <SelectItem value="all">All Plates</SelectItem>
 
                 {plateOptions.map((plate) => (
                   <SelectItem key={plate} value={plate}>
