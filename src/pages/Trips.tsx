@@ -17,10 +17,8 @@ import { FleetFilters } from "@/types/fleet";
 import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { useInitialDateRange } from "@/hooks/useInitialData";
-import { useAuth } from "@/hooks/useAuth";
 
 const Trips = () => {
-  const { user, hasAdminAccess } = useAuth();
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
   const { dateFrom, dateTo } = useInitialDateRange();
@@ -29,6 +27,21 @@ const Trips = () => {
   
   const allVehicles = useMemo(
     () => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []),
+    [snowflakeVehicles]
+  );
+
+  const driverOptions = useMemo(
+    () =>
+      snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`).sort(),
+    [snowflakeDrivers]
+  );
+
+  const licensePlateOptions = useMemo(
+    () =>
+      snowflakeVehicles
+        .map((v) => v.license_plate)
+        .filter(Boolean)
+        .sort(),
     [snowflakeVehicles]
   );
 
@@ -69,40 +82,10 @@ const Trips = () => {
     dateTo: filters.dateTo,
   });
 
-  // Filter trips based on user role - employees only see their own trips
-  const userTrips = useMemo(() => {
-    if (hasAdminAccess || !user?.full_name) return allTrips;
-    return allTrips.filter(trip => trip.driver_name === user.full_name);
-  }, [allTrips, hasAdminAccess, user?.full_name]);
-
-  // For non-admin users, show only their own name in driver filter
-  const driverOptions = useMemo(() => {
-    if (hasAdminAccess) {
-      return snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`).sort();
-    }
-    // Non-admin users see only their name
-    return user?.full_name ? [user.full_name] : [];
-  }, [snowflakeDrivers, hasAdminAccess, user?.full_name]);
-
-  // For non-admin users, show only license plates from their trips
-  const licensePlateOptions = useMemo(() => {
-    if (hasAdminAccess) {
-      return snowflakeVehicles
-        .map((v) => v.license_plate)
-        .filter(Boolean)
-        .sort();
-    }
-    // Non-admin users see only vehicles from their trips
-    const userLicensePlates = new Set(
-      userTrips.map(trip => trip.license_plate).filter(Boolean)
-    );
-    return Array.from(userLicensePlates).sort();
-  }, [snowflakeVehicles, hasAdminAccess, userTrips]);
-
   // Only filter trips if they match the current filter date range
   const filteredTrips = useMemo(() => {
     // Don't filter while loading
-    if (tripsLoading || userTrips.length === 0) return [];
+    if (tripsLoading || allTrips.length === 0) return [];
     
     // Ensure loaded trips match the current filter date range
     if (!loadedDateRange || 
@@ -111,8 +94,8 @@ const Trips = () => {
       return [];
     }
     
-    return filterTrips(userTrips, filters);
-  }, [userTrips, filters, tripsLoading, loadedDateRange]);
+    return filterTrips(allTrips, filters);
+  }, [allTrips, filters, tripsLoading, loadedDateRange]);
   
   const vehicleMetrics = useMemo(
     () => calculateVehicleUsageMetrics(filteredTrips, allVehicles),
@@ -141,7 +124,6 @@ const Trips = () => {
           drivers={driverOptions}
           licensePlates={licensePlateOptions}
           loading={tripsLoading}
-          disableDriverFilter={!hasAdminAccess}
         />
 
         <div className="text-xs text-muted-foreground flex justify-between items-center">

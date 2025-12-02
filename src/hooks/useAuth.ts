@@ -4,8 +4,7 @@ import { useNavigate } from "react-router-dom";
 export interface User {
   id: string;
   email: string;
-  full_name: string;
-  name?: string; // Alias for full_name from Azure SSO
+  name: string;
   role: string;
 }
 
@@ -23,8 +22,7 @@ export function useAuth() {
       setUser({
         id: azureUser.id,
         email: azureUser.email,
-        full_name: azureUser.full_name,
-        name: azureUser.name || azureUser.full_name, // Support both name and full_name
+        name: azureUser.full_name,
         role: userRole,
       });
     }

@@ -42,8 +42,8 @@ export function AppSidebar() {
 
   // Get user initials from name or email
   const getUserInitials = () => {
-    if (user?.full_name) {
-      const nameParts = user.full_name.split(' ');
+    if (user?.name) {
+      const nameParts = user.name.split(' ');
       if (nameParts.length >= 2) {
         return (nameParts[0].charAt(0) + nameParts[1].charAt(0)).toUpperCase();
       }
@@ -53,7 +53,7 @@ export function AppSidebar() {
   };
 
   const currentUser = {
-    name: user?.full_name || user?.email || "",
+    name: user?.name || user?.email || "",
     email: user?.email || "",
     initials: getUserInitials(),
     role: user?.role || "employee",

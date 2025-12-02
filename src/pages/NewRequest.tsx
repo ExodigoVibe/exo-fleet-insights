@@ -70,7 +70,7 @@ export default function NewRequest() {
     defaultValues: {
       usage_type: "single_use",
       purpose: "",
-      full_name: user?.full_name || "",
+      full_name: user?.name || "",
       job_title: "",
       department: "",
       phone_number: "",
@@ -106,7 +106,7 @@ export default function NewRequest() {
       form.reset({
         usage_type: "single_use",
         purpose: "",
-        full_name: user.full_name || "",
+        full_name: user.name || "",
         job_title: "",
         department: "",
         phone_number: "",
@@ -372,7 +372,7 @@ export default function NewRequest() {
                       <FormItem>
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                          <Input placeholder={!user?.full_name ? "Enter your full name" : ""} {...field} />
+                          <Input placeholder={!user?.name ? "Enter your full name" : ""} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

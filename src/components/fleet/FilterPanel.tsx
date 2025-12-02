@@ -21,10 +21,9 @@ interface FilterPanelProps {
   drivers: string[];
   licensePlates: string[];
   loading?: boolean;
-  disableDriverFilter?: boolean;
 }
 
-export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, loading = false, disableDriverFilter = false }: FilterPanelProps) {
+export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, loading = false }: FilterPanelProps) {
   const [pendingFilters, setPendingFilters] = useState<FleetFilters>(filters);
   const { dateFrom, dateTo } = useInitialDateRange();
 
@@ -104,20 +103,20 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
             <div className="space-y-2">
               <Label htmlFor="driver">Driver</Label>
               <Select
-                value={pendingFilters.drivers[0] || drivers[0] || "all"}
+                value={pendingFilters.drivers[0] || "all"}
                 onValueChange={(value) =>
                   setPendingFilters({
                     ...pendingFilters,
                     drivers: value === "all" ? [] : [value],
                   })
                 }
-                disabled={loading || disableDriverFilter}
+                disabled={loading}
               >
-                <SelectTrigger disabled={loading || disableDriverFilter}>
-                  <SelectValue placeholder={disableDriverFilter ? (drivers[0] || "Your Name") : "All Drivers"} />
+                <SelectTrigger disabled={loading}>
+                  <SelectValue placeholder="All Drivers" />
                 </SelectTrigger>
                 <SelectContent>
-                  {!disableDriverFilter && <SelectItem value="all">All Drivers ({drivers.length})</SelectItem>}
+                  <SelectItem value="all">All Drivers ({drivers.length})</SelectItem>
                   {drivers.map((driver) => (
                     <SelectItem key={driver} value={driver}>
                       {driver}

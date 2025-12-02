@@ -10,11 +10,9 @@ import { toast } from "sonner";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, hasAdminAccess } = useAuth();
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
@@ -53,33 +51,19 @@ const Dashboard = () => {
     return { total, available, maintenance };
   }, [snowflakeVehicles]);
 
-  // Get recent requests (last 3) - filtered by user email for non-admin
+  // Get recent requests (last 3)
   const recentRequests = useMemo(() => {
-    let filtered = vehicleRequests || [];
-    
-    // Filter by user's email for non-admin roles
-    if (!hasAdminAccess && user?.email) {
-      filtered = filtered.filter(r => r.email === user.email);
-    }
-    
-    return filtered
+    return (vehicleRequests || [])
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 3);
-  }, [vehicleRequests, hasAdminAccess, user?.email]);
+  }, [vehicleRequests]);
 
-  // Get recent event reports (last 5) - filtered by user name for non-admin
+  // Get recent event reports (last 5)
   const recentEventReports = useMemo(() => {
-    let filtered = eventReports || [];
-    
-    // Filter by user's name for non-admin roles
-    if (!hasAdminAccess && user?.full_name) {
-      filtered = filtered.filter(r => r.employee_name === user.full_name);
-    }
-    
-    return filtered
+    return (eventReports || [])
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
-  }, [eventReports, hasAdminAccess, user?.full_name]);
+  }, [eventReports]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -144,65 +128,63 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Vehicle Fleet Recap Section - Admin/Coordinator only */}
-        {hasAdminAccess && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Car className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold text-foreground">Vehicle Fleet</h2>
+        {/* Vehicle Fleet Recap Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Car className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold text-foreground">Vehicle Fleet</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div onClick={() => navigate("/vehicle-fleet?filter=all")} className="cursor-pointer">
+              <Card className="transition-all hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">Total Vehicles</p>
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.total}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Entire fleet overview</p>
+                    </div>
+                    <Car className="h-8 w-8 text-gray-600" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div onClick={() => navigate("/vehicle-fleet?filter=all")} className="cursor-pointer">
-                <Card className="transition-all hover:shadow-md">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Total Vehicles</p>
-                        <div className="flex items-baseline gap-2">
-                          <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.total}</h3>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Entire fleet overview</p>
+            <div onClick={() => navigate("/vehicle-fleet?filter=parking")} className="cursor-pointer">
+              <Card className="transition-all hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">Available Vehicles</p>
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.available}</h3>
                       </div>
-                      <Car className="h-8 w-8 text-gray-600" />
+                      <p className="text-xs text-muted-foreground">Ready for assignment</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-              <div onClick={() => navigate("/vehicle-fleet?filter=parking")} className="cursor-pointer">
-                <Card className="transition-all hover:shadow-md">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Available Vehicles</p>
-                        <div className="flex items-baseline gap-2">
-                          <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.available}</h3>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Ready for assignment</p>
+                    <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            <div onClick={() => navigate("/vehicle-fleet?filter=other")} className="cursor-pointer">
+              <Card className="transition-all hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">In Maintenance</p>
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.maintenance}</h3>
                       </div>
-                      <CheckCircle2 className="h-8 w-8 text-green-600" />
+                      <p className="text-xs text-muted-foreground">Currently being serviced</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-              <div onClick={() => navigate("/vehicle-fleet?filter=other")} className="cursor-pointer">
-                <Card className="transition-all hover:shadow-md">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">In Maintenance</p>
-                        <div className="flex items-baseline gap-2">
-                          <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.maintenance}</h3>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Currently being serviced</p>
-                      </div>
-                      <Wrench className="h-8 w-8 text-orange-500" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                    <Wrench className="h-8 w-8 text-orange-500" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Recent Requests Section */}
         <div className="space-y-4">
