@@ -154,7 +154,7 @@ const Vehicles = () => {
       <div className="container mx-auto px-4 py-6">
         {/* KPI Cards - Only visible to admins and coordinators */}
         {hasAdminAccess && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
             <Card 
               className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "all" ? "border-2 border-primary" : ""}`}
               onClick={() => setStatusFilter("all")}
@@ -171,23 +171,11 @@ const Vehicles = () => {
               onClick={() => setStatusFilter("parking")}
             >
               <CardContent className="pt-6 text-center">
-                <div className="h-8 w-8 rounded-full bg-green-500 mx-auto mb-3 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-full bg-emerald-500 mx-auto mb-3 flex items-center justify-center">
                   <Circle className="h-4 w-4 text-white fill-white" />
                 </div>
-                <div className="text-4xl font-bold text-green-600 mb-1">{availableVehicles}</div>
+                <div className="text-4xl font-bold text-emerald-600 mb-1">{availableVehicles}</div>
                 <div className="text-sm text-muted-foreground">Available</div>
-              </CardContent>
-            </Card>
-            <Card 
-              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "driving" ? "border-2 border-primary" : ""}`}
-              onClick={() => setStatusFilter("driving")}
-            >
-              <CardContent className="pt-6 text-center">
-                <div className="h-8 w-8 rounded-full bg-blue-500 mx-auto mb-3 flex items-center justify-center">
-                  <Activity className="h-4 w-4 text-white fill-white" />
-                </div>
-                <div className="text-4xl font-bold text-blue-600 mb-1">{drivingVehicles}</div>
-                <div className="text-sm text-muted-foreground">Driving</div>
               </CardContent>
             </Card>
 
@@ -203,22 +191,25 @@ const Vehicles = () => {
             </Card>
 
             <Card 
-              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "other" ? "border-2 border-primary" : ""}`}
-              onClick={() => setStatusFilter("other")}
+              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "driving" ? "border-2 border-primary" : ""}`}
+              onClick={() => setStatusFilter("driving")}
             >
               <CardContent className="pt-6 text-center">
-                <Activity className="h-8 w-8 text-blue-600 mx-auto mb-3" />
+                <div className="h-8 w-8 rounded-full bg-blue-500 mx-auto mb-3 flex items-center justify-center">
+                  <Activity className="h-4 w-4 text-white" />
+                </div>
                 <div className="text-4xl font-bold text-blue-600 mb-1">{drivingVehicles}</div>
                 <div className="text-sm text-muted-foreground">Driving</div>
               </CardContent>
             </Card>
+
             <Card 
               className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "other" ? "border-2 border-primary" : ""}`}
               onClick={() => setStatusFilter("other")}
             >
               <CardContent className="pt-6 text-center">
-                <Wrench className="h-8 w-8 text-orange-600 mx-auto mb-3" />
-                <div className="text-4xl font-bold text-orange-600 mb-1">{maintenanceVehicles}</div>
+                <Wrench className="h-8 w-8 text-amber-600 mx-auto mb-3" />
+                <div className="text-4xl font-bold text-amber-600 mb-1">{maintenanceVehicles}</div>
                 <div className="text-sm text-muted-foreground">Maintenance</div>
               </CardContent>
             </Card>
