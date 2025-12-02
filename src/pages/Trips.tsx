@@ -26,16 +26,28 @@ const Trips = () => {
   const { hasAdminAccess } = useAuth();
   const azureUser = useUserInfo();
 
+  const norm = (s?: string | null) =>
+    (s ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  
   const snowflakeDrivers = useMemo(() => {
-    if (!driversData) return [];
-    return hasAdminAccess
-      ? driversData
-      : driversData.filter(
-          (d) =>
-            d.first_name + d.last_name === azureUser?.full_name ||
-            d.email === azureUser?.email,
-        );
-  }, [driversData, hasAdminAccess, azureUser]);
+    if (!driversData?.length) return driversData ?? [];
+  
+    // admins see all
+    if (hasAdminAccess) return driversData;
+  
+    const azureName = norm(azureUser?.full_name);
+    const azureEmail = norm(azureUser?.email);
+  
+    return driversData.filter((d) => {
+      const driverName = norm(`${d?.first_name ?? ""} ${d?.last_name ?? ""}`);
+      const driverEmail = norm(d?.email);
+  
+      return (azureName && driverName === azureName) || (azureEmail && driverEmail && driverEmail === azureEmail);
+    });
+  }, [driversData, hasAdminAccess, azureUser?.full_name, azureUser?.email]);
 
   const snowflakeVehicles = useMemo(() => vehiclesData ?? [], [vehiclesData]);
 
