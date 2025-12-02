@@ -1,57 +1,63 @@
-import { useState, useMemo, useEffect } from "react";
-import { KPICard } from "@/components/fleet/KPICard";
-import { FilterPanel } from "@/components/fleet/FilterPanel";
-import { VehicleUtilizationChart } from "@/components/fleet/VehicleUtilizationChart";
-import { DailyUsageChart } from "@/components/fleet/DailyUsageChart";
-import { TripsTable } from "@/components/fleet/TripsTable";
-import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
-import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
-import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
+import { useState, useMemo, useEffect } from 'react';
+import { KPICard } from '@/components/fleet/KPICard';
+import { FilterPanel } from '@/components/fleet/FilterPanel';
+import { VehicleUtilizationChart } from '@/components/fleet/VehicleUtilizationChart';
+import { DailyUsageChart } from '@/components/fleet/DailyUsageChart';
+import { TripsTable } from '@/components/fleet/TripsTable';
+import { useDriversQuery } from '@/hooks/queries/useDriversQuery';
+import { useVehiclesQuery } from '@/hooks/queries/useVehiclesQuery';
+import { useSnowflakeTrips } from '@/hooks/useSnowflakeTrips';
 import {
   filterTrips,
   calculateVehicleUsageMetrics,
   calculateDailyMetrics,
   calculateKPIs,
-} from "@/utils/fleetCalculations";
-import { FleetFilters } from "@/types/fleet";
-import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
-import { toast } from "sonner";
-import { useInitialDateRange, useUserInfo } from "@/hooks/useInitialData";
-import { useAuth } from "@/hooks/useAuth";
+} from '@/utils/fleetCalculations';
+import { FleetFilters } from '@/types/fleet';
+import { Activity, Clock, TrendingUp, Car, Timer } from 'lucide-react';
+import { toast } from 'sonner';
+import { useInitialDateRange, useUserInfo } from '@/hooks/useInitialData';
+import { useAuth } from '@/hooks/useAuth';
 
 const Trips = () => {
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
-  const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
+  const {
+    data: vehiclesData,
+    isLoading: vehiclesLoading,
+    error: vehiclesError,
+  } = useVehiclesQuery();
   const { dateFrom, dateTo } = useInitialDateRange();
   const { hasAdminAccess } = useAuth();
   const azureUser = useUserInfo();
 
-  const norm = (s?: string | null) =>
-    (s ?? "")
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, " ");
-  
+  const norm = (s?: string | null) => (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+
   const snowflakeDrivers = useMemo(() => {
     if (!driversData?.length) return driversData ?? [];
-  
+
     // admins see all
     if (hasAdminAccess) return driversData;
-  
+
     const azureName = norm(azureUser?.full_name);
     const azureEmail = norm(azureUser?.email);
-  
+
     return driversData.filter((d) => {
-      const driverName = norm(`${d?.first_name ?? ""} ${d?.last_name ?? ""}`);
+      const driverName = norm(`${d?.first_name ?? ''} ${d?.last_name ?? ''}`);
       const driverEmail = norm(d?.email);
-  
-      return (azureName && driverName === azureName) || (azureEmail && driverEmail && driverEmail === azureEmail);
+
+      return (
+        (azureName && driverName === azureName) ||
+        (azureEmail && driverEmail && driverEmail === azureEmail)
+      );
     });
   }, [driversData, hasAdminAccess, azureUser?.full_name, azureUser?.email]);
 
   const snowflakeVehicles = useMemo(() => vehiclesData ?? [], [vehiclesData]);
 
-  const allVehicles = useMemo(() => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []), [snowflakeVehicles]);
+  const allVehicles = useMemo(
+    () => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []),
+    [snowflakeVehicles],
+  );
 
   const driverOptions = useMemo(
     () => snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`).sort(),
@@ -108,11 +114,37 @@ const Trips = () => {
     dateTo: filters.dateTo,
   });
 
-  // Get license plates associated with current user's trip history
-  const getUserLicensePlates = () => {
-    const uniquePlates = [...new Set(filteredTrips.map((trip) => trip.license_plate))];
-    return uniquePlates;
-  }
+  // Baseline trips: respects date range + implicit driver, but ignores license plate filter
+  const tripsForPlateOptions = useMemo(() => {
+    if (driverOptions.length === 0) return [];
+    if (tripsLoading || allTrips.length === 0) return [];
+
+    if (
+      !loadedDateRange ||
+      loadedDateRange.dateFrom !== filters.dateFrom ||
+      loadedDateRange.dateTo !== filters.dateTo
+    ) {
+      return [];
+    }
+
+    const effectiveFilters = { ...filters };
+
+    // keep implicit driver behavior
+    if (!hasAdminAccess && driverOptions.length === 1 && filters.drivers.length === 0) {
+      effectiveFilters.drivers = [driverOptions[0]];
+    }
+
+    // IMPORTANT: ignore the currently selected plate so options stay stable
+    effectiveFilters.licensePlates = [];
+
+    return filterTrips(allTrips, effectiveFilters);
+  }, [allTrips, filters, tripsLoading, loadedDateRange, driverOptions, hasAdminAccess]);
+
+  const userHistoryLicensePlates = useMemo(() => {
+    return Array.from(
+      new Set((tripsForPlateOptions ?? []).map((t) => t.license_plate).filter(Boolean)),
+    ).sort();
+  }, [tripsForPlateOptions]);
 
   // Only filter trips if they match the current filter date range
   const filteredTrips = useMemo(() => {
@@ -153,7 +185,9 @@ const Trips = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Trips Overview</h1>
-            <p className="text-muted-foreground mt-1">Analyze vehicle utilization and driver performance</p>
+            <p className="text-muted-foreground mt-1">
+              Analyze vehicle utilization and driver performance
+            </p>
           </div>
         </div>
       </div>
@@ -165,16 +199,19 @@ const Trips = () => {
           drivers={driverOptions}
           licensePlates={licensePlateOptions}
           loading={tripsLoading}
-          userHistoryLicensePlates={getUserLicensePlates()}
+          userHistoryLicensePlates={userHistoryLicensePlates}
         />
 
         <div className="text-xs text-muted-foreground flex justify-between items-center">
           {tripsLoading ? (
             <span>
-              Loading trips from Snowflake... {loadedCount.toLocaleString()}/{totalCount.toLocaleString()}
+              Loading trips from Snowflake... {loadedCount.toLocaleString()}/
+              {totalCount.toLocaleString()}
             </span>
           ) : tripsError ? (
-            <span className="text-destructive">Failed to load trips from Snowflake: {tripsError}</span>
+            <span className="text-destructive">
+              Failed to load trips from Snowflake: {tripsError}
+            </span>
           ) : (
             <span>Loaded {allTrips.length.toLocaleString()} trips from Snowflake.</span>
           )}
