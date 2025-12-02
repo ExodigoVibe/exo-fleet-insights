@@ -112,13 +112,13 @@ const Vehicles = () => {
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case "parking":
-        return <Badge className="bg-green-600 hover:bg-green-700">Available</Badge>;
+        return <Badge variant="success">Available</Badge>;
       case "driving":
-        return <Badge className="bg-blue-600 hover:bg-blue-700">Driving</Badge>;
+        return <Badge variant="driving">Driving</Badge>;
       case "maintenance":
-        return <Badge className="bg-orange-600 hover:bg-orange-700">Maintenance</Badge>;
+        return <Badge variant="warning">Maintenance</Badge>;
       case "moving":
-        return <Badge className="bg-blue-600 hover:bg-blue-700">In Use</Badge>;
+        return <Badge variant="driving">In Use</Badge>;
       default:
         return <Badge variant="outline">{status || "Unknown"}</Badge>;
     }
