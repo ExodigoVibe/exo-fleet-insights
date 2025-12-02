@@ -191,7 +191,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                     <FormItem>
                       <FormLabel>Employee Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your name" {...field} />
+                        <Input placeholder={!user?.name ? "Enter your name" : ""} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
