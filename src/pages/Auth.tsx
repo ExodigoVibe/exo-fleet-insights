@@ -43,10 +43,10 @@ const Auth = () => {
       }}
     >
       <div className="absolute inset-0 bg-black/30" />
-      <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-background/95">
+      <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-background/95" style={{ background: 'transparent' }}>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Fleet Usage Analytics</CardTitle>
-          <CardDescription className="text-center">Sign in to access the project</CardDescription>
+          <CardTitle className="text-2xl font-bold text-center text-white">Fleet Usage Analytics</CardTitle>
+          <CardDescription className="text-center text-white">Sign in to access the project</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button onClick={handleAzureLogin} disabled={isLoading} className="w-full" size="lg">
