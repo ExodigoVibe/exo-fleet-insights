@@ -86,12 +86,16 @@ const Dashboard = () => {
       .slice(0, 3);
   }, [vehicleRequests, hasAdminAccess, user?.email]);
 
-  // Get recent event reports (last 5)
+  // Get recent event reports (last 5) - filter by user email for non-admin users
   const recentEventReports = useMemo(() => {
-    return (eventReports || [])
+    let reports = eventReports || [];
+    if (!hasAdminAccess && user?.email) {
+      reports = reports.filter((r) => r.employee_name === user.email);
+    }
+    return reports
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
-  }, [eventReports]);
+  }, [eventReports, hasAdminAccess, user?.email]);
 
   return (
     <div className="min-h-screen bg-background">
