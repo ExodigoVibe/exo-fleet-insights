@@ -151,16 +151,12 @@ export function AppSidebar() {
                 <span className="text-sm font-medium text-foreground truncate max-w-[140px]">
                   {currentUser.name}
                 </span>
-                <span className="text-xs text-muted-foreground truncate max-w-[140px]">
-                  {currentUser.email}
-                </span>
               </div>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <div className="px-2 py-1.5 text-sm">
               <div className="font-medium">{currentUser.name}</div>
-              <div className="text-xs text-muted-foreground truncate">{currentUser.email}</div>
               <div className="text-xs text-muted-foreground mt-1 capitalize">Role: {currentUser.role}</div>
             </div>
             <DropdownMenuItem onClick={logout} className="cursor-pointer hover:bg-gray-100 hover:text-foreground">
