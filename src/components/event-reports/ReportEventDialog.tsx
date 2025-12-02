@@ -91,8 +91,11 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
 
   // Auto-fill employee name from SSO when dialog opens
   useEffect(() => {
-    if (open && user) {
-      form.setValue("employeeName", user.name || "");
+    if (open && user && user.name) {
+      const currentName = form.getValues("employeeName");
+      if (!currentName) {
+        form.setValue("employeeName", user.name);
+      }
     }
   }, [open, user, form]);
 
