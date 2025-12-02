@@ -24,16 +24,12 @@ const Trips = () => {
   const { dateFrom, dateTo } = useInitialDateRange();
   const snowflakeDrivers = driversData ?? [];
   const snowflakeVehicles = vehiclesData ?? [];
-  
-  const allVehicles = useMemo(
-    () => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []),
-    [snowflakeVehicles]
-  );
+
+  const allVehicles = useMemo(() => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []), [snowflakeVehicles]);
 
   const driverOptions = useMemo(
-    () =>
-      snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`).sort(),
-    [snowflakeDrivers]
+    () => snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`).sort(),
+    [snowflakeDrivers],
   );
 
   const licensePlateOptions = useMemo(
@@ -42,19 +38,23 @@ const Trips = () => {
         .map((v) => v.license_plate)
         .filter(Boolean)
         .sort(),
-    [snowflakeVehicles]
+    [snowflakeVehicles],
   );
 
   // Show error toasts
   useEffect(() => {
     if (driversError) {
-      toast.error(`Failed to load drivers: ${driversError instanceof Error ? driversError.message : String(driversError)}`);
+      toast.error(
+        `Failed to load drivers: ${driversError instanceof Error ? driversError.message : String(driversError)}`,
+      );
     }
   }, [driversError]);
 
   useEffect(() => {
     if (vehiclesError) {
-      toast.error(`Failed to load vehicles: ${vehiclesError instanceof Error ? vehiclesError.message : String(vehiclesError)}`);
+      toast.error(
+        `Failed to load vehicles: ${vehiclesError instanceof Error ? vehiclesError.message : String(vehiclesError)}`,
+      );
     }
   }, [vehiclesError]);
 
@@ -86,20 +86,22 @@ const Trips = () => {
   const filteredTrips = useMemo(() => {
     // Don't filter while loading
     if (tripsLoading || allTrips.length === 0) return [];
-    
+
     // Ensure loaded trips match the current filter date range
-    if (!loadedDateRange || 
-        loadedDateRange.dateFrom !== filters.dateFrom || 
-        loadedDateRange.dateTo !== filters.dateTo) {
+    if (
+      !loadedDateRange ||
+      loadedDateRange.dateFrom !== filters.dateFrom ||
+      loadedDateRange.dateTo !== filters.dateTo
+    ) {
       return [];
     }
-    
+
     return filterTrips(allTrips, filters);
   }, [allTrips, filters, tripsLoading, loadedDateRange]);
-  
+
   const vehicleMetrics = useMemo(
     () => calculateVehicleUsageMetrics(filteredTrips, allVehicles),
-    [filteredTrips, allVehicles]
+    [filteredTrips, allVehicles],
   );
   const dailyMetrics = useMemo(() => calculateDailyMetrics(filteredTrips), [filteredTrips]);
   const kpis = useMemo(() => calculateKPIs(filteredTrips), [filteredTrips]);
@@ -109,10 +111,8 @@ const Trips = () => {
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Fleet Usage Analytics</h1>
-            <p className="text-muted-foreground mt-1">
-              Analyze vehicle utilization and driver performance
-            </p>
+            <h1 className="text-3xl font-bold text-foreground">Trips</h1>
+            <p className="text-muted-foreground mt-1">Analyze vehicle utilization and driver performance</p>
           </div>
         </div>
       </div>
@@ -132,17 +132,9 @@ const Trips = () => {
               Loading trips from Snowflake... {loadedCount.toLocaleString()}/{totalCount.toLocaleString()}
             </span>
           ) : tripsError ? (
-            <span className="text-destructive">
-              Failed to load trips from Snowflake: {tripsError}
-            </span>
+            <span className="text-destructive">Failed to load trips from Snowflake: {tripsError}</span>
           ) : (
-            <span>
-              Loaded
-              {" "}
-              {allTrips.length.toLocaleString()}
-              {" "}
-              trips from Snowflake.
-            </span>
+            <span>Loaded {allTrips.length.toLocaleString()} trips from Snowflake.</span>
           )}
         </div>
 
@@ -184,7 +176,7 @@ const Trips = () => {
           <DailyUsageChart metrics={dailyMetrics} />
         </div>
 
-        <TripsTable trips={filteredTrips} loading={tripsLoading} totalCount={totalCount}/>
+        <TripsTable trips={filteredTrips} loading={tripsLoading} totalCount={totalCount} />
       </div>
     </div>
   );
