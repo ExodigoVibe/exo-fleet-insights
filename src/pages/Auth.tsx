@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import fleetBackground from "@/assets/fleet-background.webp";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -32,8 +33,17 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <Card className="w-full max-w-md">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 relative"
+      style={{
+        backgroundImage: `url(${fleetBackground})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      <div className="absolute inset-0 bg-black/30" />
+      <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-background/95">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Fleet Usage Analytics</CardTitle>
           <CardDescription className="text-center">Sign in to access the project</CardDescription>
