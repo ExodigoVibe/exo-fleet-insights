@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 export interface User {
   id: string;
   email: string;
-  name: string;
+  full_name: string;
   role: string;
 }
 
@@ -22,7 +22,7 @@ export function useAuth() {
       setUser({
         id: azureUser.id,
         email: azureUser.email,
-        name: azureUser.full_name,
+        full_name: azureUser.full_name,
         role: userRole,
       });
     }
