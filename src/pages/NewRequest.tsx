@@ -95,6 +95,7 @@ export default function NewRequest() {
       }
     } else if (!isEditMode && !isLoadingAuth && user) {
       // Auto-fill user data from SSO for new requests
+      console.log("Auto-filling form with user data:", user);
       form.reset({
         usage_type: "single_use",
         purpose: "",
