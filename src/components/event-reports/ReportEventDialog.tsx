@@ -45,6 +45,7 @@ import { toast } from "sonner";
 const formSchema = z.object({
   vehicleId: z.string().min(1, "Please select a vehicle"),
   employeeName: z.string().min(1, "Employee name is required").max(100),
+  employeeEmail: z.string().email("Please enter a valid email").max(255),
   eventDateTime: z.date({ required_error: "Date and time is required" }),
   location: z.string().min(1, "Location is required").max(200),
   description: z.string().min(10, "Please provide a detailed description").max(1000),
@@ -76,6 +77,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
     defaultValues: {
       vehicleId: "",
       employeeName: "",
+      employeeEmail: "",
       location: "",
       description: "",
       severity: "slight",
@@ -89,13 +91,15 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
     },
   });
 
-  // Auto-fill employee name from SSO when dialog opens
+  // Auto-fill employee name and email from SSO when dialog opens
   useEffect(() => {
-    console.log("ReportEventDialog - User data:", user);
-    console.log("ReportEventDialog - Dialog open:", open);
-    if (open && user?.name) {
-      console.log("Auto-filling employee name with:", user.name);
-      form.setValue("employeeName", user.name);
+    if (open) {
+      if (user?.name) {
+        form.setValue("employeeName", user.name);
+      }
+      if (user?.email) {
+        form.setValue("employeeEmail", user.email);
+      }
     }
   }, [open, user, form]);
 
@@ -204,6 +208,24 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                       <FormLabel>Employee Name</FormLabel>
                       <FormControl>
                         <Input placeholder={!user?.name ? "Enter your name" : ""} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="employeeEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Employee Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          placeholder={!user?.email ? "Enter your email" : ""} 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
