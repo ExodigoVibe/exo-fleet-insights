@@ -33,12 +33,19 @@ const Trips = () => {
   );
 
   const driverOptions = useMemo(() => {
+    console.log("Trips - isEmployee:", isEmployee);
+    console.log("Trips - user:", user);
+    console.log("Trips - all drivers count:", snowflakeDrivers.length);
+    
     // For employees, show only their own name
     if (isEmployee && user?.full_name) {
+      console.log("Trips - showing only user's name:", user.full_name);
       return [user.full_name];
     }
     // For admins/coordinators, show all drivers
-    return snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`).sort();
+    const allDriverNames = snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`).sort();
+    console.log("Trips - showing all drivers:", allDriverNames.length);
+    return allDriverNames;
   }, [snowflakeDrivers, isEmployee, user?.full_name]);
 
   const licensePlateOptions = useMemo(
