@@ -81,3 +81,32 @@ export const useCreateEventReport = () => {
     },
   });
 };
+
+export const useDeleteEventReport = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("event_reports")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-reports"] });
+      toast({
+        title: "Success",
+        description: "Event report deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete event report: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+};
