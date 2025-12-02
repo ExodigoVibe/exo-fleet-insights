@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import fleetBackground from "@/assets/fleet-background.webp";
+import fleetBackground from "@/assets/fleet-background.jpg";
 
 const Auth = () => {
   const navigate = useNavigate();
