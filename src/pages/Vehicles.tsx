@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Car, Search, Download, Plus, Wrench, Users, Circle } from "lucide-react";
+import { Car, Search, Download, Plus, Wrench, Users, Circle, Activity } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
@@ -80,9 +80,10 @@ const Vehicles = () => {
     v.motion_status?.toLowerCase() === "parking"
   )?.length || 0;
   const assignedVehicles = vehicles?.filter(v => v.motion_status?.toLowerCase() === "moving")?.length || 0;
+  const drivingVehicles = vehicles?.filter(v => v.motion_status?.toLowerCase() === "driving")?.length || 0;
   const maintenanceVehicles = vehicles?.filter(v => {
     const status = v.motion_status?.toLowerCase();
-    return status !== "parking" && status !== "moving";
+    return status !== "parking" && status !== "moving" && status !== "driving";
   })?.length || 0;
 
   const handleExportToExcel = () => {
@@ -187,6 +188,16 @@ const Vehicles = () => {
               </CardContent>
             </Card>
 
+            <Card 
+              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "other" ? "border-2 border-primary" : ""}`}
+              onClick={() => setStatusFilter("other")}
+            >
+              <CardContent className="pt-6 text-center">
+                <Activity className="h-8 w-8 text-blue-600 mx-auto mb-3" />
+                <div className="text-4xl font-bold text-blue-600 mb-1">{drivingVehicles}</div>
+                <div className="text-sm text-muted-foreground">Driving</div>
+              </CardContent>
+            </Card>
             <Card 
               className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "other" ? "border-2 border-primary" : ""}`}
               onClick={() => setStatusFilter("other")}
