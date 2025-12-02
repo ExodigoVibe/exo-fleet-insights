@@ -36,15 +36,27 @@ const Dashboard = () => {
     }
   }, [vehiclesError]);
 
-  // Calculate requests recap data (filtered by user email for employees)
+  // Calculate requests recap data (filtered by user email and full_name for employees)
   const requestsRecap = useMemo(() => {
-    const filteredRequests = isEmployee && user?.email
-      ? (vehicleRequests || []).filter(r => r.email === user.email)
+    console.log("Dashboard - isEmployee:", isEmployee);
+    console.log("Dashboard - user:", user);
+    console.log("Dashboard - all requests:", vehicleRequests);
+    
+    const filteredRequests = isEmployee && user
+      ? (vehicleRequests || []).filter(r => {
+          // Match by email (case-insensitive) OR full_name (case-insensitive)
+          const emailMatch = r.email?.toLowerCase() === user.email?.toLowerCase();
+          const nameMatch = r.full_name?.toLowerCase() === user.full_name?.toLowerCase();
+          console.log("Request:", r.full_name, "Email match:", emailMatch, "Name match:", nameMatch);
+          return emailMatch || nameMatch;
+        })
       : (vehicleRequests || []);
+    
+    console.log("Dashboard - filtered requests:", filteredRequests);
     const total = filteredRequests.length;
     const pending = filteredRequests.filter(r => r.status === 'pending_manager').length;
     return { total, pending };
-  }, [vehicleRequests, isEmployee, user?.email]);
+  }, [vehicleRequests, isEmployee, user]);
 
   // Calculate vehicle fleet recap data
   const vehicleFleetRecap = useMemo(() => {
@@ -56,25 +68,35 @@ const Dashboard = () => {
     return { total, available, maintenance };
   }, [snowflakeVehicles]);
 
-  // Get recent requests (last 3, filtered by user email for employees)
+  // Get recent requests (last 3, filtered by user email and full_name for employees)
   const recentRequests = useMemo(() => {
-    const filteredRequests = isEmployee && user?.email
-      ? (vehicleRequests || []).filter(r => r.email === user.email)
+    const filteredRequests = isEmployee && user
+      ? (vehicleRequests || []).filter(r => {
+          const emailMatch = r.email?.toLowerCase() === user.email?.toLowerCase();
+          const nameMatch = r.full_name?.toLowerCase() === user.full_name?.toLowerCase();
+          return emailMatch || nameMatch;
+        })
       : (vehicleRequests || []);
     return filteredRequests
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 3);
-  }, [vehicleRequests, isEmployee, user?.email]);
+  }, [vehicleRequests, isEmployee, user]);
 
-  // Get recent event reports (last 5, filtered by user email for employees)
+  // Get recent event reports (last 5, filtered by user full_name for employees)
   const recentEventReports = useMemo(() => {
-    const filteredReports = isEmployee && user?.email
-      ? (eventReports || []).filter(r => r.employee_name === user.full_name)
+    console.log("Dashboard - all event reports:", eventReports);
+    const filteredReports = isEmployee && user?.full_name
+      ? (eventReports || []).filter(r => {
+          const nameMatch = r.employee_name?.toLowerCase() === user.full_name?.toLowerCase();
+          console.log("Event report:", r.employee_name, "Match:", nameMatch);
+          return nameMatch;
+        })
       : (eventReports || []);
+    console.log("Dashboard - filtered event reports:", filteredReports);
     return filteredReports
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
-  }, [eventReports, isEmployee, user?.email, user?.full_name]);
+  }, [eventReports, isEmployee, user?.full_name]);
 
   return (
     <div className="min-h-screen bg-background">
