@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -18,9 +19,9 @@ const Dashboard = () => {
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
   const { data: vehicleRequests } = useVehicleRequestsQuery();
   const { data: eventReports } = useEventReportsQuery();
+  const { hasAdminAccess } = useAuth();
   const snowflakeDrivers = driversData ?? [];
   const snowflakeVehicles = vehiclesData ?? [];
-
   // Show error toasts
   useEffect(() => {
     if (driversError) {
@@ -130,7 +131,7 @@ const Dashboard = () => {
         </div>
 
         {/* Vehicle Fleet Recap Section */}
-        <div className="space-y-4">
+       {hasAdminAccess && ( <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Car className="h-5 w-5 text-primary" />
             <h2 className="text-xl font-semibold text-foreground">Vehicle Fleet</h2>
@@ -201,7 +202,7 @@ const Dashboard = () => {
               </Card>
             </div>
           </div>
-        </div>
+        </div>)}
 
         {/* Recent Requests Section */}
         <div className="space-y-4">

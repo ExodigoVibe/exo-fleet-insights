@@ -16,14 +16,28 @@ import {
 import { FleetFilters } from "@/types/fleet";
 import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
 import { toast } from "sonner";
-import { useInitialDateRange } from "@/hooks/useInitialData";
+import { useInitialDateRange, useUserInfo } from "@/hooks/useInitialData";
+import { useAuth } from "@/hooks/useAuth";
 
 const Trips = () => {
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
   const { dateFrom, dateTo } = useInitialDateRange();
-  const snowflakeDrivers = driversData ?? [];
-  const snowflakeVehicles = vehiclesData ?? [];
+  const { hasAdminAccess } = useAuth();
+  const azureUser = useUserInfo();
+
+  const snowflakeDrivers = useMemo(() => {
+    if (!driversData) return [];
+    return hasAdminAccess
+      ? driversData
+      : driversData.filter(
+          (d) =>
+            d.first_name + d.last_name === azureUser?.full_name ||
+            d.email === azureUser?.email,
+        );
+  }, [driversData, hasAdminAccess, azureUser]);
+
+  const snowflakeVehicles = useMemo(() => vehiclesData ?? [], [vehiclesData]);
 
   const allVehicles = useMemo(() => (snowflakeVehicles.length > 0 ? snowflakeVehicles : []), [snowflakeVehicles]);
 
@@ -141,6 +155,7 @@ const Trips = () => {
           drivers={driverOptions}
           licensePlates={licensePlateOptions}
           loading={tripsLoading}
+          userHistoryLicensePlates={getUserLicensePlates}
         />
 
         <div className="text-xs text-muted-foreground flex justify-between items-center">
