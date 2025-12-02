@@ -106,31 +106,23 @@ serve(async (req) => {
       const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      // Check if user exists in user_roles table
-      const { data: existingUser, error: fetchError } = await supabase
-        .from("user_roles")
+      // Check if user already exists in profiles table
+      const { data: existingProfile, error: profileFetchError } = await supabase
+        .from("profiles")
         .select("*")
         .eq("email", userEmail)
         .maybeSingle();
 
-      if (fetchError && fetchError.code !== "PGRST116") {
-        console.error("[azure-sso] Error fetching user role:", fetchError);
+      if (profileFetchError && profileFetchError.code !== "PGRST116") {
+        console.error("[azure-sso] Error fetching profile:", profileFetchError);
       }
 
-      let userRole = "employee";
-      let userId = existingUser?.user_id;
+      let userId = existingProfile?.id;
 
-      // Use existing role from database if user exists
-      if (existingUser) {
-        userRole = existingUser.role;
-      }
-
-      // If user doesn't exist, create with appropriate role
-      if (!existingUser) {
-        // Generate a UUID for the user
+      // If profile doesn't exist, create it
+      if (!existingProfile) {
         userId = crypto.randomUUID();
 
-        // Insert into profiles table
         const { error: profileError } = await supabase
           .from("profiles")
           .insert({
@@ -141,9 +133,30 @@ serve(async (req) => {
 
         if (profileError) {
           console.error("[azure-sso] Error creating profile:", profileError);
+          throw profileError;
         }
 
-        // Insert into user_roles table
+        console.log(`[azure-sso] Created new profile for: ${userEmail}`);
+      }
+
+      // Check if user exists in user_roles table
+      const { data: existingRole, error: roleFetchError } = await supabase
+        .from("user_roles")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (roleFetchError && roleFetchError.code !== "PGRST116") {
+        console.error("[azure-sso] Error fetching user role:", roleFetchError);
+      }
+
+      let userRole = "employee";
+
+      // Use existing role from database if user exists
+      if (existingRole) {
+        userRole = existingRole.role;
+      } else {
+        // Create new role for new user
         const { error: roleError } = await supabase
           .from("user_roles")
           .insert({
@@ -156,7 +169,7 @@ serve(async (req) => {
         if (roleError) {
           console.error("[azure-sso] Error creating user role:", roleError);
         } else {
-          console.log(`[azure-sso] Created new user with role: ${userRole}`);
+          console.log(`[azure-sso] Created new user role: ${userRole} for ${userEmail}`);
         }
       }
 
