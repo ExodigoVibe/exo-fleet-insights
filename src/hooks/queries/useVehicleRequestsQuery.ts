@@ -149,3 +149,35 @@ export const useDeleteVehicleRequest = () => {
     },
   });
 };
+
+export const useApproveVehicleRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from("vehicle_requests")
+        .update({ status: "approved" })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicle-requests"] });
+      toast({
+        title: "Success",
+        description: "Vehicle request approved successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to approve vehicle request: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+};
