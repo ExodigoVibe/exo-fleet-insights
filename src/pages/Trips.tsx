@@ -109,21 +109,10 @@ const Trips = () => {
   });
 
   // Get license plates associated with current user's trip history
-  const getUserLicensePlates = useMemo(() => {
-    const azureUser = localStorage.getItem("azureUser");
-    if (!azureUser) return [];
-
-    const user = JSON.parse(azureUser);
-    const userEmail = user.email;
-
-    // Filter trips where driver matches current user's email
-    const userTrips = allTrips.filter((trip) => trip.driver_name === userEmail);
-
-    // Extract unique license plates
-    const uniquePlates = [...new Set(userTrips.map((trip) => trip.license_plate))];
-
-    return uniquePlates.sort();
-  }, [allTrips]);
+  const getUserLicensePlates = () => {
+    const uniquePlates = [...new Set(filteredTrips.map((trip) => trip.license_plate))];
+    return uniquePlates;
+  }
 
   // Only filter trips if they match the current filter date range
   const filteredTrips = useMemo(() => {
@@ -176,7 +165,7 @@ const Trips = () => {
           drivers={driverOptions}
           licensePlates={licensePlateOptions}
           loading={tripsLoading}
-          userHistoryLicensePlates={getUserLicensePlates}
+          userHistoryLicensePlates={getUserLicensePlates()}
         />
 
         <div className="text-xs text-muted-foreground flex justify-between items-center">

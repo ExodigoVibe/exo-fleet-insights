@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,18 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
   const [pendingFilters, setPendingFilters] = useState<FleetFilters>(filters);
   const { dateFrom, dateTo } = useInitialDateRange();
 
+  const plateOptions = useMemo(() => {
+    const arr = (drivers.length > 1 ? licensePlates : userHistoryLicensePlates) ?? [];
+    // de-dupe + remove falsy
+    return Array.from(new Set(arr.map(p => (p ?? "").trim()).filter(Boolean)));
+  }, [drivers.length, licensePlates, userHistoryLicensePlates]);
+
+  const selectedPlate = useMemo(() => {
+    const current = pendingFilters.licensePlates?.[0];
+    if (!current) return "all";
+    return plateOptions.includes(current) ? current : "all";
+  }, [pendingFilters.licensePlates, plateOptions]);
+  
   useEffect(() => {
     setPendingFilters(filters);
   }, [filters]);
@@ -143,35 +155,29 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
             <div className="space-y-2">
               <Label htmlFor="licensePlate">License Plate</Label>
               <Select
-                value={pendingFilters.licensePlates[0] || "all"}
+                value={selectedPlate}
                 onValueChange={(value) =>
-                  setPendingFilters({
-                    ...pendingFilters,
+                  setPendingFilters((prev) => ({
+                    ...prev,
                     licensePlates: value === "all" ? [] : [value],
-                  })
+                  }))
                 }
-                disabled={loading}
+                disabled={loading || plateOptions.length === 0}
               >
-                <SelectTrigger disabled={loading}>
-                  <SelectValue placeholder="All Vehicles" />
-                </SelectTrigger>
-                {drivers.length > 1 ? (
-                  <SelectContent>
-                    <SelectItem value="all">All Vehicles ({licensePlates.length})</SelectItem>
-                    {licensePlates.map((plate) => (
-                      <SelectItem key={plate} value={plate}>
-                        {plate}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                ) : (
-                  <SelectContent>
-                    <SelectItem value={userHistoryLicensePlates[0] || "none"} disabled={true}>
-                      {userHistoryLicensePlates[0] || "No plate in your history"}
-                    </SelectItem>
-                  </SelectContent>
-                )}
-              </Select>
+              <SelectTrigger>
+                <SelectValue placeholder="All Vehicles" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="all">All Vehicles ({plateOptions.length})</SelectItem>
+
+                {plateOptions.map((plate) => (
+                  <SelectItem key={plate} value={plate}>
+                    {plate}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             </div>
           </div>
           <div className="space-y-2">
