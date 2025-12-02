@@ -364,7 +364,7 @@ export default function NewRequest() {
                       <FormItem>
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter your full name" {...field} />
+                          <Input placeholder={!user?.name ? "Enter your full name" : ""} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -424,7 +424,7 @@ export default function NewRequest() {
                       <FormItem>
                         <FormLabel>Email Address</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="Enter your email" {...field} />
+                          <Input type="email" placeholder={!user?.email ? "Enter your email" : ""} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
