@@ -11,36 +11,34 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // const checkAuth = () => {
-    //   const azureUser = localStorage.getItem("azureUser");
-    //   const userRole = localStorage.getItem("userRole");
-    //   const currentPath = window.location.pathname;
+    const checkAuth = () => {
+      const azureUser = localStorage.getItem("azureUser");
+      const userRole = localStorage.getItem("userRole");
+      const currentPath = window.location.pathname;
+      
+      if (!azureUser) {
+        navigate("/login");
+        return;
+      }
 
-    //   if (!azureUser) {
-    //     navigate("/login");
-    //     return;
-    //   }
+      // Employee restricted pages
+      const employeeRestrictedPages = [
+        "/vehicle-fleet",
+        "/employees",
+        "/roles",
+        "/form-templates",
+      ];
 
-    //   // Employee restricted pages
-    //   const employeeRestrictedPages = [
-    //     "/vehicle-fleet",
-    //     "/employees",
-    //     "/roles",
-    //     "/form-templates",
-    //   ];
+      // Check if employee is trying to access restricted page
+      if (userRole === "employee" && employeeRestrictedPages.includes(currentPath)) {
+        navigate("/");
+        return;
+      }
 
-    //   // Check if employee is trying to access restricted page
-    //   if (userRole === "employee" && employeeRestrictedPages.includes(currentPath)) {
-    //     navigate("/");
-    //     return;
-    //   }
+      setIsChecking(false);
+    };
 
-    //   setIsChecking(false);
-    // };
-
-    // checkAuth();
-    setIsChecking(false);
-    navigate("/");
+    checkAuth();
   }, [navigate]);
 
   if (isChecking) {
