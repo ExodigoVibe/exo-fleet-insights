@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Download, Plus, User, Calendar, Check } from "lucide-react";
+import { Download, Plus, User, Calendar, Check, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useVehicleRequestsQuery, useDeleteVehicleRequest, useApproveVehicleRequest } from "@/hooks/queries/useVehicleRequestsQuery";
+import { useVehicleRequestsQuery, useDeleteVehicleRequest, useApproveVehicleRequest, useUndoApproveVehicleRequest } from "@/hooks/queries/useVehicleRequestsQuery";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Table,
@@ -25,6 +25,7 @@ export default function Requests() {
   const { data: requests = [], isLoading } = useVehicleRequestsQuery();
   const deleteRequest = useDeleteVehicleRequest();
   const approveRequest = useApproveVehicleRequest();
+  const undoApproveRequest = useUndoApproveVehicleRequest();
   const { hasAdminAccess, user } = useAuth();
 
   // Filter requests by user email for non-admin users
@@ -49,6 +50,10 @@ export default function Requests() {
 
   const handleApprove = async (id: string) => {
     await approveRequest.mutateAsync(id);
+  };
+
+  const handleUndoApprove = async (id: string) => {
+    await undoApproveRequest.mutateAsync(id);
   };
 
   const allRequestsCount = userRequests.length;
@@ -274,7 +279,21 @@ export default function Requests() {
                             Approve
                           </Button>
                         )}
-                        <Button 
+                        {hasAdminAccess && request.status === "approved" && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-orange-600 hover:text-orange-700 hover:bg-transparent gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUndoApprove(request.id);
+                            }}
+                          >
+                            <Undo2 className="h-4 w-4" />
+                            Undo
+                          </Button>
+                        )}
+                        <Button
                           variant="ghost" 
                           size="sm" 
                           className="text-blue-600 hover:text-blue-700 hover:bg-transparent"
