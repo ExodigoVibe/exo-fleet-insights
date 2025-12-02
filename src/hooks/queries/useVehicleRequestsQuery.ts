@@ -213,3 +213,67 @@ export const useUndoApproveVehicleRequest = () => {
     },
   });
 };
+
+export const useRejectVehicleRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from("vehicle_requests")
+        .update({ status: "rejected" })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicle-requests"] });
+      toast({
+        title: "Success",
+        description: "Vehicle request rejected",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to reject vehicle request: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+};
+
+export const useUndoRejectVehicleRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase
+        .from("vehicle_requests")
+        .update({ status: "pending_manager" })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vehicle-requests"] });
+      toast({
+        title: "Success",
+        description: "Rejection undone successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to undo rejection: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+};

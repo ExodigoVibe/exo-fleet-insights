@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Download, Plus, User, Calendar, Check, Undo2 } from "lucide-react";
+import { Download, Plus, User, Calendar, Check, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useVehicleRequestsQuery, useDeleteVehicleRequest, useApproveVehicleRequest, useUndoApproveVehicleRequest } from "@/hooks/queries/useVehicleRequestsQuery";
+import { useVehicleRequestsQuery, useDeleteVehicleRequest, useApproveVehicleRequest, useUndoApproveVehicleRequest, useRejectVehicleRequest, useUndoRejectVehicleRequest } from "@/hooks/queries/useVehicleRequestsQuery";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Table,
@@ -26,6 +26,8 @@ export default function Requests() {
   const deleteRequest = useDeleteVehicleRequest();
   const approveRequest = useApproveVehicleRequest();
   const undoApproveRequest = useUndoApproveVehicleRequest();
+  const rejectRequest = useRejectVehicleRequest();
+  const undoRejectRequest = useUndoRejectVehicleRequest();
   const { hasAdminAccess, user } = useAuth();
 
   // Filter requests by user email for non-admin users
@@ -54,6 +56,14 @@ export default function Requests() {
 
   const handleUndoApprove = async (id: string) => {
     await undoApproveRequest.mutateAsync(id);
+  };
+
+  const handleReject = async (id: string) => {
+    await rejectRequest.mutateAsync(id);
+  };
+
+  const handleUndoReject = async (id: string) => {
+    await undoRejectRequest.mutateAsync(id);
   };
 
   const allRequestsCount = userRequests.length;
@@ -266,18 +276,32 @@ export default function Requests() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         {hasAdminAccess && request.status === "pending_manager" && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-green-600 hover:text-green-700 hover:bg-transparent gap-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleApprove(request.id);
-                            }}
-                          >
-                            <Check className="h-4 w-4" />
-                            Approve
-                          </Button>
+                          <>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-green-600 hover:text-green-700 hover:bg-transparent gap-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleApprove(request.id);
+                              }}
+                            >
+                              <Check className="h-4 w-4" />
+                              Approve
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-600 hover:text-red-700 hover:bg-transparent gap-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReject(request.id);
+                              }}
+                            >
+                              <X className="h-4 w-4" />
+                              Reject
+                            </Button>
+                          </>
                         )}
                         {hasAdminAccess && request.status === "approved" && (
                           <Button 
@@ -287,6 +311,20 @@ export default function Requests() {
                             onClick={(e) => {
                               e.stopPropagation();
                               handleUndoApprove(request.id);
+                            }}
+                          >
+                            <Undo2 className="h-4 w-4" />
+                            Undo
+                          </Button>
+                        )}
+                        {hasAdminAccess && request.status === "rejected" && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-orange-600 hover:text-orange-700 hover:bg-transparent gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUndoReject(request.id);
                             }}
                           >
                             <Undo2 className="h-4 w-4" />
