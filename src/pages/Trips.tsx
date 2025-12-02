@@ -17,10 +17,8 @@ import { FleetFilters } from "@/types/fleet";
 import { Activity, Clock, TrendingUp, Car, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { useInitialDateRange } from "@/hooks/useInitialData";
-import { useAuth } from "@/hooks/useAuth";
 
 const Trips = () => {
-  const { user, isEmployee } = useAuth();
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError } = useVehiclesQuery();
   const { dateFrom, dateTo } = useInitialDateRange();
@@ -32,21 +30,11 @@ const Trips = () => {
     [snowflakeVehicles]
   );
 
-  const driverOptions = useMemo(() => {
-    console.log("Trips - isEmployee:", isEmployee);
-    console.log("Trips - user:", user);
-    console.log("Trips - all drivers count:", snowflakeDrivers.length);
-    
-    // For employees, show only their own name
-    if (isEmployee && user?.full_name) {
-      console.log("Trips - showing only user's name:", user.full_name);
-      return [user.full_name];
-    }
-    // For admins/coordinators, show all drivers
-    const allDriverNames = snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`).sort();
-    console.log("Trips - showing all drivers:", allDriverNames.length);
-    return allDriverNames;
-  }, [snowflakeDrivers, isEmployee, user?.full_name]);
+  const driverOptions = useMemo(
+    () =>
+      snowflakeDrivers.map((d) => `${d.first_name} ${d.last_name}`).sort(),
+    [snowflakeDrivers]
+  );
 
   const licensePlateOptions = useMemo(
     () =>

@@ -150,11 +150,10 @@ serve(async (req) => {
         console.error("[azure-sso] Error fetching user role:", roleFetchError);
       }
 
-      // TEMPORARY: Hardcode role as employee for testing
       let userRole = "employee";
 
       // Use existing role from database if user exists
-      if (false && existingRole) {
+      if (existingRole) {
         userRole = existingRole.role;
       } else {
         // Create new role for new user

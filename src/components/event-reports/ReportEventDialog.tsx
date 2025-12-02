@@ -93,9 +93,9 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
   useEffect(() => {
     console.log("ReportEventDialog - User data:", user);
     console.log("ReportEventDialog - Dialog open:", open);
-    if (open && user?.full_name) {
-      console.log("Auto-filling employee name with:", user.full_name);
-      form.setValue("employeeName", user.full_name);
+    if (open && user?.name) {
+      console.log("Auto-filling employee name with:", user.name);
+      form.setValue("employeeName", user.name);
     }
   }, [open, user, form]);
 
@@ -194,7 +194,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                     <FormItem>
                       <FormLabel>Employee Name</FormLabel>
                       <FormControl>
-                        <Input placeholder={!user?.full_name ? "Enter your name" : ""} {...field} />
+                        <Input placeholder={!user?.name ? "Enter your name" : ""} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
