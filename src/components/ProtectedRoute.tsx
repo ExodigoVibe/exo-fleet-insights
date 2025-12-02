@@ -15,26 +15,21 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       const azureUser = localStorage.getItem("azureUser");
       const userRole = localStorage.getItem("userRole");
       const currentPath = window.location.pathname;
-      
+
       if (!azureUser) {
         navigate("/login");
         return;
       }
 
       // Employee restricted pages
-      const employeeRestrictedPages = [
-        "/vehicle-fleet",
-        "/employees",
-        "/roles",
-        "/form-templates",
-      ];
+      const employeeRestrictedPages = ["/vehicle-fleet", "/employees", "/roles", "/form-templates"];
 
       // Check if employee is trying to access restricted page
       if (userRole === "employee" && employeeRestrictedPages.includes(currentPath)) {
         navigate("/");
         return;
       }
-
+      navigate("/");
       setIsChecking(false);
     };
 
