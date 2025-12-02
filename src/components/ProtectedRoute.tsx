@@ -24,13 +24,13 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       // Employee restricted pages
       const employeeRestrictedPages = ["/vehicle-fleet", "/employees", "/roles", "/form-templates"];
 
-      // Check if employee is trying to access restricted page
-      if (userRole === "employee" && employeeRestrictedPages.includes(currentPath)) {
-        navigate("/");
-        return;
-      }
+    // Check if employee is trying to access restricted page
+    if (userRole === "employee" && employeeRestrictedPages.includes(currentPath)) {
       navigate("/");
-      setIsChecking(false);
+      return;
+    }
+    
+    setIsChecking(false);
     };
 
     checkAuth();
