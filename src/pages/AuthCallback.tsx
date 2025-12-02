@@ -35,18 +35,7 @@ const AuthCallback = () => {
 
         if (functionError) throw functionError;
 
-        if (data?.user && data?.hashedToken) {
-          // Sign in to Supabase using the hashed token
-          const { error: signInError } = await supabase.auth.verifyOtp({
-            token_hash: data.hashedToken,
-            type: 'magiclink',
-          });
-
-          if (signInError) {
-            console.error("Supabase sign in error:", signInError);
-            throw signInError;
-          }
-
+        if (data?.user) {
           // Store user info in localStorage
           localStorage.setItem("azureUser", JSON.stringify(data.user));
           localStorage.setItem("azureAccessToken", data.accessToken);
@@ -55,7 +44,7 @@ const AuthCallback = () => {
           toast.success(`Welcome, ${data.user.name}!`);
           navigate("/");
         } else {
-          throw new Error("No user data or session token received");
+          throw new Error("No user data received");
         }
       } catch (error) {
         console.error("Token exchange error:", error);

@@ -104,50 +104,46 @@ serve(async (req) => {
       }
 
       const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      });
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      // Check if auth user exists
-      const { data: authUsersData, error: authListError } = await supabaseAdmin.auth.admin.listUsers();
-      
-      if (authListError) {
-        console.error("[azure-sso] Error listing users:", authListError);
-        throw authListError;
+      // Check if user already exists in profiles table
+      const { data: existingProfile, error: profileFetchError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("email", userEmail)
+        .maybeSingle();
+
+      if (profileFetchError && profileFetchError.code !== "PGRST116") {
+        console.error("[azure-sso] Error fetching profile:", profileFetchError);
       }
-      
-      let authUser = authUsersData.users.find(u => u.email === userEmail);
-      
-      // Create auth user if doesn't exist
-      if (!authUser) {
-        const { data: newAuthUser, error: authCreateError } = await supabaseAdmin.auth.admin.createUser({
-          email: userEmail,
-          email_confirm: true,
-          user_metadata: {
-            full_name: user.displayName,
-            azure_id: user.id,
-          }
-        });
 
-        if (authCreateError) {
-          console.error("[azure-sso] Error creating auth user:", authCreateError);
-          throw authCreateError;
+      let userId = existingProfile?.id;
+
+      // If profile doesn't exist, create it
+      if (!existingProfile) {
+        userId = crypto.randomUUID();
+
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            id: userId,
+            email: userEmail,
+            full_name: user.displayName,
+          });
+
+        if (profileError) {
+          console.error("[azure-sso] Error creating profile:", profileError);
+          throw profileError;
         }
 
-        authUser = newAuthUser.user;
-        console.log(`[azure-sso] Created new auth user for: ${userEmail}`);
-      } else {
-        console.log(`[azure-sso] Found existing auth user for: ${userEmail}`);
+        console.log(`[azure-sso] Created new profile for: ${userEmail}`);
       }
 
       // Check if user exists in user_roles table
-      const { data: existingRole, error: roleFetchError } = await supabaseAdmin
+      const { data: existingRole, error: roleFetchError } = await supabase
         .from("user_roles")
         .select("*")
-        .eq("user_id", authUser.id)
+        .eq("user_id", userId)
         .maybeSingle();
 
       if (roleFetchError && roleFetchError.code !== "PGRST116") {
@@ -161,10 +157,10 @@ serve(async (req) => {
         userRole = existingRole.role;
       } else {
         // Create new role for new user
-        const { error: roleError } = await supabaseAdmin
+        const { error: roleError } = await supabase
           .from("user_roles")
           .insert({
-            user_id: authUser.id,
+            user_id: userId,
             email: userEmail,
             full_name: user.displayName,
             role: userRole,
@@ -177,30 +173,15 @@ serve(async (req) => {
         }
       }
 
-      // Generate a session token for the user
-      const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
-        type: 'magiclink',
-        email: userEmail,
-      });
-
-      if (sessionError) {
-        console.error("[azure-sso] Error generating session:", sessionError);
-        throw sessionError;
-      }
-
-      console.log(`[azure-sso] Successfully generated session for: ${userEmail}`);
-
       return new Response(
         JSON.stringify({
           user: {
-            id: authUser.id,
+            id: userId,
             email: userEmail,
             name: user.displayName,
             role: userRole,
           },
           accessToken: tokens.access_token,
-          hashedToken: sessionData.properties.hashed_token,
-          verifyType: sessionData.properties.verification_type,
         }),
         {
           headers: {
