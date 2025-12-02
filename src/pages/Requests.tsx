@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Download, Plus, User, Calendar } from "lucide-react";
+import { Download, Plus, User, Calendar, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useVehicleRequestsQuery, useDeleteVehicleRequest } from "@/hooks/queries/useVehicleRequestsQuery";
+import { useVehicleRequestsQuery, useDeleteVehicleRequest, useApproveVehicleRequest } from "@/hooks/queries/useVehicleRequestsQuery";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Table,
@@ -24,6 +24,7 @@ export default function Requests() {
   const [statusFilter, setStatusFilter] = useState<RequestStatus>("all");
   const { data: requests = [], isLoading } = useVehicleRequestsQuery();
   const deleteRequest = useDeleteVehicleRequest();
+  const approveRequest = useApproveVehicleRequest();
   const { hasAdminAccess, user } = useAuth();
 
   // Filter requests by user email for non-admin users
@@ -44,6 +45,10 @@ export default function Requests() {
     if (window.confirm("Are you sure you want to delete this request?")) {
       await deleteRequest.mutateAsync(id);
     }
+  };
+
+  const handleApprove = async (id: string) => {
+    await approveRequest.mutateAsync(id);
   };
 
   const allRequestsCount = userRequests.length;
@@ -255,6 +260,20 @@ export default function Requests() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        {hasAdminAccess && request.status === "pending_manager" && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-green-600 hover:text-green-700 hover:bg-transparent gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApprove(request.id);
+                            }}
+                          >
+                            <Check className="h-4 w-4" />
+                            Approve
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="sm" 
