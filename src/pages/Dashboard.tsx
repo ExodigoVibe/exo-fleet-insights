@@ -276,7 +276,7 @@ const Dashboard = () => {
 
               <div className="space-y-4">
                 <div className="grid grid-cols-5 gap-4 pb-3 border-b text-sm font-medium text-muted-foreground">
-                  <div>Employee</div>
+                  <div>Employee Name</div>
                   <div>Type</div>
                   <div>Date</div>
                   <div>Status</div>

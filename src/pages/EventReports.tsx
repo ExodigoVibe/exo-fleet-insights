@@ -1,12 +1,16 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Download, AlertTriangle, ExternalLink, Trash2 } from "lucide-react";
-import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
-import { ViewEventDialog } from "@/components/event-reports/ViewEventDialog";
-import { useEventReportsQuery, useDeleteEventReport, EventReport } from "@/hooks/queries/useEventReportsQuery";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Download, AlertTriangle, ExternalLink, Trash2 } from 'lucide-react';
+import { ReportEventDialog } from '@/components/event-reports/ReportEventDialog';
+import { ViewEventDialog } from '@/components/event-reports/ViewEventDialog';
+import {
+  useEventReportsQuery,
+  useDeleteEventReport,
+  EventReport,
+} from '@/hooks/queries/useEventReportsQuery';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 import {
   Table,
   TableBody,
@@ -24,8 +28,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import * as XLSX from "xlsx";
+} from '@/components/ui/table';
+import * as XLSX from 'xlsx';
 
 export default function EventReports() {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
@@ -41,7 +45,7 @@ export default function EventReports() {
   useEffect(() => {
     const reportId = searchParams.get('reportId');
     if (reportId && reports.length > 0) {
-      const report = reports.find(r => r.id === reportId);
+      const report = reports.find((r) => r.id === reportId);
       if (report) {
         setSelectedReport(report);
         setViewDialogOpen(true);
@@ -78,34 +82,34 @@ export default function EventReports() {
         Location: report.location,
         Severity: report.severity,
         Status: report.status,
-      }))
+      })),
     );
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Event Reports");
-    XLSX.writeFile(workbook, "event_reports.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Event Reports');
+    XLSX.writeFile(workbook, 'event_reports.xlsx');
   };
 
   const getSeverityBadgeColor = (severity: string) => {
     switch (severity) {
-      case "slight":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "extensive":
-        return "bg-red-100 text-red-800 border-red-200";
+      case 'slight':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'extensive':
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "reviewed":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "closed":
-        return "bg-gray-100 text-gray-800 border-gray-200";
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'reviewed':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'closed':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -127,8 +131,8 @@ export default function EventReports() {
             >
               Excel <Download className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               className="gap-2"
               onClick={() => setReportDialogOpen(true)}
             >
@@ -148,7 +152,7 @@ export default function EventReports() {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Employee</TableHead>
+                <TableHead>Employee Name</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Severity</TableHead>
                 <TableHead>Status</TableHead>
@@ -170,29 +174,27 @@ export default function EventReports() {
                 </TableRow>
               ) : (
                 reports.map((report) => (
-                  <TableRow key={report.id} onClick={() => handleViewReport(report)} className="cursor-pointer hover:bg-muted">
+                  <TableRow
+                    key={report.id}
+                    onClick={() => handleViewReport(report)}
+                    className="cursor-pointer hover:bg-muted"
+                  >
                     <TableCell>
-                      {new Date(report.event_date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
+                      {new Date(report.event_date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
                       })}
                     </TableCell>
                     <TableCell>{report.employee_name}</TableCell>
                     <TableCell>{report.location}</TableCell>
                     <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={getSeverityBadgeColor(report.severity)}
-                      >
+                      <Badge variant="outline" className={getSeverityBadgeColor(report.severity)}>
                         {report.severity.charAt(0).toUpperCase() + report.severity.slice(1)}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={getStatusBadgeColor(report.status)}
-                      >
+                      <Badge variant="outline" className={getStatusBadgeColor(report.status)}>
                         {report.status}
                       </Badge>
                     </TableCell>
@@ -229,10 +231,7 @@ export default function EventReports() {
         </div>
       </Card>
 
-      <ReportEventDialog 
-        open={reportDialogOpen} 
-        onOpenChange={setReportDialogOpen} 
-      />
+      <ReportEventDialog open={reportDialogOpen} onOpenChange={setReportDialogOpen} />
 
       <ViewEventDialog
         open={viewDialogOpen}
