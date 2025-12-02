@@ -372,7 +372,7 @@ export default function NewRequest() {
                       <FormItem>
                         <FormLabel>Full Name</FormLabel>
                         <FormControl>
-                          <Input placeholder={!user?.full_name ? "Enter your full name" : ""} {...field} />
+                          <Input type="text" placeholder={!user?.full_name ? "Enter your full name" : ""} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
