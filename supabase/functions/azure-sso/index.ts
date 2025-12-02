@@ -104,46 +104,43 @@ serve(async (req) => {
       }
 
       const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      });
 
-      // Check if user already exists in profiles table
-      const { data: existingProfile, error: profileFetchError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("email", userEmail)
-        .maybeSingle();
-
-      if (profileFetchError && profileFetchError.code !== "PGRST116") {
-        console.error("[azure-sso] Error fetching profile:", profileFetchError);
-      }
-
-      let userId = existingProfile?.id;
-
-      // If profile doesn't exist, create it
-      if (!existingProfile) {
-        userId = crypto.randomUUID();
-
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .insert({
-            id: userId,
-            email: userEmail,
+      // Check if auth user exists
+      const { data: authUsers, error: authListError } = await supabaseAdmin.auth.admin.listUsers();
+      
+      let authUser = authUsers?.users.find(u => u.email === userEmail);
+      
+      // Create auth user if doesn't exist
+      if (!authUser) {
+        const { data: newAuthUser, error: authCreateError } = await supabaseAdmin.auth.admin.createUser({
+          email: userEmail,
+          email_confirm: true,
+          user_metadata: {
             full_name: user.displayName,
-          });
+            azure_id: user.id,
+          }
+        });
 
-        if (profileError) {
-          console.error("[azure-sso] Error creating profile:", profileError);
-          throw profileError;
+        if (authCreateError) {
+          console.error("[azure-sso] Error creating auth user:", authCreateError);
+          throw authCreateError;
         }
 
-        console.log(`[azure-sso] Created new profile for: ${userEmail}`);
+        authUser = newAuthUser.user;
+        console.log(`[azure-sso] Created new auth user for: ${userEmail}`);
       }
 
       // Check if user exists in user_roles table
-      const { data: existingRole, error: roleFetchError } = await supabase
+      const { data: existingRole, error: roleFetchError } = await supabaseAdmin
         .from("user_roles")
         .select("*")
-        .eq("user_id", userId)
+        .eq("user_id", authUser.id)
         .maybeSingle();
 
       if (roleFetchError && roleFetchError.code !== "PGRST116") {
@@ -157,10 +154,10 @@ serve(async (req) => {
         userRole = existingRole.role;
       } else {
         // Create new role for new user
-        const { error: roleError } = await supabase
+        const { error: roleError } = await supabaseAdmin
           .from("user_roles")
           .insert({
-            user_id: userId,
+            user_id: authUser.id,
             email: userEmail,
             full_name: user.displayName,
             role: userRole,
@@ -173,15 +170,29 @@ serve(async (req) => {
         }
       }
 
+      // Generate a session for the user using admin API
+      const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'magiclink',
+        email: userEmail,
+      });
+
+      if (sessionError) {
+        console.error("[azure-sso] Error generating session:", sessionError);
+        throw sessionError;
+      }
+
+      console.log(`[azure-sso] Successfully authenticated user: ${userEmail}`);
+
       return new Response(
         JSON.stringify({
           user: {
-            id: userId,
+            id: authUser.id,
             email: userEmail,
             name: user.displayName,
             role: userRole,
           },
           accessToken: tokens.access_token,
+          magicLinkUrl: sessionData.properties.action_link,
         }),
         {
           headers: {

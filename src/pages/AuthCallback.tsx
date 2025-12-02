@@ -35,16 +35,36 @@ const AuthCallback = () => {
 
         if (functionError) throw functionError;
 
-        if (data?.user) {
-          // Store user info in localStorage
-          localStorage.setItem("azureUser", JSON.stringify(data.user));
-          localStorage.setItem("azureAccessToken", data.accessToken);
-          localStorage.setItem("userRole", data.user.role);
+        if (data?.user && data?.magicLinkUrl) {
+          // Extract token from magic link URL
+          const linkUrl = new URL(data.magicLinkUrl);
+          const token = linkUrl.searchParams.get('token');
+          const type = linkUrl.searchParams.get('type');
 
-          toast.success(`Welcome, ${data.user.name}!`);
-          navigate("/");
+          if (token && type) {
+            // Sign in to Supabase using the token
+            const { error: signInError } = await supabase.auth.verifyOtp({
+              token_hash: token,
+              type: type as any,
+            });
+
+            if (signInError) {
+              console.error("Supabase sign in error:", signInError);
+              throw signInError;
+            }
+
+            // Store user info in localStorage
+            localStorage.setItem("azureUser", JSON.stringify(data.user));
+            localStorage.setItem("azureAccessToken", data.accessToken);
+            localStorage.setItem("userRole", data.user.role);
+
+            toast.success(`Welcome, ${data.user.name}!`);
+            navigate("/");
+          } else {
+            throw new Error("Invalid magic link token");
+          }
         } else {
-          throw new Error("No user data received");
+          throw new Error("No user data or session received");
         }
       } catch (error) {
         console.error("Token exchange error:", error);
