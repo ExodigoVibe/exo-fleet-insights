@@ -154,7 +154,7 @@ const Vehicles = () => {
       <div className="container mx-auto px-4 py-6">
         {/* KPI Cards - Only visible to admins and coordinators */}
         {hasAdminAccess && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <Card 
               className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "all" ? "border-2 border-primary" : ""}`}
               onClick={() => setStatusFilter("all")}
