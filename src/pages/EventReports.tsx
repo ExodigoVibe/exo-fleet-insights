@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Download, AlertTriangle, ExternalLink, Trash2 } from 'lucide-react';
 import { ReportEventDialog } from '@/components/event-reports/ReportEventDialog';
@@ -8,6 +8,7 @@ import {
   useDeleteEventReport,
   EventReport,
 } from '@/hooks/queries/useEventReportsQuery';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,12 +41,19 @@ export default function EventReports() {
   const { data: reports = [], isLoading } = useEventReportsQuery();
   const deleteReportMutation = useDeleteEventReport();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { hasAdminAccess, user } = useAuth();
+
+  // Filter reports by user email for non-admin users
+  const userReports = useMemo(() => {
+    if (hasAdminAccess || !user?.email) return reports;
+    return reports.filter((r) => r.employee_name === user.email);
+  }, [reports, hasAdminAccess, user?.email]);
 
   // Check if there's a reportId in the URL and open the dialog
   useEffect(() => {
     const reportId = searchParams.get('reportId');
-    if (reportId && reports.length > 0) {
-      const report = reports.find((r) => r.id === reportId);
+    if (reportId && userReports.length > 0) {
+      const report = userReports.find((r) => r.id === reportId);
       if (report) {
         setSelectedReport(report);
         setViewDialogOpen(true);
@@ -53,7 +61,7 @@ export default function EventReports() {
         setSearchParams({});
       }
     }
-  }, [searchParams, reports, setSearchParams]);
+  }, [searchParams, userReports, setSearchParams]);
 
   const handleViewReport = (report: EventReport) => {
     setSelectedReport(report);
@@ -76,7 +84,7 @@ export default function EventReports() {
 
   const handleExportToExcel = () => {
     const worksheet = XLSX.utils.json_to_sheet(
-      reports.map((report) => ({
+      userReports.map((report) => ({
         Date: new Date(report.event_date).toLocaleDateString(),
         Employee: report.employee_name,
         Location: report.location,
@@ -146,7 +154,7 @@ export default function EventReports() {
         <div className="p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            Event Reports ({reports.length})
+            Event Reports ({userReports.length})
           </h2>
           <Table>
             <TableHeader>
@@ -166,14 +174,14 @@ export default function EventReports() {
                     Loading event reports...
                   </TableCell>
                 </TableRow>
-              ) : reports.length === 0 ? (
+              ) : userReports.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
                     No event reports found
                   </TableCell>
                 </TableRow>
               ) : (
-                reports.map((report) => (
+                userReports.map((report) => (
                   <TableRow
                     key={report.id}
                     onClick={() => handleViewReport(report)}
