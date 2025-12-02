@@ -1,5 +1,6 @@
 import { FileText, Wrench, Users, CheckSquare, AlertTriangle, Settings, Car, Shield, LogOut, Route } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
   SidebarContent,
@@ -22,8 +23,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: FileText, roles: ["admin", "coordinator", "employee"] },
@@ -39,24 +38,29 @@ const menuItems = [
 export function AppSidebar() {
   const { data: requests = [] } = useVehicleRequestsQuery();
   const { data: eventReports = [] } = useEventReportsQuery();
-  const navigate = useNavigate();
+  const { user, logout, isAdmin, isCoordinator } = useAuth();
 
-  // Get current user from localStorage
-  const azureUserStr = localStorage.getItem("azureUser");
-  const userRole = localStorage.getItem("userRole") || "employee";
-  const azureUser = azureUserStr ? JSON.parse(azureUserStr) : null;
-
-  const currentUser = azureUser ? {
-    name: azureUser.name || azureUser.email,
-    email: azureUser.email,
-    initials: azureUser.name?.charAt(0).toUpperCase() || azureUser.email?.charAt(0).toUpperCase() || "U",
-    role: userRole,
-  } : {
-    name: "Guest User",
-    email: "guest@example.com",
-    initials: "G",
-    role: "employee",
+  // Get user initials from name or email
+  const getUserInitials = () => {
+    if (user?.name) {
+      const nameParts = user.name.split(' ');
+      if (nameParts.length >= 2) {
+        return (nameParts[0].charAt(0) + nameParts[1].charAt(0)).toUpperCase();
+      }
+      return nameParts[0].charAt(0).toUpperCase();
+    }
+    return user?.email?.charAt(0).toUpperCase() || "U";
   };
+
+  const currentUser = {
+    name: user?.name || user?.email || "Guest User",
+    email: user?.email || "",
+    initials: getUserInitials(),
+    role: user?.role || "employee",
+  };
+
+  // Determine if user has admin/coordinator access
+  const hasFullAccess = isAdmin || isCoordinator;
 
   // Filter menu items based on user role
   const filteredMenuItems = menuItems.filter(item => 
@@ -69,18 +73,6 @@ export function AppSidebar() {
   const pendingEventReportsCount = eventReports.filter(
     (report) =>  report.status === "pending"
   ).length;
-
-  const handleLogout = async () => {
-    try {
-      localStorage.removeItem("azureUser");
-      localStorage.removeItem("azureAccessToken");
-      localStorage.removeItem("userRole");
-      toast.success("Logged out successfully");
-      navigate("/login");
-    } catch (error) {
-      toast.error("Failed to log out");
-    }
-  };
 
   return (
     <Sidebar collapsible="icon">
@@ -156,14 +148,22 @@ export function AppSidebar() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start">
-                <span className="text-sm font-medium text-foreground truncate w-full">
+                <span className="text-sm font-medium text-foreground truncate max-w-[140px]">
                   {currentUser.name}
+                </span>
+                <span className="text-xs text-muted-foreground truncate max-w-[140px]">
+                  {currentUser.email}
                 </span>
               </div>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer hover:bg-gray-100 hover:text-foreground">
+            <div className="px-2 py-1.5 text-sm">
+              <div className="font-medium">{currentUser.name}</div>
+              <div className="text-xs text-muted-foreground truncate">{currentUser.email}</div>
+              <div className="text-xs text-muted-foreground mt-1 capitalize">Role: {currentUser.role}</div>
+            </div>
+            <DropdownMenuItem onClick={logout} className="cursor-pointer hover:bg-gray-100 hover:text-foreground">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>
