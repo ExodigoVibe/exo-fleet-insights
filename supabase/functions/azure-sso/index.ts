@@ -132,7 +132,21 @@ serve(async (req) => {
         // Generate a UUID for the user
         userId = crypto.randomUUID();
 
-        const { error: insertError } = await supabase
+        // Insert into profiles table
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .insert({
+            id: userId,
+            email: userEmail,
+            full_name: user.displayName,
+          });
+
+        if (profileError) {
+          console.error("[azure-sso] Error creating profile:", profileError);
+        }
+
+        // Insert into user_roles table
+        const { error: roleError } = await supabase
           .from("user_roles")
           .insert({
             user_id: userId,
@@ -141,8 +155,8 @@ serve(async (req) => {
             role: userRole,
           });
 
-        if (insertError) {
-          console.error("[azure-sso] Error creating user role:", insertError);
+        if (roleError) {
+          console.error("[azure-sso] Error creating user role:", roleError);
         } else {
           console.log(`[azure-sso] Created new user with role: ${userRole}`);
         }
