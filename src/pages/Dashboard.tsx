@@ -4,7 +4,7 @@ import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
 import { useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
 import { useEventReportsQuery } from "@/hooks/queries/useEventReportsQuery";
-import { FileText, Wrench, CheckCircle2, AlertTriangle, Clock, Car, Calendar, User, ArrowRight } from "lucide-react";
+import { FileText, Wrench, CheckCircle2, AlertTriangle, Clock, Car, Calendar, User, ArrowRight, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
@@ -45,10 +45,11 @@ const Dashboard = () => {
   const vehicleFleetRecap = useMemo(() => {
     const total = snowflakeVehicles.length;
     const available = snowflakeVehicles.filter(v => v.motion_status === 'parking').length;
+    const driving = snowflakeVehicles.filter(v => v.motion_status === 'driving').length;
     const maintenance = snowflakeVehicles.filter(v => 
-      v.motion_status !== 'parking' && v.motion_status !== 'moving'
+      v.motion_status !== 'parking' && v.motion_status !== 'moving' && v.motion_status !== 'driving'
     ).length;
-    return { total, available, maintenance };
+    return { total, available, driving, maintenance };
   }, [snowflakeVehicles]);
 
   // Get recent requests (last 3)
@@ -163,6 +164,22 @@ const Dashboard = () => {
                       <p className="text-xs text-muted-foreground">Ready for assignment</p>
                     </div>
                     <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            <div onClick={() => navigate("/vehicle-fleet?filter=driving")} className="cursor-pointer">
+              <Card className="transition-all hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">Driving</p>
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-3xl font-bold text-foreground">{vehicleFleetRecap.driving}</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Currently on the road</p>
+                    </div>
+                    <Activity className="h-8 w-8 text-blue-500" />
                   </div>
                 </CardContent>
               </Card>

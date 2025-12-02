@@ -25,12 +25,12 @@ const Vehicles = () => {
   const { data: vehicles, isLoading, error } = useVehiclesQuery();
   const { hasAdminAccess } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "parking" | "moving" | "other">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "parking" | "moving" | "driving" | "other">("all");
 
   // Read filter from URL on mount
   useEffect(() => {
-    const filterParam = searchParams.get("filter") as "all" | "parking" | "moving" | "other";
-    if (filterParam && ["all", "parking", "moving", "other"].includes(filterParam)) {
+    const filterParam = searchParams.get("filter") as "all" | "parking" | "moving" | "driving" | "other";
+    if (filterParam && ["all", "parking", "moving", "driving", "other"].includes(filterParam)) {
       setStatusFilter(filterParam);
     }
   }, [searchParams]);
@@ -41,13 +41,13 @@ const Vehicles = () => {
     let filtered = vehicles;
 
     // Apply status filter
-    if (statusFilter === "parking" || statusFilter === "moving") {
+    if (statusFilter === "parking" || statusFilter === "moving" || statusFilter === "driving") {
       filtered = filtered.filter(v => v.motion_status?.toLowerCase() === statusFilter);
     } else if (statusFilter === "other") {
-      // Show all vehicles that are NOT parking or moving
+      // Show all vehicles that are NOT parking or moving or driving
       filtered = filtered.filter(v => {
         const status = v.motion_status?.toLowerCase();
-        return status !== "parking" && status !== "moving";
+        return status !== "parking" && status !== "moving" && status !== "driving";
       });
     }
 
@@ -113,6 +113,8 @@ const Vehicles = () => {
     switch (status?.toLowerCase()) {
       case "parking":
         return <Badge className="bg-green-600 hover:bg-green-700">Available</Badge>;
+      case "driving":
+        return <Badge className="bg-blue-600 hover:bg-blue-700">Driving</Badge>;
       case "maintenance":
         return <Badge className="bg-orange-600 hover:bg-orange-700">Maintenance</Badge>;
       case "moving":
@@ -176,6 +178,18 @@ const Vehicles = () => {
                 <div className="text-sm text-muted-foreground">Available</div>
               </CardContent>
             </Card>
+            <Card 
+              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "driving" ? "border-2 border-primary" : ""}`}
+              onClick={() => setStatusFilter("driving")}
+            >
+              <CardContent className="pt-6 text-center">
+                <div className="h-8 w-8 rounded-full bg-blue-500 mx-auto mb-3 flex items-center justify-center">
+                  <Activity className="h-4 w-4 text-white fill-white" />
+                </div>
+                <div className="text-4xl font-bold text-blue-600 mb-1">{drivingVehicles}</div>
+                <div className="text-sm text-muted-foreground">Driving</div>
+              </CardContent>
+            </Card>
 
             <Card 
               className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "moving" ? "border-2 border-primary" : ""}`}
@@ -236,6 +250,7 @@ const Vehicles = () => {
                 {statusFilter === "all" ? "All Vehicles" : 
                  statusFilter === "parking" ? "Available Vehicles" :
                  statusFilter === "moving" ? "Assigned Vehicles" :
+                 statusFilter === "driving" ? "Driving Vehicles" :
                  "Maintenance Vehicles"} ({filteredVehicles.length})
               </h2>
             </div>
