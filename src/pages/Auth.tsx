@@ -34,7 +34,7 @@ const Auth = () => {
 
   return (
     <div 
-      className="min-h-screen flex justify-center p-4 relative pt-32"
+      className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
         backgroundImage: `url(${fleetBackground})`,
         backgroundSize: 'cover',
