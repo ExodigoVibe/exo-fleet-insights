@@ -38,7 +38,7 @@ const menuItems = [
 export function AppSidebar() {
   const { data: requests = [] } = useVehicleRequestsQuery();
   const { data: eventReports = [] } = useEventReportsQuery();
-  const { user, logout, isAdmin, isCoordinator } = useAuth();
+  const { user, logout, isAdmin, isCoordinator, hasAdminAccess } = useAuth();
 
   // Get user initials from name or email
   const getUserInitials = () => {
@@ -67,10 +67,14 @@ export function AppSidebar() {
     item.roles.includes(currentUser.role)
   );
 
-  const pendingRequestsCount = requests.filter(
+  // Filter counts by user email for non-admin users
+  const userRequests = hasAdminAccess ? requests : requests.filter((r) => r.email === user?.email);
+  const userEventReports = hasAdminAccess ? eventReports : eventReports.filter((r) => r.employee_name === user?.email);
+
+  const pendingRequestsCount = userRequests.filter(
     (req) => req.status === "pending_manager"
   ).length;
-  const pendingEventReportsCount = eventReports.filter(
+  const pendingEventReportsCount = userEventReports.filter(
     (report) =>  report.status === "pending"
   ).length;
 
