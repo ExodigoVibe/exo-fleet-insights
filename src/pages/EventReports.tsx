@@ -1,23 +1,12 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Download, AlertTriangle, ExternalLink, Trash2 } from "lucide-react";
+import { Download, AlertTriangle, ExternalLink } from "lucide-react";
 import { ReportEventDialog } from "@/components/event-reports/ReportEventDialog";
 import { ViewEventDialog } from "@/components/event-reports/ViewEventDialog";
-import { useEventReportsQuery, EventReport, useDeleteEventReport } from "@/hooks/queries/useEventReportsQuery";
-import { useAuth } from "@/hooks/useAuth";
+import { useEventReportsQuery, EventReport } from "@/hooks/queries/useEventReportsQuery";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableBody,
@@ -32,11 +21,7 @@ export default function EventReports() {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<EventReport | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [reportToDelete, setReportToDelete] = useState<EventReport | null>(null);
   const { data: reports = [], isLoading } = useEventReportsQuery();
-  const deleteReport = useDeleteEventReport();
-  const { isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Check if there's a reportId in the URL and open the dialog
@@ -56,20 +41,6 @@ export default function EventReports() {
   const handleViewReport = (report: EventReport) => {
     setSelectedReport(report);
     setViewDialogOpen(true);
-  };
-
-  const handleDeleteClick = (report: EventReport, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setReportToDelete(report);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (reportToDelete) {
-      deleteReport.mutate(reportToDelete.id);
-      setDeleteDialogOpen(false);
-      setReportToDelete(null);
-    }
   };
 
   const handleExportToExcel = () => {
@@ -199,31 +170,15 @@ export default function EventReports() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-blue-600 hover:text-blue-700 hover:bg-transparent gap-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewReport(report);
-                          }}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                          View
-                        </Button>
-                        {isAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-transparent gap-1"
-                            onClick={(e) => handleDeleteClick(report, e)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete
-                          </Button>
-                        )}
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-700 hover:bg-transparent gap-1"
+                        onClick={() => handleViewReport(report)}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        View
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -243,23 +198,6 @@ export default function EventReports() {
         onOpenChange={setViewDialogOpen}
         report={selectedReport}
       />
-
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Event Report</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this event report? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="hover:bg-gray-100 hover:text-foreground">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
