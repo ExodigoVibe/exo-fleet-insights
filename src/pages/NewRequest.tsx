@@ -56,8 +56,7 @@ export default function NewRequest() {
   const createRequest = useCreateVehicleRequest();
   const updateRequest = useUpdateVehicleRequest();
   const { data: requests = [] } = useVehicleRequestsQuery();
-  const { user } = useAuth();
-  console.log({ user });
+  const { user, isLoading: isLoadingAuth } = useAuth();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -99,19 +98,22 @@ export default function NewRequest() {
 
   // Auto-fill user data from SSO for new requests
   useEffect(() => {
-    if (!isEditMode && user?.name && user?.email) {
-      const currentName = form.getValues("full_name");
-      const currentEmail = form.getValues("email");
+    if (!isEditMode && !isLoadingAuth && user) {
+      console.log("Auto-filling with user data:", user);
       
-      // Only set if fields are currently empty
-      if (!currentName) {
+      if (user.name) {
         form.setValue("full_name", user.name);
       }
-      if (!currentEmail) {
+      if (user.email) {
         form.setValue("email", user.email);
       }
+      
+      // Show toast to confirm auto-fill
+      if (user.name || user.email) {
+        toast.success("Your information has been auto-filled from your profile");
+      }
     }
-  }, [isEditMode, user, form]);
+  }, [isEditMode, isLoadingAuth, user, form]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -162,6 +164,16 @@ export default function NewRequest() {
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-5xl mx-auto space-y-6">
+        {/* Debug info - remove after testing */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs">
+            <strong>Debug Info:</strong> User loaded: {user ? 'Yes' : 'No'} | 
+            Name: {user?.name || 'N/A'} | 
+            Email: {user?.email || 'N/A'} |
+            Loading: {isLoadingAuth ? 'Yes' : 'No'}
+          </div>
+        )}
+        
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
