@@ -17,10 +17,10 @@ export interface FormTemplate {
 
 export interface CreateFormTemplateData {
   form_title: string;
-  description?: string;
+  description?: string | null;
   usage_type: string;
   form_type: string;
-  pdf_template_url?: string;
+  pdf_template_url?: string | null;
   is_active: boolean;
   form_fields: any;
 }

@@ -3,6 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useCreateFormTemplate, useUpdateFormTemplate, FormTemplate } from "@/hooks/queries/useFormTemplatesQuery";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import {
   Sheet,
   SheetContent,
@@ -28,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { X, Save, Plus, GripVertical, Trash2 } from "lucide-react";
+import { X, Save, Plus, GripVertical, Trash2, FileText, Upload } from "lucide-react";
 
 const formSchema = z.object({
   formTitle: z.string().min(1, "Form title is required").max(200),
@@ -57,6 +59,9 @@ interface NewTemplateSheetProps {
 
 export function NewTemplateSheet({ open, onOpenChange, template }: NewTemplateSheetProps) {
   const [fields, setFields] = useState<FormField[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [existingFileUrl, setExistingFileUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const createMutation = useCreateFormTemplate();
   const updateMutation = useUpdateFormTemplate();
 
@@ -88,6 +93,10 @@ export function NewTemplateSheet({ open, onOpenChange, template }: NewTemplateSh
       } else {
         setFields([]);
       }
+      
+      // Set existing PDF URL
+      setExistingFileUrl(template.pdf_template_url);
+      setUploadedFiles([]);
     } else if (!template && open) {
       // Reset form for new template
       form.reset({
@@ -98,10 +107,47 @@ export function NewTemplateSheet({ open, onOpenChange, template }: NewTemplateSh
         isActive: true,
       });
       setFields([]);
+      setUploadedFiles([]);
+      setExistingFileUrl(null);
     }
   }, [template, open, form]);
 
+  const uploadFiles = async (): Promise<string | null> => {
+    if (uploadedFiles.length === 0) return existingFileUrl;
+    
+    setIsUploading(true);
+    try {
+      const file = uploadedFiles[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `templates/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('form-template-files')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('form-template-files')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error: any) {
+      toast({
+        title: "Upload Error",
+        description: error.message || "Failed to upload file",
+        variant: "destructive",
+      });
+      return existingFileUrl;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const onSubmit = async (data: FormValues) => {
+    const pdfUrl = await uploadFiles();
+    
     if (template) {
       // Update existing template
       await updateMutation.mutateAsync({
@@ -113,6 +159,7 @@ export function NewTemplateSheet({ open, onOpenChange, template }: NewTemplateSh
           form_type: data.formType,
           is_active: data.isActive,
           form_fields: fields,
+          pdf_template_url: pdfUrl,
         },
       });
     } else {
@@ -124,12 +171,31 @@ export function NewTemplateSheet({ open, onOpenChange, template }: NewTemplateSh
         form_type: data.formType,
         is_active: data.isActive,
         form_fields: fields,
+        pdf_template_url: pdfUrl,
       });
     }
     
     form.reset();
     setFields([]);
+    setUploadedFiles([]);
+    setExistingFileUrl(null);
     onOpenChange(false);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setUploadedFiles(Array.from(files));
+      setExistingFileUrl(null); // Clear existing when new file selected
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveExistingFile = () => {
+    setExistingFileUrl(null);
   };
 
   const handleAddField = () => {
@@ -278,24 +344,84 @@ export function NewTemplateSheet({ open, onOpenChange, template }: NewTemplateSh
             </div>
 
             {/* PDF Template */}
-            <FormField
-              control={form.control}
-              name="pdfTemplate"
-              render={({ field: { onChange, value, ...field } }) => (
-                <FormItem>
-                  <FormLabel>PDF Template (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="file"
-                      accept=".pdf"
-                      onChange={(e) => onChange(e.target.files?.[0])}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            <div className="space-y-3">
+              <FormLabel>PDF Template (Optional)</FormLabel>
+              
+              {/* Existing File Display */}
+              {existingFileUrl && (
+                <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <a 
+                    href={existingFileUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex-1 text-sm text-primary hover:underline truncate"
+                  >
+                    {existingFileUrl.split('/').pop()}
+                  </a>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleRemoveExistingFile}
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               )}
-            />
+              
+              {/* Newly Selected Files Display */}
+              {uploadedFiles.map((file, index) => (
+                <div key={index} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <span className="flex-1 text-sm truncate">{file.name}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {(file.size / 1024).toFixed(1)} KB
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveFile(index)}
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              
+              {/* File Upload Input */}
+              {!existingFileUrl && uploadedFiles.length === 0 && (
+                <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Click to upload or drag and drop
+                  </p>
+                  <Input
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileSelect}
+                    className="cursor-pointer"
+                  />
+                </div>
+              )}
+              
+              {/* Replace File Button */}
+              {(existingFileUrl || uploadedFiles.length > 0) && (
+                <div>
+                  <Input
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileSelect}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Select a new file to replace the current one
+                  </p>
+                </div>
+              )}
+            </div>
 
             {/* Active Form Toggle */}
             <FormField
