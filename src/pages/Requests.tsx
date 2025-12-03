@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Download, Plus, User, Calendar, Check, Undo2, X } from "lucide-react";
+import { Download, Plus, User, Calendar, Check, Undo2, X, Paperclip, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import * as XLSX from "xlsx";
 
 type RequestStatus = "all" | "pending_manager" | "approved" | "rejected";
@@ -22,6 +28,8 @@ export default function Requests() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<RequestStatus>("all");
+  const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
+  const [selectedAttachment, setSelectedAttachment] = useState<{ url: string; name: string } | null>(null);
   const { data: requests = [], isLoading } = useVehicleRequestsQuery();
   const deleteRequest = useDeleteVehicleRequest();
   const approveRequest = useApproveVehicleRequest();
@@ -64,6 +72,13 @@ export default function Requests() {
 
   const handleUndoReject = async (id: string) => {
     await undoRejectRequest.mutateAsync(id);
+  };
+
+  const handleViewAttachment = (url: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const fileName = url.split('/').pop() || 'attachment';
+    setSelectedAttachment({ url, name: fileName });
+    setAttachmentDialogOpen(true);
   };
 
   const allRequestsCount = userRequests.length;
@@ -275,6 +290,17 @@ export default function Requests() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        {request.license_file_url && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-purple-600 hover:text-purple-700 hover:bg-transparent gap-1"
+                            onClick={(e) => handleViewAttachment(request.license_file_url!, e)}
+                          >
+                            <Paperclip className="h-4 w-4" />
+                            Files
+                          </Button>
+                        )}
                         {hasAdminAccess && request.status === "pending_manager" && (
                           <>
                             <Button 
@@ -362,6 +388,64 @@ export default function Requests() {
           </Table>
         </div>
       </Card>
+
+      {/* Attachment Dialog */}
+      <Dialog open={attachmentDialogOpen} onOpenChange={setAttachmentDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Paperclip className="h-5 w-5" />
+              Attached File
+            </DialogTitle>
+          </DialogHeader>
+          {selectedAttachment && (
+            <div className="space-y-4">
+              <div className="border rounded-lg p-4">
+                {selectedAttachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                  <img 
+                    src={selectedAttachment.url} 
+                    alt="Attachment" 
+                    className="max-w-full h-auto rounded"
+                  />
+                ) : selectedAttachment.url.match(/\.pdf$/i) ? (
+                  <iframe 
+                    src={selectedAttachment.url} 
+                    className="w-full h-96 rounded"
+                    title="PDF Preview"
+                  />
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Paperclip className="h-12 w-12 mx-auto mb-2" />
+                    <p>File preview not available</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => window.open(selectedAttachment.url, '_blank')}
+                  className="gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  Open in New Tab
+                </Button>
+                <Button
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = selectedAttachment.url;
+                    link.download = selectedAttachment.name;
+                    link.click();
+                  }}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
