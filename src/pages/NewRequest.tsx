@@ -4,13 +4,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, parseISO } from "date-fns";
-import { CalendarIcon, FileText, Car, Upload } from "lucide-react";
+import { CalendarIcon, FileText, Car, Upload, X } from "lucide-react";
 import {
   useCreateVehicleRequest,
   useUpdateVehicleRequest,
   useVehicleRequestsQuery,
 } from "@/hooks/queries/useVehicleRequestsQuery";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -121,6 +122,31 @@ export default function NewRequest() {
     try {
       console.log("Submitting request with data:", data);
       
+      let licenseFileUrl = null;
+      
+      // Upload file to storage if exists
+      if (licenseFile) {
+        const fileExt = licenseFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `licenses/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('vehicle-request-files')
+          .upload(filePath, licenseFile);
+          
+        if (uploadError) {
+          console.error("File upload error:", uploadError);
+          toast.error("Failed to upload file");
+          return;
+        }
+        
+        const { data: urlData } = supabase.storage
+          .from('vehicle-request-files')
+          .getPublicUrl(filePath);
+          
+        licenseFileUrl = urlData.publicUrl;
+      }
+      
       const requestData = {
         full_name: data.full_name,
         department: data.department,
@@ -134,6 +160,7 @@ export default function NewRequest() {
         department_manager: data.department_manager,
         manager_email: data.manager_email,
         priority: "medium" as const,
+        license_file_url: licenseFileUrl,
       };
 
       console.log("Formatted request data:", requestData);
