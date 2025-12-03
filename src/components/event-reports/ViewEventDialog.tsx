@@ -44,12 +44,6 @@ export function ViewEventDialog({ open, onOpenChange, report }: ViewEventDialogP
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center justify-between">
             Event Report Details
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-              className="h-8 w-8"
-            ></Button>
           </DialogTitle>
         </DialogHeader>
 
