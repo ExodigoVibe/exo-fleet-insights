@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, AlertTriangle, ExternalLink, Trash2 } from 'lucide-react';
+import { Download, AlertTriangle, ExternalLink, Trash2, Paperclip, Eye } from 'lucide-react';
 import { ReportEventDialog } from '@/components/event-reports/ReportEventDialog';
 import { ViewEventDialog } from '@/components/event-reports/ViewEventDialog';
 import {
@@ -23,6 +23,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Table,
   TableBody,
   TableCell,
@@ -38,6 +44,8 @@ export default function EventReports() {
   const [selectedReport, setSelectedReport] = useState<EventReport | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reportToDelete, setReportToDelete] = useState<EventReport | null>(null);
+  const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const { data: reports = [], isLoading } = useEventReportsQuery();
   const deleteReportMutation = useDeleteEventReport();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -80,6 +88,12 @@ export default function EventReports() {
       setDeleteDialogOpen(false);
       setReportToDelete(null);
     }
+  };
+
+  const handleViewAttachments = (photos: string[], e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedPhotos(photos);
+    setAttachmentDialogOpen(true);
   };
 
   const handleExportToExcel = () => {
@@ -208,6 +222,17 @@ export default function EventReports() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
+                        {report.photo_urls && report.photo_urls.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-purple-600 hover:text-purple-700 hover:bg-transparent gap-1"
+                            onClick={(e) => handleViewAttachments(report.photo_urls!, e)}
+                          >
+                            <Paperclip className="h-4 w-4" />
+                            Files ({report.photo_urls.length})
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -266,6 +291,55 @@ export default function EventReports() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Attachment Dialog */}
+      <Dialog open={attachmentDialogOpen} onOpenChange={setAttachmentDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Paperclip className="h-5 w-5" />
+              Attached Photos ({selectedPhotos.length})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {selectedPhotos.map((url, index) => (
+                <div key={index} className="border rounded-lg overflow-hidden">
+                  <img 
+                    src={url} 
+                    alt={`Damage photo ${index + 1}`} 
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-2 flex gap-2 justify-end bg-muted/50">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(url, '_blank')}
+                      className="gap-1"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Open
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `photo-${index + 1}.jpg`;
+                        link.click();
+                      }}
+                      className="gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
