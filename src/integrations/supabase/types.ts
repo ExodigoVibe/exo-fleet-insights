@@ -168,6 +168,7 @@ export type Database = {
           department_manager: string | null
           email: string | null
           end_date: string | null
+          file_urls: string[] | null
           full_name: string
           id: string
           job_title: string | null
@@ -187,6 +188,7 @@ export type Database = {
           department_manager?: string | null
           email?: string | null
           end_date?: string | null
+          file_urls?: string[] | null
           full_name: string
           id?: string
           job_title?: string | null
@@ -206,6 +208,7 @@ export type Database = {
           department_manager?: string | null
           email?: string | null
           end_date?: string | null
+          file_urls?: string[] | null
           full_name?: string
           id?: string
           job_title?: string | null
