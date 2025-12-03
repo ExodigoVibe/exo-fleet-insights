@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Info, Car, FileText, Users, Upload, Send } from "lucide-react";
+import { Info, Car, FileText, Users, Upload, Send, X } from "lucide-react";
 import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
 import { useCreateEventReport } from "@/hooks/queries/useEventReportsQuery";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,6 +114,31 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
     try {
       console.log("Submitting event report with data:", data);
       
+      // Upload files to storage
+      const photoUrls: string[] = [];
+      
+      for (const file of uploadedFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `photos/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('event-report-files')
+          .upload(filePath, file);
+          
+        if (uploadError) {
+          console.error("File upload error:", uploadError);
+          toast.error(`Failed to upload file: ${file.name}`);
+          continue;
+        }
+        
+        const { data: urlData } = supabase.storage
+          .from('event-report-files')
+          .getPublicUrl(filePath);
+          
+        photoUrls.push(urlData.publicUrl);
+      }
+      
       const reportData = {
         vehicle_license_plate: data.vehicleId,
         employee_name: data.employeeName,
@@ -125,6 +151,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
         third_party_phone: data.thirdPartyPhone || undefined,
         third_party_license_plate: data.thirdPartyLicensePlate || undefined,
         third_party_insurance: data.thirdPartyInsurance || undefined,
+        photo_urls: photoUrls.length > 0 ? photoUrls : undefined,
       };
 
       console.log("Formatted report data:", reportData);
@@ -351,7 +378,7 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
             {/* Photos of Damage Section */}
             <div className="space-y-4">
               <FormLabel>Photos of Damage</FormLabel>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                 <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-lg font-medium mb-2">Upload Images</p>
                 <p className="text-sm text-muted-foreground mb-4">
@@ -374,9 +401,25 @@ export function ReportEventDialog({ open, onOpenChange }: ReportEventDialogProps
                   />
                 </label>
                 {uploadedFiles.length > 0 && (
-                  <p className="text-sm text-muted-foreground mt-4">
-                    {uploadedFiles.length} file(s) uploaded
-                  </p>
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      {uploadedFiles.length} file(s) selected
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {uploadedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-sm">
+                          <span className="truncate max-w-[150px]">{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setUploadedFiles(uploadedFiles.filter((_, i) => i !== index))}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
