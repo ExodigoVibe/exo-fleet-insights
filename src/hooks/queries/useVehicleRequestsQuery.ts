@@ -16,6 +16,7 @@ export interface VehicleRequest {
   department_manager?: string;
   manager_email?: string;
   license_file_url?: string;
+  file_urls?: string[];
   status: "pending_manager" | "approved" | "rejected";
   priority: "low" | "medium" | "high";
   created_at: string;
@@ -35,6 +36,7 @@ export interface CreateVehicleRequestData {
   department_manager?: string;
   manager_email?: string;
   license_file_url?: string;
+  file_urls?: string[];
   priority?: "low" | "medium" | "high";
 }
 

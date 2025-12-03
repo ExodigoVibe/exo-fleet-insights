@@ -53,7 +53,7 @@ export default function NewRequest() {
   const { id } = useParams();
   const isEditMode = !!id;
   const [usageType, setUsageType] = useState<"single_use" | "permanent_driver">("single_use");
-  const [licenseFile, setLicenseFile] = useState<File | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const createRequest = useCreateVehicleRequest();
   const updateRequest = useUpdateVehicleRequest();
   const { data: requests = [], isLoading: isLoadingRequest } = useVehicleRequestsQuery();
@@ -122,29 +122,29 @@ export default function NewRequest() {
     try {
       console.log("Submitting request with data:", data);
       
-      let licenseFileUrl = null;
+      // Upload files to storage
+      const fileUrls: string[] = [];
       
-      // Upload file to storage if exists
-      if (licenseFile) {
-        const fileExt = licenseFile.name.split('.').pop();
+      for (const file of uploadedFiles) {
+        const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `licenses/${fileName}`;
+        const filePath = `files/${fileName}`;
         
         const { error: uploadError } = await supabase.storage
           .from('vehicle-request-files')
-          .upload(filePath, licenseFile);
+          .upload(filePath, file);
           
         if (uploadError) {
           console.error("File upload error:", uploadError);
-          toast.error("Failed to upload file");
-          return;
+          toast.error(`Failed to upload file: ${file.name}`);
+          continue;
         }
         
         const { data: urlData } = supabase.storage
           .from('vehicle-request-files')
           .getPublicUrl(filePath);
           
-        licenseFileUrl = urlData.publicUrl;
+        fileUrls.push(urlData.publicUrl);
       }
       
       const requestData = {
@@ -160,7 +160,7 @@ export default function NewRequest() {
         department_manager: data.department_manager,
         manager_email: data.manager_email,
         priority: "medium" as const,
-        license_file_url: licenseFileUrl,
+        file_urls: fileUrls.length > 0 ? fileUrls : undefined,
       };
 
       console.log("Formatted request data:", requestData);
@@ -512,42 +512,62 @@ export default function NewRequest() {
 
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-medium mb-3">Driver's License</h4>
+                  <h4 className="font-medium mb-3">Documents & Files</h4>
                   <div className="border-2 border-dashed border-border rounded-lg p-8">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
                         <FileText className="h-6 w-6 text-muted-foreground" />
                       </div>
                       <div className="text-center">
-                        <p className="font-medium">Upload Driver's License Photo</p>
-                        <p className="text-sm text-muted-foreground">PDF or image file</p>
+                        <p className="font-medium">Upload Documents</p>
+                        <p className="text-sm text-muted-foreground">Driver's license, traffic history, or other required files</p>
                       </div>
-                      <label htmlFor="license-upload">
+                      <label htmlFor="file-upload">
                         <Button
                           type="button"
                           variant="outline"
                           className="gap-2 hover:bg-gray-100 hover:text-foreground"
-                          onClick={() => document.getElementById("license-upload")?.click()}
+                          onClick={() => document.getElementById("file-upload")?.click()}
                         >
                           <Upload className="h-4 w-4" />
-                          Upload File
+                          Upload Files
                         </Button>
                       </label>
                       <input
-                        id="license-upload"
+                        id="file-upload"
                         type="file"
+                        multiple
                         accept="image/*,.pdf"
                         className="hidden"
                         onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setLicenseFile(file);
-                            form.setValue("license_file", file);
-                            toast.success(`File "${file.name}" uploaded successfully`);
+                          if (e.target.files) {
+                            const newFiles = Array.from(e.target.files);
+                            setUploadedFiles([...uploadedFiles, ...newFiles]);
+                            toast.success(`${newFiles.length} file(s) added`);
                           }
                         }}
                       />
-                      {licenseFile && <p className="text-sm text-primary font-medium">Selected: {licenseFile.name}</p>}
+                      {uploadedFiles.length > 0 && (
+                        <div className="mt-4 space-y-2 w-full">
+                          <p className="text-sm text-muted-foreground text-center">
+                            {uploadedFiles.length} file(s) selected
+                          </p>
+                          <div className="flex flex-wrap gap-2 justify-center">
+                            {uploadedFiles.map((file, index) => (
+                              <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-sm">
+                                <span className="truncate max-w-[150px]">{file.name}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setUploadedFiles(uploadedFiles.filter((_, i) => i !== index))}
+                                  className="text-muted-foreground hover:text-foreground"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

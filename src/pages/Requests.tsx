@@ -29,7 +29,7 @@ export default function Requests() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<RequestStatus>("all");
   const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
-  const [selectedAttachment, setSelectedAttachment] = useState<{ url: string; name: string } | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const { data: requests = [], isLoading } = useVehicleRequestsQuery();
   const deleteRequest = useDeleteVehicleRequest();
   const approveRequest = useApproveVehicleRequest();
@@ -74,11 +74,24 @@ export default function Requests() {
     await undoRejectRequest.mutateAsync(id);
   };
 
-  const handleViewAttachment = (url: string, e: React.MouseEvent) => {
+  const handleViewAttachments = (request: typeof requests[0], e: React.MouseEvent) => {
     e.stopPropagation();
-    const fileName = url.split('/').pop() || 'attachment';
-    setSelectedAttachment({ url, name: fileName });
+    const files: string[] = [];
+    if (request.license_file_url) files.push(request.license_file_url);
+    if (request.file_urls) files.push(...request.file_urls);
+    setSelectedFiles(files);
     setAttachmentDialogOpen(true);
+  };
+
+  const hasAttachments = (request: typeof requests[0]) => {
+    return request.license_file_url || (request.file_urls && request.file_urls.length > 0);
+  };
+
+  const getAttachmentCount = (request: typeof requests[0]) => {
+    let count = 0;
+    if (request.license_file_url) count++;
+    if (request.file_urls) count += request.file_urls.length;
+    return count;
   };
 
   const allRequestsCount = userRequests.length;
@@ -290,15 +303,15 @@ export default function Requests() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        {request.license_file_url && (
+                        {hasAttachments(request) && (
                           <Button 
                             variant="ghost" 
                             size="sm" 
                             className="text-purple-600 hover:text-purple-700 hover:bg-transparent gap-1"
-                            onClick={(e) => handleViewAttachment(request.license_file_url!, e)}
+                            onClick={(e) => handleViewAttachments(request, e)}
                           >
                             <Paperclip className="h-4 w-4" />
-                            Files
+                            Files ({getAttachmentCount(request)})
                           </Button>
                         )}
                         {hasAdminAccess && request.status === "pending_manager" && (
@@ -391,59 +404,66 @@ export default function Requests() {
 
       {/* Attachment Dialog */}
       <Dialog open={attachmentDialogOpen} onOpenChange={setAttachmentDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Paperclip className="h-5 w-5" />
-              Attached File
+              Attached Files ({selectedFiles.length})
             </DialogTitle>
           </DialogHeader>
-          {selectedAttachment && (
-            <div className="space-y-4">
-              <div className="border rounded-lg p-4">
-                {selectedAttachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                  <img 
-                    src={selectedAttachment.url} 
-                    alt="Attachment" 
-                    className="max-w-full h-auto rounded"
-                  />
-                ) : selectedAttachment.url.match(/\.pdf$/i) ? (
-                  <iframe 
-                    src={selectedAttachment.url} 
-                    className="w-full h-96 rounded"
-                    title="PDF Preview"
-                  />
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Paperclip className="h-12 w-12 mx-auto mb-2" />
-                    <p>File preview not available</p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {selectedFiles.map((url, index) => (
+                <div key={index} className="border rounded-lg overflow-hidden">
+                  {url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                    <img 
+                      src={url} 
+                      alt={`Attachment ${index + 1}`} 
+                      className="w-full h-48 object-cover"
+                    />
+                  ) : url.match(/\.pdf$/i) ? (
+                    <div className="w-full h-48 flex items-center justify-center bg-muted">
+                      <div className="text-center">
+                        <Paperclip className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">PDF Document</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-full h-48 flex items-center justify-center bg-muted">
+                      <div className="text-center">
+                        <Paperclip className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">File</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-2 flex gap-2 justify-end bg-muted/50">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(url, '_blank')}
+                      className="gap-1"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Open
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = url.split('/').pop() || `file-${index + 1}`;
+                        link.click();
+                      }}
+                      className="gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
                   </div>
-                )}
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => window.open(selectedAttachment.url, '_blank')}
-                  className="gap-2"
-                >
-                  <Eye className="h-4 w-4" />
-                  Open in New Tab
-                </Button>
-                <Button
-                  onClick={() => {
-                    const link = document.createElement('a');
-                    link.href = selectedAttachment.url;
-                    link.download = selectedAttachment.name;
-                    link.click();
-                  }}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Download
-                </Button>
-              </div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
