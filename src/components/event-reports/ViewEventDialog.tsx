@@ -1,14 +1,9 @@
-import { Info, Car, FileText, Users, X } from "lucide-react";
-import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { EventReport } from "@/hooks/queries/useEventReportsQuery";
+import { Info, Car, FileText, Users, X } from 'lucide-react';
+import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { EventReport } from '@/hooks/queries/useEventReportsQuery';
 
 interface ViewEventDialogProps {
   open: boolean;
@@ -21,25 +16,25 @@ export function ViewEventDialog({ open, onOpenChange, report }: ViewEventDialogP
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case "slight":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "extensive":
-        return "bg-red-100 text-red-800 border-red-200";
+      case 'slight':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'extensive':
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "reviewed":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "closed":
-        return "bg-gray-100 text-gray-800 border-gray-200";
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'reviewed':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'closed':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -54,9 +49,7 @@ export function ViewEventDialog({ open, onOpenChange, report }: ViewEventDialogP
               size="icon"
               onClick={() => onOpenChange(false)}
               className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            ></Button>
           </DialogTitle>
         </DialogHeader>
 
@@ -87,7 +80,9 @@ export function ViewEventDialog({ open, onOpenChange, report }: ViewEventDialogP
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg">
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Vehicle License Plate</label>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Vehicle License Plate
+                </label>
                 <p className="text-base font-medium mt-1">{report.vehicle_license_plate}</p>
               </div>
 
@@ -97,7 +92,9 @@ export function ViewEventDialog({ open, onOpenChange, report }: ViewEventDialogP
               </div>
 
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Date and Time of Event</label>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Date and Time of Event
+                </label>
                 <p className="text-base font-medium mt-1">
                   {format(new Date(report.event_date), "MMM dd, yyyy 'at' HH:mm")}
                 </p>
@@ -121,12 +118,14 @@ export function ViewEventDialog({ open, onOpenChange, report }: ViewEventDialogP
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Description</label>
                 <p className="text-base mt-2 whitespace-pre-wrap">
-                  {report.description || "No description provided"}
+                  {report.description || 'No description provided'}
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Severity of Damages</label>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Severity of Damages
+                </label>
                 <div className="mt-2">
                   <Badge variant="outline" className={getSeverityColor(report.severity)}>
                     {report.severity.charAt(0).toUpperCase() + report.severity.slice(1)} Damage
@@ -167,28 +166,36 @@ export function ViewEventDialog({ open, onOpenChange, report }: ViewEventDialogP
 
                 {report.third_party_license_plate && (
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">License Plate</label>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      License Plate
+                    </label>
                     <p className="text-base font-medium mt-1">{report.third_party_license_plate}</p>
                   </div>
                 )}
 
                 {report.third_party_phone && (
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Phone Number</label>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Phone Number
+                    </label>
                     <p className="text-base font-medium mt-1">{report.third_party_phone}</p>
                   </div>
                 )}
 
                 {report.third_party_insurance && (
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Insurance Policy</label>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      Insurance Policy
+                    </label>
                     <p className="text-base font-medium mt-1">{report.third_party_insurance}</p>
                   </div>
                 )}
               </div>
             ) : (
               <div className="bg-muted/30 p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground">No third party involved in this incident</p>
+                <p className="text-sm text-muted-foreground">
+                  No third party involved in this incident
+                </p>
               </div>
             )}
           </div>
