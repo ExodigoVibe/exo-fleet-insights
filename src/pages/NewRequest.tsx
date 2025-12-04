@@ -28,7 +28,9 @@ import { SignaturePad } from "@/components/SignaturePad";
 
 const formSchema = z
   .object({
-    usage_type: z.enum(["single_use", "permanent_driver"]),
+    usage_type: z.enum(["single_use", "permanent_driver"], {
+      required_error: "Usage type is required",
+    }),
     start_date: z.date({
       required_error: "Start date is required",
     }),
@@ -40,10 +42,12 @@ const formSchema = z
     job_title: z.string().min(1, "Job title is required").max(100),
     department: z.string().min(1, "Department is required").max(100),
     phone_number: z.string().min(1, "Phone number is required").max(20),
-    email: z.string().email("Invalid email address").max(255),
+    email: z.string().min(1, "Email is required").email("Invalid email address").max(255),
     department_manager: z.string().min(1, "Department manager is required").max(100),
-    manager_email: z.string().email("Invalid email address").max(255),
-    license_file: z.any().optional(),
+    manager_email: z.string().min(1, "Manager email is required").email("Invalid email address").max(255),
+    license_file: z.any().refine((val) => val !== undefined && val !== null, {
+      message: "Driver's license file is required",
+    }),
   })
   .refine((data) => data.end_date >= data.start_date, {
     message: "End date must be after or equal to start date",
@@ -192,8 +196,20 @@ export default function NewRequest() {
     try {
       console.log("Submitting request with data:", data);
       
-      // Validate signature if template is selected
-      if (selectedTemplateId && !signatureDataUrl && !isEditMode) {
+      // Validate file upload
+      if (uploadedFiles.length === 0 && !isEditMode) {
+        toast.error("Please upload your driver's license");
+        return;
+      }
+      
+      // Validate template selection
+      if (!selectedTemplateId && !isEditMode) {
+        toast.error("Please select a document template");
+        return;
+      }
+      
+      // Validate signature
+      if (!signatureDataUrl && !isEditMode) {
         toast.error("Please sign the document before submitting");
         return;
       }
