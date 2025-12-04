@@ -45,9 +45,6 @@ const formSchema = z
     email: z.string().min(1, "Email is required").email("Invalid email address").max(255),
     department_manager: z.string().min(1, "Department manager is required").max(100),
     manager_email: z.string().min(1, "Manager email is required").email("Invalid email address").max(255),
-    license_file: z.any().refine((val) => val !== undefined && val !== null, {
-      message: "Driver's license file is required",
-    }),
   })
   .refine((data) => data.end_date >= data.start_date, {
     message: "End date must be after or equal to start date",
@@ -700,15 +697,21 @@ FleetFlow System`
             </Card>
 
             {/* Document Signing Section */}
-            <Card className="p-6">
+            <Card className={`p-6 ${!isEditMode && (!selectedTemplateId || !signatureDataUrl) ? 'border-amber-500' : ''}`}>
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <PenTool className="h-5 w-5 text-primary" />
                 Document Signing
+                <span className="text-destructive">*</span>
+                {!isEditMode && selectedTemplateId && signatureDataUrl && (
+                  <span className="text-emerald-600 text-sm font-normal ml-2">✓ Completed</span>
+                )}
               </h3>
 
               <div className="space-y-6">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Select Document to Sign</label>
+                  <label className="text-sm font-medium mb-2 block">
+                    Select Document to Sign <span className="text-destructive">*</span>
+                  </label>
                   <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Choose a document template..." />
@@ -791,13 +794,21 @@ FleetFlow System`
               </div>
             </Card>
 
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Required Forms</h3>
+            <Card className={`p-6 ${!isEditMode && uploadedFiles.length === 0 ? 'border-amber-500' : ''}`}>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                Required Forms
+                <span className="text-destructive">*</span>
+                {!isEditMode && uploadedFiles.length > 0 && (
+                  <span className="text-emerald-600 text-sm font-normal ml-2">✓ {uploadedFiles.length} file(s) uploaded</span>
+                )}
+              </h3>
 
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-medium mb-3">Documents & Files</h4>
-                  <div className="border-2 border-dashed border-border rounded-lg p-8">
+                  <h4 className="font-medium mb-3">
+                    Documents & Files <span className="text-destructive">*</span>
+                  </h4>
+                  <div className={`border-2 border-dashed rounded-lg p-8 ${!isEditMode && uploadedFiles.length === 0 ? 'border-amber-500 bg-amber-50/50' : 'border-border'}`}>
                     <div className="flex flex-col items-center justify-center gap-3">
                       <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
                         <FileText className="h-6 w-6 text-muted-foreground" />
@@ -858,6 +869,24 @@ FleetFlow System`
               </div>
             </Card>
 
+            {/* Validation Summary */}
+            {!isEditMode && (uploadedFiles.length === 0 || !selectedTemplateId || !signatureDataUrl) && (
+              <Card className="p-4 border-amber-500 bg-amber-50">
+                <h3 className="font-semibold text-amber-800 mb-2">Required items before submitting:</h3>
+                <ul className="text-sm text-amber-700 space-y-1">
+                  {uploadedFiles.length === 0 && (
+                    <li>• Upload driver's license photo</li>
+                  )}
+                  {!selectedTemplateId && (
+                    <li>• Select a document template</li>
+                  )}
+                  {!signatureDataUrl && (
+                    <li>• Sign the document</li>
+                  )}
+                </ul>
+              </Card>
+            )}
+
             <div className="flex justify-end gap-4">
               <Button
                 type="button"
@@ -867,7 +896,11 @@ FleetFlow System`
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-primary hover:bg-primary/90">
+              <Button 
+                type="submit" 
+                className="bg-primary hover:bg-primary/90"
+                disabled={!isEditMode && (uploadedFiles.length === 0 || !selectedTemplateId || !signatureDataUrl)}
+              >
                 {isEditMode ? "Update Request" : "Submit Request"}
               </Button>
             </div>
