@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      assigned_vehicles: {
+        Row: {
+          created_at: string
+          employee_name: string
+          id: string
+          license_plates: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_name: string
+          id?: string
+          license_plates: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_name?: string
+          id?: string
+          license_plates?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       department_managers: {
         Row: {
           created_at: string
