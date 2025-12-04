@@ -67,10 +67,12 @@ export default function NewRequest() {
   const { user, isLoading: isLoadingAuth } = useAuth();
 
   // Filter form templates based on usage type
+  // Map form usage_type to template usage_type values
+  const templateUsageType = usageType === "permanent_driver" ? "permanent" : "single_use";
   const availableTemplates = formTemplates.filter(
     (template) =>
       template.is_active &&
-      (template.usage_type === usageType || template.usage_type === "both")
+      (template.usage_type === templateUsageType || template.usage_type === "both")
   );
 
   const selectedTemplate = formTemplates.find((t) => t.id === selectedTemplateId);
