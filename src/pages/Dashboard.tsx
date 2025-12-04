@@ -179,7 +179,7 @@ const Dashboard = () => {
               <Car className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">Vehicle Fleet</h2>
             </div>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-3">
               <div onClick={() => navigate('/vehicle-fleet?filter=all')} className="cursor-pointer">
                 <Card className="transition-all hover:shadow-md">
                   <CardContent className="p-6">
@@ -221,7 +221,7 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
               </div>
-              <div
+              {/* <div
                 onClick={() => navigate('/vehicle-fleet?filter=driving')}
                 className="cursor-pointer"
               >
@@ -241,7 +241,7 @@ const Dashboard = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              </div> */}
               <div
                 onClick={() => navigate('/vehicle-fleet?filter=other')}
                 className="cursor-pointer"
