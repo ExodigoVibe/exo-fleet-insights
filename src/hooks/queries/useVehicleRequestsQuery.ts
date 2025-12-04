@@ -19,6 +19,9 @@ export interface VehicleRequest {
   file_urls?: string[];
   status: "pending_manager" | "approved" | "rejected";
   priority: "low" | "medium" | "high";
+  signature_url?: string;
+  signed_at?: string;
+  signed_template_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -38,6 +41,9 @@ export interface CreateVehicleRequestData {
   license_file_url?: string;
   file_urls?: string[];
   priority?: "low" | "medium" | "high";
+  signature_url?: string;
+  signed_at?: string;
+  signed_template_id?: string;
 }
 
 export interface UpdateVehicleRequestData extends CreateVehicleRequestData {
