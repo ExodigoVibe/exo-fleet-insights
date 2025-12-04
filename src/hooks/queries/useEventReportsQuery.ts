@@ -118,7 +118,7 @@ export const useResolveEventReport = () => {
     mutationFn: async ({ id, resolution }: { id: string; resolution: 'maintenance' | 'assignment' }) => {
       const { error } = await supabase
         .from("event_reports")
-        .update({ status: resolution })
+        .update({ status: 'reviewed' })
         .eq("id", id);
 
       if (error) throw error;
@@ -127,7 +127,7 @@ export const useResolveEventReport = () => {
       queryClient.invalidateQueries({ queryKey: ["event-reports"] });
       toast({
         title: "Success",
-        description: `Event report resolved as ${variables.resolution}`,
+        description: `Event report marked as reviewed (${variables.resolution})`,
       });
     },
     onError: (error) => {
