@@ -1,9 +1,10 @@
 import { FileText, ExternalLink, Calendar, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { FormTemplate } from '@/hooks/queries/useFormTemplatesQuery';
+import { useState } from 'react';
 
 interface ViewTemplateDialogProps {
   open: boolean;
@@ -40,18 +41,30 @@ const formatFormType = (type: string) => {
 };
 
 export function ViewTemplateDialog({ open, onOpenChange, template }: ViewTemplateDialogProps) {
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
+
   if (!template) return null;
 
   const formFields = template.form_fields || [];
+  
+  const getGoogleDocsViewerUrl = (pdfUrl: string) => {
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) setShowPdfPreview(false);
+      onOpenChange(isOpen);
+    }}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
             Template Details
           </DialogTitle>
+          <DialogDescription>
+            View template configuration and attached PDF document
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -91,16 +104,38 @@ export function ViewTemplateDialog({ open, onOpenChange, template }: ViewTemplat
                 <Tag className="h-4 w-4 text-primary" />
                 PDF Template
               </h4>
-              <div className="bg-muted/30 p-4 rounded-lg">
-                <a
-                  href={template.pdf_template_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  View PDF Document
-                </a>
+              <div className="bg-muted/30 p-4 rounded-lg space-y-3">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setShowPdfPreview(!showPdfPreview)}
+                  >
+                    <FileText className="h-4 w-4" />
+                    {showPdfPreview ? 'Hide Preview' : 'Preview PDF'}
+                  </Button>
+                  <a
+                    href={template.pdf_template_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open in New Tab
+                  </a>
+                </div>
+                
+                {showPdfPreview && (
+                  <div className="border rounded-lg overflow-hidden bg-white">
+                    <iframe
+                      src={getGoogleDocsViewerUrl(template.pdf_template_url)}
+                      className="w-full h-[500px]"
+                      title="PDF Preview"
+                      frameBorder="0"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
