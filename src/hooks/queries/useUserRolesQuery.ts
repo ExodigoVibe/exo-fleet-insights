@@ -41,7 +41,7 @@ export const useUserRolesQuery = () => {
           id: roleRecord.user_id,
           email: profile?.email || roleRecord.email || "",
           full_name: profile?.full_name || roleRecord.full_name || "",
-          created_at: profile?.created_at || "",
+          created_at: roleRecord.created_at || profile?.created_at || "",
           role: roleRecord.role,
           role_id: roleRecord.id,
         };
