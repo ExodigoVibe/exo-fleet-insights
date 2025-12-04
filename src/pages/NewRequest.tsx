@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, parseISO } from "date-fns";
-import { CalendarIcon, FileText, Car, Upload, X, PenTool, ExternalLink } from "lucide-react";
+import { CalendarIcon, FileText, Car, Upload, X, PenTool } from "lucide-react";
 import {
   useCreateVehicleRequest,
   useUpdateVehicleRequest,
@@ -59,6 +59,7 @@ export default function NewRequest() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
   const createRequest = useCreateVehicleRequest();
   const updateRequest = useUpdateVehicleRequest();
   const { data: requests = [], isLoading: isLoadingRequest } = useVehicleRequestsQuery();
@@ -616,17 +617,31 @@ export default function NewRequest() {
                         <p className="text-sm text-muted-foreground mb-3">{selectedTemplate.description}</p>
                       )}
                       
-                      {/* PDF Preview Link */}
+                      {/* PDF Preview */}
                       {selectedTemplate.pdf_template_url && (
-                        <a
-                          href={selectedTemplate.pdf_template_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                          View Document (PDF)
-                        </a>
+                        <div className="space-y-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => setShowPdfPreview(!showPdfPreview)}
+                          >
+                            <FileText className="h-4 w-4" />
+                            {showPdfPreview ? 'Hide Preview' : 'Preview PDF'}
+                          </Button>
+                          
+                          {showPdfPreview && (
+                            <div className="border rounded-lg overflow-hidden bg-white">
+                              <iframe
+                                src={`https://docs.google.com/viewer?url=${encodeURIComponent(selectedTemplate.pdf_template_url)}&embedded=true`}
+                                className="w-full h-[400px]"
+                                title="PDF Preview"
+                                frameBorder="0"
+                              />
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
 
