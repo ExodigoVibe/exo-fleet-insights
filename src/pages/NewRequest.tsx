@@ -12,7 +12,6 @@ import {
 } from "@/hooks/queries/useVehicleRequestsQuery";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 import { useAuth } from "@/hooks/useAuth";
-import { departments, getManagersByDepartment, getManagerByName } from "@/data/departmentManagers";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -65,11 +64,7 @@ export default function NewRequest() {
   const updateRequest = useUpdateVehicleRequest();
   const { data: requests = [], isLoading: isLoadingRequest } = useVehicleRequestsQuery();
   const { data: formTemplates = [] } = useFormTemplatesQuery();
-  const { user, isLoading: isLoadingAuth, isEmployee } = useAuth();
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
-
-  // Get managers filtered by selected department
-  const filteredManagers = selectedDepartment ? getManagersByDepartment(selectedDepartment) : [];
+  const { user, isLoading: isLoadingAuth } = useAuth();
 
   // Filter form templates based on usage type
   // Map form usage_type to template usage_type values
@@ -123,7 +118,6 @@ export default function NewRequest() {
           manager_email: request.manager_email || "",
         });
         setUsageType(request.usage_type as "single_use" | "permanent_driver");
-        setSelectedDepartment(request.department);
         if (request.signed_template_id) {
           setSelectedTemplateId(request.signed_template_id);
         }
@@ -515,35 +509,9 @@ export default function NewRequest() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Department</FormLabel>
-                        {isEmployee ? (
-                          <Select
-                            value={field.value}
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              setSelectedDepartment(value);
-                              // Clear manager fields when department changes
-                              form.setValue("department_manager", "");
-                              form.setValue("manager_email", "");
-                            }}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select department" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {departments.map((dept) => (
-                                <SelectItem key={dept} value={dept}>
-                                  {dept}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <FormControl>
-                            <Input placeholder="Enter your department" {...field} />
-                          </FormControl>
-                        )}
+                        <FormControl>
+                          <Input placeholder="Enter your department" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -585,37 +553,9 @@ export default function NewRequest() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Department Manager</FormLabel>
-                        {isEmployee ? (
-                          <Select
-                            value={field.value}
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              // Auto-fill manager email when manager is selected
-                              const manager = getManagerByName(value);
-                              if (manager) {
-                                form.setValue("manager_email", manager.email);
-                              }
-                            }}
-                            disabled={!selectedDepartment}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={selectedDepartment ? "Select manager" : "Select department first"} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {filteredManagers.map((manager) => (
-                                <SelectItem key={manager.email} value={manager.displayName}>
-                                  {manager.displayName} - {manager.jobTitle}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <FormControl>
-                            <Input placeholder="Enter department manager name" {...field} />
-                          </FormControl>
-                        )}
+                        <FormControl>
+                          <Input placeholder="Enter department manager name" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -629,21 +569,9 @@ export default function NewRequest() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Manager's Email Address</FormLabel>
-                        {isEmployee ? (
-                          <FormControl>
-                            <Input 
-                              type="email" 
-                              placeholder="Auto-filled from manager selection" 
-                              {...field} 
-                              disabled
-                              className="bg-muted"
-                            />
-                          </FormControl>
-                        ) : (
-                          <FormControl>
-                            <Input type="email" placeholder="Enter manager's email" {...field} />
-                          </FormControl>
-                        )}
+                        <FormControl>
+                          <Input type="email" placeholder="Enter manager's email" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
