@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      department_managers: {
+        Row: {
+          created_at: string
+          department: string
+          display_name: string
+          email: string
+          employee_id: string | null
+          id: string
+          job_title: string | null
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          display_name: string
+          email: string
+          employee_id?: string | null
+          id?: string
+          job_title?: string | null
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          display_name?: string
+          email?: string
+          employee_id?: string | null
+          id?: string
+          job_title?: string | null
+        }
+        Relationships: []
+      }
       event_reports: {
         Row: {
           created_at: string
