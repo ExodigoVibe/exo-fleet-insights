@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useVehicleRequestsQuery } from '@/hooks/queries/useVehicleRequestsQuery';
 import { useFormTemplatesQuery } from '@/hooks/queries/useFormTemplatesQuery';
 import { format } from 'date-fns';
+import { jsPDF } from 'jspdf';
+import { toast } from 'sonner';
 
 export default function RequestDetail() {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +43,170 @@ export default function RequestDetail() {
         return 'Rejected';
       default:
         return status;
+    }
+  };
+
+  const generateSignedDocumentPDF = async () => {
+    if (!request) return;
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let yPosition = 20;
+
+      // Title
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Vehicle Request - Signed Document', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
+
+      // Document reference
+      if (signedTemplate) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Document: ${signedTemplate.form_title}`, 20, yPosition);
+        yPosition += 8;
+        if (signedTemplate.description) {
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'normal');
+          doc.text(signedTemplate.description, 20, yPosition);
+          yPosition += 8;
+        }
+      }
+
+      // Divider line
+      yPosition += 5;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, yPosition, pageWidth - 20, yPosition);
+      yPosition += 15;
+
+      // Employee Information Section
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Employee Information', 20, yPosition);
+      yPosition += 10;
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+
+      const addField = (label: string, value: string | undefined | null) => {
+        if (value) {
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${label}:`, 20, yPosition);
+          doc.setFont('helvetica', 'normal');
+          doc.text(value, 70, yPosition);
+          yPosition += 8;
+        }
+      };
+
+      addField('Full Name', request.full_name);
+      addField('Department', request.department);
+      addField('Job Title', request.job_title);
+      addField('Email', request.email);
+      addField('Phone', request.phone_number);
+
+      yPosition += 5;
+
+      // Request Details Section
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Request Details', 20, yPosition);
+      yPosition += 10;
+
+      doc.setFontSize(11);
+      addField('Usage Type', request.usage_type === 'single_use' ? 'Single Use' : 'Permanent Driver');
+      addField('Start Date', format(new Date(request.start_date), 'MMMM do, yyyy'));
+      if (request.end_date) {
+        addField('End Date', format(new Date(request.end_date), 'MMMM do, yyyy'));
+      }
+      addField('Purpose', request.purpose);
+      addField('Status', getStatusLabel(request.status));
+      addField('Priority', request.priority?.charAt(0).toUpperCase() + request.priority?.slice(1));
+
+      yPosition += 5;
+
+      // Manager Information
+      if (request.department_manager || request.manager_email) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Manager Information', 20, yPosition);
+        yPosition += 10;
+
+        doc.setFontSize(11);
+        addField('Manager Name', request.department_manager);
+        addField('Manager Email', request.manager_email);
+        yPosition += 5;
+      }
+
+      // Signature Section
+      if (request.signature_url) {
+        // Divider line
+        doc.setDrawColor(200, 200, 200);
+        doc.line(20, yPosition, pageWidth - 20, yPosition);
+        yPosition += 15;
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Signature & Acknowledgment', 20, yPosition);
+        yPosition += 10;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('By signing below, I acknowledge that I have read and agree to the terms in the document.', 20, yPosition);
+        yPosition += 15;
+
+        // Add signature image
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => {
+              const imgWidth = 80;
+              const imgHeight = (img.height / img.width) * imgWidth;
+              doc.addImage(img, 'PNG', 20, yPosition, imgWidth, imgHeight);
+              yPosition += imgHeight + 10;
+              resolve();
+            };
+            img.onerror = () => {
+              // If image fails to load, just add a placeholder
+              doc.setFont('helvetica', 'italic');
+              doc.text('[Signature on file]', 20, yPosition);
+              yPosition += 10;
+              resolve();
+            };
+            img.src = request.signature_url!;
+          });
+        } catch (e) {
+          doc.setFont('helvetica', 'italic');
+          doc.text('[Signature on file]', 20, yPosition);
+          yPosition += 10;
+        }
+
+        // Signing date
+        if (request.signed_at) {
+          doc.setFontSize(11);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Signed on: ${format(new Date(request.signed_at), "MMMM do, yyyy 'at' HH:mm")}`, 20, yPosition);
+        }
+      }
+
+      // Footer with generation date
+      const footerY = doc.internal.pageSize.getHeight() - 15;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Document generated on: ${format(new Date(), "MMMM do, yyyy 'at' HH:mm")}`, 20, footerY);
+      doc.text(`Request ID: ${request.id}`, pageWidth - 20, footerY, { align: 'right' });
+
+      // Save the PDF
+      const fileName = `vehicle_request_${request.full_name.replace(/\s+/g, '_')}_${format(new Date(request.created_at), 'yyyy-MM-dd')}.pdf`;
+      doc.save(fileName);
+      
+      toast.success('Document downloaded successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate document');
     }
   };
 
@@ -202,17 +368,28 @@ export default function RequestDetail() {
                           <p className="text-sm text-muted-foreground">{signedTemplate.description}</p>
                         )}
                       </div>
-                      {signedTemplate.pdf_template_url && (
+                      <div className="flex gap-2">
+                        {signedTemplate.pdf_template_url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(signedTemplate.pdf_template_url!)}&embedded=true`, '_blank')}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            View Template
+                          </Button>
+                        )}
                         <Button
-                          variant="outline"
+                          variant="default"
                           size="sm"
                           className="gap-2"
-                          onClick={() => window.open(signedTemplate.pdf_template_url!, '_blank')}
+                          onClick={generateSignedDocumentPDF}
                         >
-                          <ExternalLink className="h-4 w-4" />
-                          View Document
+                          <Download className="h-4 w-4" />
+                          Download Signed Doc
                         </Button>
-                      )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -231,6 +408,21 @@ export default function RequestDetail() {
                       <p className="text-sm text-muted-foreground mt-2">
                         Signed on: {format(new Date(request.signed_at), "MMMM do, yyyy 'at' HH:mm")}
                       </p>
+                    )}
+
+                    {/* Download button if no template but has signature */}
+                    {!signedTemplate && (
+                      <div className="mt-4">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="gap-2"
+                          onClick={generateSignedDocumentPDF}
+                        >
+                          <Download className="h-4 w-4" />
+                          Download Signed Document
+                        </Button>
+                      </div>
                     )}
                   </div>
                 )}
