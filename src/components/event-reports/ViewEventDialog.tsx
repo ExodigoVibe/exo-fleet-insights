@@ -1,9 +1,10 @@
-import { Info, Car, FileText, Users, X } from 'lucide-react';
+import { Info, Car, FileText, Users, Image as ImageIcon, Wrench, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { EventReport } from '@/hooks/queries/useEventReportsQuery';
+import { Separator } from '@/components/ui/separator';
+import { EventReport, useResolveEventReport } from '@/hooks/queries/useEventReportsQuery';
 
 interface ViewEventDialogProps {
   open: boolean;
@@ -12,6 +13,8 @@ interface ViewEventDialogProps {
 }
 
 export function ViewEventDialog({ open, onOpenChange, report }: ViewEventDialogProps) {
+  const resolveReport = useResolveEventReport();
+
   if (!report) return null;
 
   const getSeverityColor = (severity: string) => {
@@ -31,11 +34,23 @@ export function ViewEventDialog({ open, onOpenChange, report }: ViewEventDialogP
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'reviewed':
         return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'maintenance':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'assignment':
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'closed':
         return 'bg-gray-100 text-gray-800 border-gray-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
+  };
+
+  const handleResolve = (resolution: 'maintenance' | 'assignment') => {
+    resolveReport.mutate({ id: report.id, resolution }, {
+      onSuccess: () => {
+        onOpenChange(false);
+      }
+    });
   };
 
   return (
@@ -130,17 +145,38 @@ export function ViewEventDialog({ open, onOpenChange, report }: ViewEventDialogP
           </div>
 
           {/* Photos Section */}
-          {report.photo_urls && report.photo_urls.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">Photos of Damage</h3>
-              <div className="bg-muted/30 p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  {report.photo_urls.length} photo(s) attached
-                </p>
-                {/* Future enhancement: Display actual photos here */}
-              </div>
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2 border-b pb-2">
+              <ImageIcon className="h-5 w-5 text-primary" />
+              Photos
+            </h3>
+            <div className="bg-muted/30 p-4 rounded-lg">
+              {report.photo_urls && report.photo_urls.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {report.photo_urls.map((url, index) => (
+                    <a
+                      key={index}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block aspect-square rounded-lg overflow-hidden border border-border hover:opacity-90 transition-opacity"
+                    >
+                      <img
+                        src={url}
+                        alt={`Evidence ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder.svg';
+                        }}
+                      />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No photos attached</p>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Third Party Involvement Section */}
           <div className="space-y-4">
@@ -193,6 +229,39 @@ export function ViewEventDialog({ open, onOpenChange, report }: ViewEventDialogP
               </div>
             )}
           </div>
+
+          {/* Resolve Report Section - Only show for pending reports */}
+          {report.status === 'pending' && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Resolve Report</h3>
+                <p className="text-sm text-muted-foreground">
+                  Choose what to do with the vehicle before marking this report as reviewed.
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="border-orange-300 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                    onClick={() => handleResolve('maintenance')}
+                    disabled={resolveReport.isPending}
+                  >
+                    <Wrench className="h-4 w-4 mr-2" />
+                    Maintenance
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-green-300 text-green-600 hover:bg-green-50 hover:text-green-700"
+                    onClick={() => handleResolve('assignment')}
+                    disabled={resolveReport.isPending}
+                  >
+                    <UserCheck className="h-4 w-4 mr-2" />
+                    Assignment
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Report Metadata */}
           <div className="pt-4 border-t text-xs text-muted-foreground space-y-1">

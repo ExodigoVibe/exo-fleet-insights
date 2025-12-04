@@ -110,3 +110,32 @@ export const useDeleteEventReport = () => {
     },
   });
 };
+
+export const useResolveEventReport = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, resolution }: { id: string; resolution: 'maintenance' | 'assignment' }) => {
+      const { error } = await supabase
+        .from("event_reports")
+        .update({ status: resolution })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["event-reports"] });
+      toast({
+        title: "Success",
+        description: `Event report resolved as ${variables.resolution}`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to resolve event report: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+};
