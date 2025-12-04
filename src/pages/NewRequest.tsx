@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +11,7 @@ import {
   useVehicleRequestsQuery,
 } from "@/hooks/queries/useVehicleRequestsQuery";
 import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
+import { useDepartmentManagersQuery } from "@/hooks/queries/useDepartmentManagersQuery";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,20 @@ export default function NewRequest() {
   const updateRequest = useUpdateVehicleRequest();
   const { data: requests = [], isLoading: isLoadingRequest } = useVehicleRequestsQuery();
   const { data: formTemplates = [] } = useFormTemplatesQuery();
+  const { data: departmentManagers = [] } = useDepartmentManagersQuery();
   const { user, isLoading: isLoadingAuth } = useAuth();
+  
+  // Get unique departments from managers data
+  const uniqueDepartments = useMemo(() => {
+    return [...new Set(departmentManagers.map(m => m.department))].sort();
+  }, [departmentManagers]);
+  
+  // Get managers filtered by selected department
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const filteredManagers = useMemo(() => {
+    if (!selectedDepartment) return departmentManagers;
+    return departmentManagers.filter(m => m.department === selectedDepartment);
+  }, [departmentManagers, selectedDepartment]);
 
   // Filter form templates based on usage type
   // Map form usage_type to template usage_type values
@@ -118,6 +132,7 @@ export default function NewRequest() {
           manager_email: request.manager_email || "",
         });
         setUsageType(request.usage_type as "single_use" | "permanent_driver");
+        setSelectedDepartment(request.department || "");
         if (request.signed_template_id) {
           setSelectedTemplateId(request.signed_template_id);
         }
@@ -509,9 +524,29 @@ export default function NewRequest() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Department</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter your department" {...field} />
-                        </FormControl>
+                        <Select 
+                          value={field.value} 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            setSelectedDepartment(value);
+                            // Reset manager fields when department changes
+                            form.setValue("department_manager", "");
+                            form.setValue("manager_email", "");
+                          }}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select department" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {uniqueDepartments.map((dept) => (
+                              <SelectItem key={dept} value={dept}>
+                                {dept}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -553,9 +588,31 @@ export default function NewRequest() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Department Manager</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter department manager name" {...field} />
-                        </FormControl>
+                        <Select 
+                          value={field.value} 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Auto-fill manager email
+                            const manager = departmentManagers.find(m => m.display_name === value);
+                            if (manager) {
+                              form.setValue("manager_email", manager.email);
+                            }
+                          }}
+                          disabled={!selectedDepartment && filteredManagers.length === departmentManagers.length}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={selectedDepartment ? "Select manager" : "Select department first"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {filteredManagers.map((manager) => (
+                              <SelectItem key={manager.id} value={manager.display_name}>
+                                {manager.display_name} - {manager.job_title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -570,7 +627,13 @@ export default function NewRequest() {
                       <FormItem>
                         <FormLabel>Manager's Email Address</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="Enter manager's email" {...field} />
+                          <Input 
+                            type="email" 
+                            placeholder="Auto-filled from manager selection" 
+                            {...field} 
+                            readOnly
+                            className="bg-muted"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
