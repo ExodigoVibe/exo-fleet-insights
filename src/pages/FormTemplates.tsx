@@ -9,8 +9,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Plus, Pencil, Trash2 } from "lucide-react";
+import { FileText, Plus, Pencil, Trash2, Eye } from "lucide-react";
 import { NewTemplateSheet } from "@/components/form-templates/NewTemplateSheet";
+import { ViewTemplateDialog } from "@/components/form-templates/ViewTemplateDialog";
 import { useFormTemplatesQuery, useDeleteFormTemplate, FormTemplate } from "@/hooks/queries/useFormTemplatesQuery";
 import {
   AlertDialog,
@@ -28,7 +29,7 @@ const formatUsageType = (type: string) => {
   switch (type) {
     case "single_use":
       return "Single Use";
-    case "permanent":
+    case "permanent_driver":
       return "Permanent Driver";
     case "both":
       return "Both";
@@ -54,7 +55,9 @@ const formatFormType = (type: string) => {
 
 export default function FormTemplates() {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
+  const [viewTemplate, setViewTemplate] = useState<FormTemplate | null>(null);
   const { data: templates, isLoading } = useFormTemplatesQuery();
   const deleteMutation = useDeleteFormTemplate();
 
@@ -65,6 +68,11 @@ export default function FormTemplates() {
   const handleEdit = (template: FormTemplate) => {
     setSelectedTemplate(template);
     setSheetOpen(true);
+  };
+
+  const handleView = (template: FormTemplate) => {
+    setViewTemplate(template);
+    setViewDialogOpen(true);
   };
 
   const handleCloseSheet = (open: boolean) => {
@@ -142,6 +150,14 @@ export default function FormTemplates() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          className="h-8 w-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                          onClick={() => handleView(template)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           onClick={() => handleEdit(template)}
                         >
@@ -192,6 +208,12 @@ export default function FormTemplates() {
         open={sheetOpen} 
         onOpenChange={handleCloseSheet}
         template={selectedTemplate}
+      />
+
+      <ViewTemplateDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        template={viewTemplate}
       />
     </div>
   );
