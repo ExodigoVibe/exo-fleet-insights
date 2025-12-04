@@ -1,4 +1,4 @@
-import { FileText, ExternalLink, Calendar, Tag } from 'lucide-react';
+import { FileText, Calendar, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -105,26 +105,15 @@ export function ViewTemplateDialog({ open, onOpenChange, template }: ViewTemplat
                 PDF Template
               </h4>
               <div className="bg-muted/30 p-4 rounded-lg space-y-3">
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => setShowPdfPreview(!showPdfPreview)}
-                  >
-                    <FileText className="h-4 w-4" />
-                    {showPdfPreview ? 'Hide Preview' : 'Preview PDF'}
-                  </Button>
-                  <a
-                    href={template.pdf_template_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Open in New Tab
-                  </a>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setShowPdfPreview(!showPdfPreview)}
+                >
+                  <FileText className="h-4 w-4" />
+                  {showPdfPreview ? 'Hide Preview' : 'Preview PDF'}
+                </Button>
                 
                 {showPdfPreview && (
                   <div className="border rounded-lg overflow-hidden bg-white">
