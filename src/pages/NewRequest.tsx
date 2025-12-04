@@ -618,15 +618,20 @@ export default function NewRequest() {
                       
                       {/* PDF Preview Link */}
                       {selectedTemplate.pdf_template_url && (
-                        <a
-                          href={selectedTemplate.pdf_template_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.open(selectedTemplate.pdf_template_url!, '_blank', 'noopener,noreferrer');
+                          }}
                         >
                           <ExternalLink className="h-4 w-4" />
                           View Document (PDF)
-                        </a>
+                        </Button>
                       )}
                     </div>
 

@@ -92,15 +92,19 @@ export function ViewTemplateDialog({ open, onOpenChange, template }: ViewTemplat
                 PDF Template
               </h4>
               <div className="bg-muted/30 p-4 rounded-lg">
-                <a
-                  href={template.pdf_template_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-primary hover:underline"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.open(template.pdf_template_url!, '_blank', 'noopener,noreferrer');
+                  }}
                 >
                   <ExternalLink className="h-4 w-4" />
                   View PDF Document
-                </a>
+                </Button>
               </div>
             </div>
           )}
