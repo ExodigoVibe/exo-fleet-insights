@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useVehiclesQuery } from '@/hooks/queries/useVehiclesQuery';
+import { useAssignedVehiclesQuery } from '@/hooks/queries/useAssignedVehiclesQuery';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Table,
@@ -23,21 +24,42 @@ const Vehicles = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: vehicles, isLoading, error } = useVehiclesQuery();
+  const { data: assignedVehiclesData } = useAssignedVehiclesQuery();
   const { hasAdminAccess } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<
-    'all' | 'parking' | 'moving' | 'driving' | 'other'
+    'all' | 'parking' | 'assigned' | 'driving' | 'other'
   >('all');
+
+  // Build a map of license plate to employee name for assignments
+  const assignmentMap = useMemo(() => {
+    const map = new Map<string, string>();
+    assignedVehiclesData?.forEach((assignment) => {
+      assignment.license_plates.forEach((plate) => {
+        map.set(plate, assignment.employee_name);
+      });
+    });
+    return map;
+  }, [assignedVehiclesData]);
+
+  // Get all assigned license plates
+  const assignedLicensePlates = useMemo(() => {
+    const plates = new Set<string>();
+    assignedVehiclesData?.forEach((assignment) => {
+      assignment.license_plates.forEach((plate) => plates.add(plate));
+    });
+    return plates;
+  }, [assignedVehiclesData]);
 
   // Read filter from URL on mount
   useEffect(() => {
     const filterParam = searchParams.get('filter') as
       | 'all'
       | 'parking'
-      | 'moving'
+      | 'assigned'
       | 'driving'
       | 'other';
-    if (filterParam && ['all', 'parking', 'moving', 'driving', 'other'].includes(filterParam)) {
+    if (filterParam && ['all', 'parking', 'assigned', 'driving', 'other'].includes(filterParam)) {
       setStatusFilter(filterParam);
     }
   }, [searchParams]);
@@ -48,13 +70,16 @@ const Vehicles = () => {
     let filtered = vehicles;
 
     // Apply status filter
-    if (statusFilter === 'parking' || statusFilter === 'moving' || statusFilter === 'driving') {
+    if (statusFilter === 'parking' || statusFilter === 'driving') {
       filtered = filtered.filter((v) => v.motion_status?.toLowerCase() === statusFilter);
+    } else if (statusFilter === 'assigned') {
+      // Show only vehicles that are in the assigned_vehicles database
+      filtered = filtered.filter((v) => assignedLicensePlates.has(v.license_plate));
     } else if (statusFilter === 'other') {
-      // Show all vehicles that are NOT parking or moving or driving
+      // Show all vehicles that are NOT parking or driving
       filtered = filtered.filter((v) => {
         const status = v.motion_status?.toLowerCase();
-        return status !== 'parking' && status !== 'moving' && status !== 'driving';
+        return status !== 'parking' && status !== 'driving';
       });
     }
 
@@ -79,20 +104,19 @@ const Vehicles = () => {
     }
 
     return filtered;
-  }, [vehicles, searchTerm, statusFilter]);
+  }, [vehicles, searchTerm, statusFilter, assignedLicensePlates]);
 
   // Calculate KPIs
   const totalVehicles = vehicles?.length || 0;
   const availableVehicles =
     vehicles?.filter((v) => v.motion_status?.toLowerCase() === 'parking')?.length || 0;
-  const assignedVehicles =
-    vehicles?.filter((v) => v.motion_status?.toLowerCase() === 'moving')?.length || 0;
+  const assignedVehiclesCount = assignedLicensePlates.size;
   const drivingVehicles =
     vehicles?.filter((v) => v.motion_status?.toLowerCase() === 'driving')?.length || 0;
   const maintenanceVehicles =
     vehicles?.filter((v) => {
       const status = v.motion_status?.toLowerCase();
-      return status !== 'parking' && status !== 'moving' && status !== 'driving';
+      return status !== 'parking' && status !== 'driving';
     })?.length || 0;
 
   const handleExportToExcel = () => {
@@ -189,12 +213,12 @@ const Vehicles = () => {
             </Card>
 
             <Card
-              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'moving' ? 'border-2 border-primary' : ''}`}
-              onClick={() => setStatusFilter('moving')}
+              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'assigned' ? 'border-2 border-primary' : ''}`}
+              onClick={() => setStatusFilter('assigned')}
             >
               <CardContent className="pt-6 text-center">
                 <Users className="h-8 w-8 text-blue-600 mx-auto mb-3" />
-                <div className="text-4xl font-bold text-blue-600 mb-1">{assignedVehicles}</div>
+                <div className="text-4xl font-bold text-blue-600 mb-1">{assignedVehiclesCount}</div>
                 <div className="text-sm text-muted-foreground">Assigned</div>
               </CardContent>
             </Card>
@@ -251,7 +275,7 @@ const Vehicles = () => {
                   ? 'All Vehicles'
                   : statusFilter === 'parking'
                     ? 'Available Vehicles'
-                    : statusFilter === 'moving'
+                    : statusFilter === 'assigned'
                       ? 'Assigned Vehicles'
                       : statusFilter === 'driving'
                         ? 'Driving Vehicles'
@@ -299,7 +323,11 @@ const Vehicles = () => {
                           {vehicle.make_name} {vehicle.model_name}
                         </TableCell>
                         <TableCell>
-                          <span className="text-muted-foreground">Unassigned</span>
+                          {assignmentMap.has(vehicle.license_plate) ? (
+                            <span className="font-medium text-blue-600">{assignmentMap.get(vehicle.license_plate)}</span>
+                          ) : (
+                            <span className="text-muted-foreground">Unassigned</span>
+                          )}
                         </TableCell>
                         <TableCell>-</TableCell>
                         <TableCell>{vehicle.color || '-'}</TableCell>
