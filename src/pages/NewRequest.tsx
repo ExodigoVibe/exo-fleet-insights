@@ -256,13 +256,53 @@ export default function NewRequest() {
       if (isEditMode && id) {
         console.log("Updating existing request with id:", id);
         await updateRequest.mutateAsync({ ...requestData, id });
+        navigate("/requests");
       } else {
         console.log("Creating new request");
         await createRequest.mutateAsync(requestData);
-      }
+        
+        // Generate mailto link for department manager notification
+        const appUrl = window.location.origin;
+        const subject = encodeURIComponent(`Vehicle Request Approval Needed - ${data.full_name}`);
+        const body = encodeURIComponent(
+`Dear ${data.department_manager},
 
-      console.log("Request submitted successfully, navigating to /requests");
-      navigate("/requests");
+A new vehicle request has been submitted and requires your approval.
+
+REQUEST DETAILS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Employee Name: ${data.full_name}
+Job Title: ${data.job_title}
+Department: ${data.department}
+Email: ${data.email}
+Phone: ${data.phone_number}
+
+Usage Type: ${data.usage_type === 'single_use' ? 'Single Use' : 'Permanent Driver'}
+Start Date: ${format(data.start_date, "PPP")}
+End Date: ${format(data.end_date, "PPP")}
+
+Purpose: ${data.purpose}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Please review and approve/reject this request by clicking the link below:
+${appUrl}/requests
+
+Best regards,
+FleetFlow System`
+        );
+        
+        const mailtoLink = `mailto:${data.manager_email}?subject=${subject}&body=${body}`;
+        
+        // Open mailto link
+        window.location.href = mailtoLink;
+        
+        toast.success("Request submitted! Email client opened to notify manager.");
+        
+        // Navigate after a short delay to allow mailto to open
+        setTimeout(() => {
+          navigate("/requests");
+        }, 500);
+      }
     } catch (error) {
       console.error("Failed to submit request:", error);
       toast.error("Failed to submit request. Please try again.");
