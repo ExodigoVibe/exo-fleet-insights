@@ -4,12 +4,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format, parseISO } from "date-fns";
-import { CalendarIcon, FileText, Car, Upload, X } from "lucide-react";
+import { CalendarIcon, FileText, Car, Upload, X, PenTool, ExternalLink } from "lucide-react";
 import {
   useCreateVehicleRequest,
   useUpdateVehicleRequest,
   useVehicleRequestsQuery,
 } from "@/hooks/queries/useVehicleRequestsQuery";
+import { useFormTemplatesQuery } from "@/hooks/queries/useFormTemplatesQuery";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { SignaturePad } from "@/components/SignaturePad";
 
 const formSchema = z
   .object({
@@ -54,10 +57,22 @@ export default function NewRequest() {
   const isEditMode = !!id;
   const [usageType, setUsageType] = useState<"single_use" | "permanent_driver">("single_use");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const createRequest = useCreateVehicleRequest();
   const updateRequest = useUpdateVehicleRequest();
   const { data: requests = [], isLoading: isLoadingRequest } = useVehicleRequestsQuery();
+  const { data: formTemplates = [] } = useFormTemplatesQuery();
   const { user, isLoading: isLoadingAuth } = useAuth();
+
+  // Filter form templates based on usage type
+  const availableTemplates = formTemplates.filter(
+    (template) =>
+      template.is_active &&
+      (template.usage_type === usageType || template.usage_type === "both")
+  );
+
+  const selectedTemplate = formTemplates.find((t) => t.id === selectedTemplateId);
 
   // Debug: Log user data on component mount and when user changes
   useEffect(() => {
@@ -100,6 +115,9 @@ export default function NewRequest() {
           manager_email: request.manager_email || "",
         });
         setUsageType(request.usage_type as "single_use" | "permanent_driver");
+        if (request.signed_template_id) {
+          setSelectedTemplateId(request.signed_template_id);
+        }
       }
     } else if (!isEditMode && !isLoadingAuth && user) {
       // Auto-fill user data from SSO for new requests
@@ -118,9 +136,49 @@ export default function NewRequest() {
     }
   }, [isEditMode, id, requests, isLoadingRequest, isLoadingAuth, user, form]);
 
+  // Reset template selection when usage type changes
+  useEffect(() => {
+    setSelectedTemplateId("");
+    setSignatureDataUrl(null);
+  }, [usageType]);
+
+  const uploadSignature = async (dataUrl: string): Promise<string | null> => {
+    try {
+      // Convert data URL to blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      
+      const fileName = `signatures/${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('vehicle-request-files')
+        .upload(fileName, blob, { contentType: 'image/png' });
+      
+      if (uploadError) {
+        console.error("Signature upload error:", uploadError);
+        return null;
+      }
+      
+      const { data: urlData } = supabase.storage
+        .from('vehicle-request-files')
+        .getPublicUrl(fileName);
+      
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("Failed to upload signature:", error);
+      return null;
+    }
+  };
+
   const onSubmit = async (data: FormValues) => {
     try {
       console.log("Submitting request with data:", data);
+      
+      // Validate signature if template is selected
+      if (selectedTemplateId && !signatureDataUrl && !isEditMode) {
+        toast.error("Please sign the document before submitting");
+        return;
+      }
       
       // Upload files to storage
       const fileUrls: string[] = [];
@@ -147,6 +205,15 @@ export default function NewRequest() {
         fileUrls.push(urlData.publicUrl);
       }
       
+      // Upload signature if present
+      let signatureUrl: string | undefined;
+      if (signatureDataUrl) {
+        const uploadedSignatureUrl = await uploadSignature(signatureDataUrl);
+        if (uploadedSignatureUrl) {
+          signatureUrl = uploadedSignatureUrl;
+        }
+      }
+      
       const requestData = {
         full_name: data.full_name,
         department: data.department,
@@ -161,6 +228,9 @@ export default function NewRequest() {
         manager_email: data.manager_email,
         priority: "medium" as const,
         file_urls: fileUrls.length > 0 ? fileUrls : undefined,
+        signature_url: signatureUrl,
+        signed_at: signatureUrl ? new Date().toISOString() : undefined,
+        signed_template_id: selectedTemplateId || undefined,
       };
 
       console.log("Formatted request data:", requestData);
@@ -504,6 +574,84 @@ export default function NewRequest() {
                     )}
                   />
                 </div>
+              </div>
+            </Card>
+
+            {/* Document Signing Section */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <PenTool className="h-5 w-5 text-primary" />
+                Document Signing
+              </h3>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Select Document to Sign</label>
+                  <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a document template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTemplates.length === 0 ? (
+                        <SelectItem value="none" disabled>
+                          No templates available for {usageType === "single_use" ? "Single Use" : "Permanent Driver"}
+                        </SelectItem>
+                      ) : (
+                        availableTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.form_title}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedTemplate && (
+                  <div className="space-y-4">
+                    {/* Template Info */}
+                    <div className="bg-muted/30 p-4 rounded-lg">
+                      <h4 className="font-medium mb-2">{selectedTemplate.form_title}</h4>
+                      {selectedTemplate.description && (
+                        <p className="text-sm text-muted-foreground mb-3">{selectedTemplate.description}</p>
+                      )}
+                      
+                      {/* PDF Preview Link */}
+                      {selectedTemplate.pdf_template_url && (
+                        <a
+                          href={selectedTemplate.pdf_template_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          View Document (PDF)
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Signature Section */}
+                    <div className="border rounded-lg p-4">
+                      <h4 className="font-medium mb-3">Your Signature</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        By signing below, you acknowledge that you have read and agree to the terms in the document above.
+                      </p>
+                      <SignaturePad onSignatureChange={setSignatureDataUrl} />
+                      {signatureDataUrl && (
+                        <p className="text-sm text-green-600 mt-2 flex items-center gap-1">
+                          <span className="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                          Signature captured
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {availableTemplates.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No document templates are available for this usage type. You can proceed without signing.
+                  </p>
+                )}
               </div>
             </Card>
 

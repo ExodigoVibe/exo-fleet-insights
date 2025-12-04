@@ -177,6 +177,9 @@ export type Database = {
           phone_number: string | null
           priority: string
           purpose: string | null
+          signature_url: string | null
+          signed_at: string | null
+          signed_template_id: string | null
           start_date: string
           status: string
           updated_at: string
@@ -197,6 +200,9 @@ export type Database = {
           phone_number?: string | null
           priority?: string
           purpose?: string | null
+          signature_url?: string | null
+          signed_at?: string | null
+          signed_template_id?: string | null
           start_date: string
           status?: string
           updated_at?: string
@@ -217,12 +223,23 @@ export type Database = {
           phone_number?: string | null
           priority?: string
           purpose?: string | null
+          signature_url?: string | null
+          signed_at?: string | null
+          signed_template_id?: string | null
           start_date?: string
           status?: string
           updated_at?: string
           usage_type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_requests_signed_template_id_fkey"
+            columns: ["signed_template_id"]
+            isOneToOne: false
+            referencedRelation: "form_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
