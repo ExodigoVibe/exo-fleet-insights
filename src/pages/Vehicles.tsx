@@ -19,14 +19,13 @@ import { Button } from '@/components/ui/button';
 import { Car, Search, Download, Plus, Wrench, Users, Circle, Activity } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
-import { VehicleAssignGroupTable } from '@/components/vehicles/VehicleAssignGroupTable';
 
 const Vehicles = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: vehicles, isLoading, error } = useVehiclesQuery();
-  const { data: assignedVehiclesData, isLoading: isLoadingAssigned } = useAssignedVehiclesQuery();
-  const { hasAdminAccess, isAdmin } = useAuth();
+  const { data: assignedVehiclesData } = useAssignedVehiclesQuery();
+  const { hasAdminAccess } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'parking' | 'assigned' | 'driving' | 'other'
@@ -347,11 +346,6 @@ const Vehicles = () => {
             )}
           </CardContent>
         </Card>
-
-        {/* Vehicle Assign Group - Admin only */}
-        {isAdmin && (
-          <VehicleAssignGroupTable data={assignedVehiclesData} isLoading={isLoadingAssigned} />
-        )}
       </div>
     </div>
   );
