@@ -73,15 +73,30 @@ export default function Roles() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      // Delete from user_roles first (due to foreign key)
-      const { error: roleError } = await supabase.from('user_roles').delete().eq('user_id', userId);
+      // Delete from user_roles first
+      const { error: roleError, count: roleCount } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .select();
 
-      if (roleError) throw roleError;
+      if (roleError) {
+        console.error('Role delete error:', roleError);
+        throw roleError;
+      }
 
       // Then delete from profiles
-      const { error: profileError } = await supabase.from('profiles').delete().eq('id', userId);
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile delete error:', profileError);
+        throw profileError;
+      }
+
+      return { roleCount };
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['user-roles'] });
@@ -91,6 +106,7 @@ export default function Roles() {
       setUserToDelete(null);
     },
     onError: (error: Error) => {
+      console.error('Delete mutation error:', error);
       toast.error(`Failed to delete user: ${error.message}`);
     },
   });
