@@ -83,8 +83,9 @@ export default function Roles() {
 
       if (profileError) throw profileError;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-roles'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['user-roles'] });
+      await queryClient.refetchQueries({ queryKey: ['user-roles'] });
       toast.success('User deleted successfully');
       setDeleteDialogOpen(false);
       setUserToDelete(null);

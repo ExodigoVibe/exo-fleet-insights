@@ -71,12 +71,12 @@ export function EditRoleDialog({ user, open, onOpenChange }: EditRoleDialogProps
 
       if (profileError) throw profileError;
 
-      // Update or insert role
+      // Update or insert role (including full_name in user_roles for consistency)
       if (user.role_id) {
         // Update existing role
         const { error: roleError } = await supabase
           .from("user_roles")
-          .update({ role: values.role })
+          .update({ role: values.role, full_name: values.full_name })
           .eq("id", user.role_id);
 
         if (roleError) throw roleError;
@@ -84,13 +84,14 @@ export function EditRoleDialog({ user, open, onOpenChange }: EditRoleDialogProps
         // Insert new role
         const { error: roleError } = await supabase
           .from("user_roles")
-          .insert({ user_id: user.id, role: values.role });
+          .insert({ user_id: user.id, role: values.role, full_name: values.full_name, email: user.email });
 
         if (roleError) throw roleError;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-roles"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["user-roles"] });
+      await queryClient.refetchQueries({ queryKey: ["user-roles"] });
       toast.success("User updated successfully");
       onOpenChange(false);
     },
