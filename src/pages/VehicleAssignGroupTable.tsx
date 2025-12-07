@@ -176,6 +176,9 @@ export default function VehicleAssignGroupTable() {
 
   const driverOptions = drivers.map((d) => `${d.first_name} ${d.last_name}`).sort();
   const vehiclePlates = vehicles.map((v) => v.license_plate).sort();
+  
+  // Get all plates that are already assigned to other drivers
+  const alreadyAssignedPlates = assignedVehicles.flatMap((av) => av.license_plates);
 
   const handleCancelNew = () => {
     setNewRow(null);
@@ -248,19 +251,31 @@ export default function VehicleAssignGroupTable() {
                       </PopoverTrigger>
                       <PopoverContent className="w-[300px] p-0 bg-popover" align="start">
                         <div className="max-h-[300px] overflow-y-auto p-2">
-                          {vehiclePlates.map((plate) => (
-                            <div
-                              key={plate}
-                              className="flex items-center space-x-2 p-2 hover:bg-muted rounded cursor-pointer"
-                              onClick={() => toggleNewPlate(plate)}
-                            >
-                              <Checkbox
-                                checked={newRow.license_plates.includes(plate)}
-                                onCheckedChange={() => toggleNewPlate(plate)}
-                              />
-                              <span className="text-sm">{plate}</span>
-                            </div>
-                          ))}
+                          {vehiclePlates.map((plate) => {
+                            const isAssignedToOther = alreadyAssignedPlates.includes(plate);
+                            return (
+                              <div
+                                key={plate}
+                                className={cn(
+                                  "flex items-center space-x-2 p-2 rounded",
+                                  isAssignedToOther
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : "hover:bg-muted cursor-pointer"
+                                )}
+                                onClick={() => !isAssignedToOther && toggleNewPlate(plate)}
+                              >
+                                <Checkbox
+                                  checked={newRow.license_plates.includes(plate)}
+                                  onCheckedChange={() => !isAssignedToOther && toggleNewPlate(plate)}
+                                  disabled={isAssignedToOther}
+                                />
+                                <span className="text-sm">{plate}</span>
+                                {isAssignedToOther && (
+                                  <span className="text-xs text-muted-foreground ml-auto">(assigned)</span>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </PopoverContent>
                     </Popover>
