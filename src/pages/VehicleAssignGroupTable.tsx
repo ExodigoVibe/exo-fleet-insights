@@ -3,11 +3,12 @@ import {
   useAssignedVehiclesQuery,
   AssignedVehicle,
 } from '@/hooks/queries/useAssignedVehiclesQuery';
+import { useSnowflakeDrivers } from '@/hooks/useSnowflakeDrivers';
+import { useSnowflakeVehicles } from '@/hooks/useSnowflakeVehicles';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -16,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Pencil, Save, X, Trash2, Plus } from 'lucide-react';
+import { Pencil, Save, X, Trash2, Plus, Check, ChevronsUpDown } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,20 +29,38 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 interface EditingRow {
   id: string;
   employee_name: string;
-  license_plates: string;
+  license_plates: string[];
 }
 
 export default function VehicleAssignGroupTable() {
   const { data: assignedVehicles = [], isLoading } = useAssignedVehiclesQuery();
+  const { drivers, loading: driversLoading } = useSnowflakeDrivers();
+  const { vehicles, loading: vehiclesLoading } = useSnowflakeVehicles();
   const queryClient = useQueryClient();
   const [editingRow, setEditingRow] = useState<EditingRow | null>(null);
-  const [newRow, setNewRow] = useState<{ employee_name: string; license_plates: string } | null>(
+  const [newRow, setNewRow] = useState<{ employee_name: string; license_plates: string[] } | null>(
     null,
   );
+  const [newPlatesOpen, setNewPlatesOpen] = useState(false);
+  const [editPlatesOpen, setEditPlatesOpen] = useState(false);
 
   const updateMutation = useMutation({
     mutationFn: async (data: { id: string; employee_name: string; license_plates: string[] }) => {
@@ -103,23 +122,26 @@ export default function VehicleAssignGroupTable() {
     setEditingRow({
       id: vehicle.id,
       employee_name: vehicle.employee_name,
-      license_plates: vehicle.license_plates.join(', '),
+      license_plates: [...vehicle.license_plates],
     });
   };
 
   const handleSave = () => {
     if (!editingRow) return;
 
-    const licensePlatesArray = editingRow.license_plates
-      .split(',')
-      .map((plate) => plate.trim())
-      .filter((plate) => plate.length > 0);
-
     updateMutation.mutate({
       id: editingRow.id,
       employee_name: editingRow.employee_name,
-      license_plates: licensePlatesArray,
+      license_plates: editingRow.license_plates,
     });
+  };
+
+  const toggleEditPlate = (plate: string) => {
+    if (!editingRow) return;
+    const plates = editingRow.license_plates.includes(plate)
+      ? editingRow.license_plates.filter((p) => p !== plate)
+      : [...editingRow.license_plates, plate];
+    setEditingRow({ ...editingRow, license_plates: plates });
   };
 
   const handleCancel = () => {
@@ -127,33 +149,39 @@ export default function VehicleAssignGroupTable() {
   };
 
   const handleAddNew = () => {
-    setNewRow({ employee_name: '', license_plates: '' });
+    setNewRow({ employee_name: '', license_plates: [] });
   };
 
   const handleSaveNew = () => {
     if (!newRow) return;
 
-    const licensePlatesArray = newRow.license_plates
-      .split(',')
-      .map((plate) => plate.trim())
-      .filter((plate) => plate.length > 0);
-
-    if (!newRow.employee_name.trim() || licensePlatesArray.length === 0) {
+    if (!newRow.employee_name.trim() || newRow.license_plates.length === 0) {
       toast.error('Please fill in all fields');
       return;
     }
 
     createMutation.mutate({
       employee_name: newRow.employee_name,
-      license_plates: licensePlatesArray,
+      license_plates: newRow.license_plates,
     });
   };
+
+  const toggleNewPlate = (plate: string) => {
+    if (!newRow) return;
+    const plates = newRow.license_plates.includes(plate)
+      ? newRow.license_plates.filter((p) => p !== plate)
+      : [...newRow.license_plates, plate];
+    setNewRow({ ...newRow, license_plates: plates });
+  };
+
+  const driverOptions = drivers.map((d) => `${d.first_name} ${d.last_name}`).sort();
+  const vehiclePlates = vehicles.map((v) => v.license_plate).sort();
 
   const handleCancelNew = () => {
     setNewRow(null);
   };
 
-  if (isLoading) {
+  if (isLoading || driversLoading || vehiclesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -188,19 +216,54 @@ export default function VehicleAssignGroupTable() {
               {newRow && (
                 <TableRow className="bg-primary/5">
                   <TableCell>
-                    <Input
+                    <Select
                       value={newRow.employee_name}
-                      onChange={(e) => setNewRow({ ...newRow, employee_name: e.target.value })}
-                      placeholder="Employee name"
-                      className="max-w-xs"
-                    />
+                      onValueChange={(value) => setNewRow({ ...newRow, employee_name: value })}
+                    >
+                      <SelectTrigger className="max-w-xs">
+                        <SelectValue placeholder="Select employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {driverOptions.map((name) => (
+                          <SelectItem key={name} value={name}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
-                    <Input
-                      value={newRow.license_plates}
-                      onChange={(e) => setNewRow({ ...newRow, license_plates: e.target.value })}
-                      placeholder="Comma-separated plates (e.g., ABC-123, DEF-456)"
-                    />
+                    <Popover open={newPlatesOpen} onOpenChange={setNewPlatesOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between hover:bg-gray-100 hover:text-foreground"
+                        >
+                          {newRow.license_plates.length > 0
+                            ? `${newRow.license_plates.length} plate(s) selected`
+                            : 'Select plates...'}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0 bg-popover" align="start">
+                        <div className="max-h-[300px] overflow-y-auto p-2">
+                          {vehiclePlates.map((plate) => (
+                            <div
+                              key={plate}
+                              className="flex items-center space-x-2 p-2 hover:bg-muted rounded cursor-pointer"
+                              onClick={() => toggleNewPlate(plate)}
+                            >
+                              <Checkbox
+                                checked={newRow.license_plates.includes(plate)}
+                                onCheckedChange={() => toggleNewPlate(plate)}
+                              />
+                              <span className="text-sm">{plate}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2 justify-end">
@@ -223,32 +286,60 @@ export default function VehicleAssignGroupTable() {
                 <TableRow key={vehicle.id} className="hover:bg-muted/50">
                   <TableCell className="font-medium">
                     {editingRow?.id === vehicle.id ? (
-                      <Input
+                      <Select
                         value={editingRow.employee_name}
-                        onChange={(e) =>
-                          setEditingRow({
-                            ...editingRow,
-                            employee_name: e.target.value,
-                          })
+                        onValueChange={(value) =>
+                          setEditingRow({ ...editingRow, employee_name: value })
                         }
-                        className="max-w-xs"
-                      />
+                      >
+                        <SelectTrigger className="max-w-xs">
+                          <SelectValue placeholder="Select employee" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {driverOptions.map((name) => (
+                            <SelectItem key={name} value={name}>
+                              {name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       vehicle.employee_name
                     )}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {editingRow?.id === vehicle.id ? (
-                      <Input
-                        value={editingRow.license_plates}
-                        onChange={(e) =>
-                          setEditingRow({
-                            ...editingRow,
-                            license_plates: e.target.value,
-                          })
-                        }
-                        placeholder="Comma-separated plates"
-                      />
+                      <Popover open={editPlatesOpen} onOpenChange={setEditPlatesOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className="w-full justify-between hover:bg-gray-100 hover:text-foreground"
+                          >
+                            {editingRow.license_plates.length > 0
+                              ? `${editingRow.license_plates.length} plate(s) selected`
+                              : 'Select plates...'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0 bg-popover" align="start">
+                          <div className="max-h-[300px] overflow-y-auto p-2">
+                            {vehiclePlates.map((plate) => (
+                              <div
+                                key={plate}
+                                className="flex items-center space-x-2 p-2 hover:bg-muted rounded cursor-pointer"
+                                onClick={() => toggleEditPlate(plate)}
+                              >
+                                <Checkbox
+                                  checked={editingRow.license_plates.includes(plate)}
+                                  onCheckedChange={() => toggleEditPlate(plate)}
+                                />
+                                <span className="text-sm">{plate}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     ) : (
                       vehicle.license_plates.join(', ')
                     )}
