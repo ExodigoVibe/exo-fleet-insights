@@ -1,4 +1,4 @@
-import { FileText, Wrench, Users, CheckSquare, AlertTriangle, Settings, Car, Shield, LogOut, Route, ClipboardList } from "lucide-react";
+import { FileText, Wrench, Users, CheckSquare, AlertTriangle, Settings, Car, Shield, LogOut, Route, ClipboardList, CalendarDays } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -29,6 +29,7 @@ const menuItems = [
   { title: "Trips", url: "/trips", icon: Route, roles: ["admin", "coordinator", "employee"] },
   { title: "Vehicle Fleet", url: "/vehicle-fleet", icon: Wrench, roles: ["admin", "coordinator"] },
   { title: "Vehicle Assign Groups", url: "/vehicle-assign-groups", icon: ClipboardList, roles: ["admin"] },
+  { title: "Calendar", url: "/calendar", icon: CalendarDays, roles: ["admin"] },
   { title: "Employees", url: "/employees", icon: Users, roles: ["admin", "coordinator"] },
   { title: "Requests", url: "/requests", icon: CheckSquare, roles: ["admin", "coordinator", "employee"] },
   { title: "Event Reports", url: "/event-reports", icon: AlertTriangle, roles: ["admin", "coordinator", "employee"] },
