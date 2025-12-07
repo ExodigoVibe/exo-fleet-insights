@@ -174,18 +174,18 @@ export default function VehicleAssignGroupTable() {
         </Button>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg bg-card overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Employee Name</TableHead>
-              <TableHead>License Plates</TableHead>
-              <TableHead className="w-[150px]">Actions</TableHead>
+            <TableRow className="bg-muted/50">
+              <TableHead className="font-semibold">Employee Name</TableHead>
+              <TableHead className="font-semibold">License Plates</TableHead>
+              <TableHead className="w-[150px] font-semibold text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {newRow && (
-              <TableRow>
+              <TableRow className="bg-primary/5">
                 <TableCell>
                   <Input
                     value={newRow.employee_name}
@@ -193,6 +193,7 @@ export default function VehicleAssignGroupTable() {
                       setNewRow({ ...newRow, employee_name: e.target.value })
                     }
                     placeholder="Employee name"
+                    className="max-w-xs"
                   />
                 </TableCell>
                 <TableCell>
@@ -205,7 +206,7 @@ export default function VehicleAssignGroupTable() {
                   />
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 justify-end">
                     <Button
                       size="sm"
                       onClick={handleSaveNew}
@@ -217,6 +218,7 @@ export default function VehicleAssignGroupTable() {
                       size="sm"
                       variant="outline"
                       onClick={handleCancelNew}
+                      className="hover:bg-gray-100 hover:text-foreground"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -225,8 +227,8 @@ export default function VehicleAssignGroupTable() {
               </TableRow>
             )}
             {assignedVehicles.map((vehicle) => (
-              <TableRow key={vehicle.id}>
-                <TableCell>
+              <TableRow key={vehicle.id} className="hover:bg-muted/50">
+                <TableCell className="font-medium">
                   {editingRow?.id === vehicle.id ? (
                     <Input
                       value={editingRow.employee_name}
@@ -236,12 +238,13 @@ export default function VehicleAssignGroupTable() {
                           employee_name: e.target.value,
                         })
                       }
+                      className="max-w-xs"
                     />
                   ) : (
                     vehicle.employee_name
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-muted-foreground">
                   {editingRow?.id === vehicle.id ? (
                     <Input
                       value={editingRow.license_plates}
@@ -258,58 +261,62 @@ export default function VehicleAssignGroupTable() {
                   )}
                 </TableCell>
                 <TableCell>
-                  {editingRow?.id === vehicle.id ? (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={handleSave}
-                        disabled={updateMutation.isPending}
-                      >
-                        <Save className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCancel}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(vehicle)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Assignment</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete the assignment for{" "}
-                              {vehicle.employee_name}? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteMutation.mutate(vehicle.id)}
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  )}
+                  <div className="flex gap-2 justify-end">
+                    {editingRow?.id === vehicle.id ? (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={handleSave}
+                          disabled={updateMutation.isPending}
+                        >
+                          <Save className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleCancel}
+                          className="hover:bg-gray-100 hover:text-foreground"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(vehicle)}
+                          className="hover:bg-gray-100 hover:text-foreground"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Assignment</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete the assignment for{" "}
+                                {vehicle.employee_name}? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="hover:bg-gray-100 hover:text-foreground">Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteMutation.mutate(vehicle.id)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
