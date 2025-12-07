@@ -112,7 +112,7 @@ const Calendar = () => {
             <span className="text-sm text-muted-foreground">Approved</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-primary/30 border border-primary/50" />
+            <div className="w-4 h-4 rounded bg-yellow-400/50 border border-yellow-500" />
             <span className="text-sm text-muted-foreground">Pending (Tentative)</span>
           </div>
           <div className="flex items-center gap-2">
@@ -165,7 +165,7 @@ const Calendar = () => {
                             ? "bg-primary text-primary-foreground"
                             : event.status === "rejected"
                               ? "bg-destructive/30 text-destructive border border-destructive/50"
-                              : "bg-primary/30 text-primary border border-primary/50"
+                              : "bg-yellow-400/50 text-yellow-800 border border-yellow-500 dark:text-yellow-200"
                         }`}
                         title={`${event.title} - ${event.status}`}
                       >
