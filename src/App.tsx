@@ -10,7 +10,6 @@ import VehicleDetail from "./pages/VehicleDetail";
 import VehicleProfile from "./pages/VehicleProfile";
 import Vehicles from "./pages/Vehicles";
 import VehicleAssignGroupTable from "./pages/VehicleAssignGroupTable";
-import Calendar from "./pages/Calendar";
 import Employees from "./pages/Employees";
 import EmployeeDetail from "./pages/EmployeeDetail";
 import Requests from "./pages/Requests";
@@ -45,7 +44,6 @@ const App = () => (
                     <Route path="/trips" element={<Trips />} />
                     <Route path="/vehicle-fleet" element={<Vehicles />} />
                     <Route path="/vehicle-assign-groups" element={<VehicleAssignGroupTable />} />
-                    <Route path="/calendar" element={<Calendar />} />
                     <Route path="/employees" element={<Employees />} />
                     <Route path="/employees/:driverId" element={<EmployeeDetail />} />
                     <Route path="/requests" element={<Requests />} />
