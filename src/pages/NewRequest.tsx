@@ -274,47 +274,40 @@ export default function NewRequest() {
         console.log("Creating new request");
         await createRequest.mutateAsync(requestData);
         
-        // Generate mailto link for department manager notification
+        // Send email notification to manager via edge function
         const appUrl = window.location.origin;
-        const subject = encodeURIComponent(`Vehicle Request Approval Needed - ${data.full_name}`);
-        const body = encodeURIComponent(
-`Dear ${data.department_manager},
-
-A new vehicle request has been submitted and requires your approval.
-
-REQUEST DETAILS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Employee Name: ${data.full_name}
-Job Title: ${data.job_title}
-Department: ${data.department}
-Email: ${data.email}
-Phone: ${data.phone_number}
-
-Usage Type: ${data.usage_type === 'single_use' ? 'Single Use' : 'Permanent Driver'}
-Start Date: ${format(data.start_date, "PPP")}
-End Date: ${format(data.end_date, "PPP")}
-
-Purpose: ${data.purpose}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Please review and approve/reject this request by clicking the link below:
-${appUrl}/requests
-
-Best regards,
-FleetFlow System`
-        );
         
-        const mailtoLink = `mailto:${data.manager_email}?subject=${subject}&body=${body}`;
+        try {
+          const { data: emailData, error: emailError } = await supabase.functions.invoke('send-manager-email', {
+            body: {
+              managerEmail: data.manager_email,
+              managerName: data.department_manager,
+              employeeName: data.full_name,
+              department: data.department,
+              usageType: data.usage_type,
+              startDate: format(data.start_date, "PPP"),
+              endDate: format(data.end_date, "PPP"),
+              purpose: data.purpose,
+              jobTitle: data.job_title,
+              phoneNumber: data.phone_number,
+              employeeEmail: data.email,
+              appUrl: `${appUrl}/requests`,
+            },
+          });
+          
+          if (emailError) {
+            console.error("Failed to send email:", emailError);
+            toast.warning("Request submitted, but email notification failed to send.");
+          } else {
+            console.log("Email sent successfully:", emailData);
+            toast.success("Request submitted! Email notification sent to manager.");
+          }
+        } catch (emailErr) {
+          console.error("Email sending error:", emailErr);
+          toast.warning("Request submitted, but email notification failed to send.");
+        }
         
-        // Navigate to requests first, then trigger mailto
         navigate("/requests");
-        
-        // Use setTimeout to ensure navigation completes before opening mailto
-        setTimeout(() => {
-          window.location.href = mailtoLink;
-        }, 100);
-        
-        toast.success("Request submitted! Your email client will open to notify your manager.");
       }
     } catch (error) {
       console.error("Failed to submit request:", error);

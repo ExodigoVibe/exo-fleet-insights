@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.azure-sso]
 verify_jwt = false
+
+[functions.send-manager-email]
+verify_jwt = false
