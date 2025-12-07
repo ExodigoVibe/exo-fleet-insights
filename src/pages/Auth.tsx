@@ -1,24 +1,24 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import fleetBackground from "@/assets/fleet-background.jpg";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import fleetBackground from '@/assets/fleet-background.jpg';
 
 const Auth = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
 
   const handleAzureLogin = async () => {
     try {
       setIsLoading(true);
 
       // Get the auth URL from the edge function
-      const { data, error } = await supabase.functions.invoke("azure-sso", {
-        method: "GET",
+      const { data, error } = await supabase.functions.invoke('azure-sso', {
+        method: 'GET',
       });
 
       if (error) throw error;
@@ -28,63 +28,70 @@ const Auth = () => {
         window.location.href = data.authUrl;
       }
     } catch (error) {
-      console.error("Azure login error:", error);
-      toast.error("Failed to initiate Azure login");
+      console.error('Azure login error:', error);
+      toast.error('Failed to initiate Azure login');
       setIsLoading(false);
     }
   };
 
   const handleBasicLogin = async () => {
     if (!email) {
-      toast.error("Please enter an email");
+      toast.error('Please enter an email');
       return;
     }
 
     setIsLoading(true);
-    
+
     // Determine role based on email
-    let role = "employee";
-    if (email === "admin@admin.com") {
-      role = "admin";
-    } else if (email === "user@user.com") {
-      role = "employee";
+    let role = 'employee';
+    if (email === 'admin@admin.com') {
+      role = 'admin';
+    } else if (email === 'user@user.com') {
+      role = 'employee';
     }
 
     // Create mock user object
     const mockUser = {
-      id: email === "admin@admin.com" ? "admin-id" : "user-id",
+      id: email === 'admin@admin.com' ? 'admin-id' : 'user-id',
       email: email,
-      full_name: email === "admin@admin.com" ? "Admin User" : "Ortal Spitzer-Hanoch"
+      full_name: email === 'admin@admin.com' ? 'Admin User' : 'Ortal Spitzer-Hanoch',
     };
 
     // Store in localStorage
-    localStorage.setItem("azureUser", JSON.stringify(mockUser));
-    localStorage.setItem("userRole", role);
+    localStorage.setItem('azureUser', JSON.stringify(mockUser));
+    localStorage.setItem('userRole', role);
 
     toast.success(`Logged in as ${role}`);
-    navigate("/");
+    navigate('/');
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
         backgroundImage: `url(${fleetBackground})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundRepeat: 'no-repeat',
       }}
     >
       <div className="absolute inset-0 bg-black/30" />
-      <Card className="w-full max-w-md relative z-10 backdrop-blur-sm bg-background/95" style={{ background: 'transparent' }}>
+      <Card
+        className="w-full max-w-md relative z-10 backdrop-blur-sm bg-background/95"
+        style={{ background: 'transparent' }}
+      >
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center text-white">Fleet Usage Analytics</CardTitle>
-          <CardDescription className="text-center text-white">Sign in to access the project</CardDescription>
+          <CardTitle className="text-2xl font-bold text-center text-white">
+            Fleet Usage Analytics
+          </CardTitle>
+          <CardDescription className="text-center text-white">
+            Sign in to access the project
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button onClick={handleAzureLogin} disabled={isLoading} className="w-full" size="lg">
             {isLoading ? (
-              "Connecting..."
+              'Connecting...'
             ) : (
               <>
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 23 23" fill="none">
@@ -98,7 +105,7 @@ const Auth = () => {
             )}
           </Button>
 
-          <div className="relative">
+          {/* <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-white/20" />
             </div>
@@ -119,7 +126,7 @@ const Auth = () => {
             <Button onClick={handleBasicLogin} disabled={isLoading} variant="outline" className="w-full" size="lg">
               Sign in with Basic Authentication
             </Button>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </div>
