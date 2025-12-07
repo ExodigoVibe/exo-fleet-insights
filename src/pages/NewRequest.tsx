@@ -306,11 +306,15 @@ FleetFlow System`
         
         const mailtoLink = `mailto:${data.manager_email}?subject=${subject}&body=${body}`;
         
-        // Open mailto link in new window to avoid navigation issues
-        window.open(mailtoLink, '_blank');
-        
-        toast.success("Request submitted! Please send the email to notify your manager.");
+        // Navigate to requests first, then trigger mailto
         navigate("/requests");
+        
+        // Use setTimeout to ensure navigation completes before opening mailto
+        setTimeout(() => {
+          window.location.href = mailtoLink;
+        }, 100);
+        
+        toast.success("Request submitted! Your email client will open to notify your manager.");
       }
     } catch (error) {
       console.error("Failed to submit request:", error);
