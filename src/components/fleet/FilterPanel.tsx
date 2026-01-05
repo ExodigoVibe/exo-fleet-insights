@@ -12,19 +12,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FleetFilters } from "@/types/fleet";
+import { FleetFilters, Driver } from "@/types/fleet";
 import { useInitialDateRange } from "@/hooks/useInitialData";
 
 interface FilterPanelProps {
   filters: FleetFilters;
   onFiltersChange: (filters: FleetFilters) => void;
   drivers: string[];
+  driversData?: Driver[];
   licensePlates: string[];
   userHistoryLicensePlates: string[];
   loading?: boolean;
 }
 
-export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, userHistoryLicensePlates, loading = false }: FilterPanelProps) {
+export function FilterPanel({ filters, onFiltersChange, drivers, driversData = [], licensePlates, userHistoryLicensePlates, loading = false }: FilterPanelProps) {
   const [pendingFilters, setPendingFilters] = useState<FleetFilters>(filters);
   const { dateFrom, dateTo } = useInitialDateRange();
 
@@ -54,6 +55,7 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
       safetyGradeMin: 0,
       safetyGradeMax: 100,
       tripStatus: [],
+      driverStatus: 'all',
     };
     setPendingFilters(defaultFilters);
     onFiltersChange(defaultFilters);
@@ -88,7 +90,7 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-2">
               <Label htmlFor="dateFrom">Date From</Label>
               <Input
@@ -178,6 +180,28 @@ export function FilterPanel({ filters, onFiltersChange, drivers, licensePlates, 
                 ))}
               </SelectContent>
             </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="driverStatus">Driver Status</Label>
+              <Select
+                value={pendingFilters.driverStatus || 'all'}
+                onValueChange={(value: 'all' | 'active' | 'blocked') =>
+                  setPendingFilters({
+                    ...pendingFilters,
+                    driverStatus: value,
+                  })
+                }
+                disabled={loading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active (Not Blocked)</SelectItem>
+                  <SelectItem value="blocked">Blocked</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="space-y-2">
