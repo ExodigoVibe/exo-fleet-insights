@@ -13,14 +13,22 @@ const routeLabels: Record<string, string> = {
   "": "Dashboard",
   "trips": "Trips",
   "vehicle-fleet": "Vehicle Fleet",
+  "vehicle": "Vehicle Profile",
   "vehicle-assign-groups": "Vehicle Assign Groups",
   "calendar": "Calendar",
   "employees": "Employees",
   "requests": "Requests",
   "new-request": "New Request",
+  "new": "New Request",
+  "edit": "Edit Request",
   "event-reports": "Event Reports",
   "form-templates": "Form Templates",
   "roles": "Roles",
+};
+
+// Map child routes to their parent for breadcrumb linking
+const parentRoutes: Record<string, { path: string; label: string }> = {
+  "vehicle": { path: "/vehicle-fleet", label: "Vehicle Fleet" },
 };
 
 export function Breadcrumbs() {
@@ -32,12 +40,24 @@ export function Breadcrumbs() {
     return null;
   }
 
-  const breadcrumbs = pathSegments.map((segment, index) => {
+  // Build breadcrumbs with parent route injection for special cases
+  const breadcrumbs: { path: string; label: string; isLast: boolean }[] = [];
+  
+  pathSegments.forEach((segment, index) => {
     const path = "/" + pathSegments.slice(0, index + 1).join("/");
     const label = routeLabels[segment] || segment.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
     const isLast = index === pathSegments.length - 1;
-
-    return { path, label, isLast };
+    
+    // If this is the first segment and has a parent route, inject parent first
+    if (index === 0 && parentRoutes[segment]) {
+      breadcrumbs.push({
+        path: parentRoutes[segment].path,
+        label: parentRoutes[segment].label,
+        isLast: false,
+      });
+    }
+    
+    breadcrumbs.push({ path, label, isLast });
   });
 
   return (
