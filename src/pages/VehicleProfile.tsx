@@ -227,16 +227,6 @@ export default function VehicleProfile() {
               </div>
               <div className="text-sm text-muted-foreground">kilometers</div>
             </div>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                value={mileage}
-                onChange={(e) => setMileage(e.target.value)}
-                className="flex-1"
-                placeholder="Enter mileage"
-              />
-              <Button>Update</Button>
-            </div>
           </CardContent>
         </Card>
 
