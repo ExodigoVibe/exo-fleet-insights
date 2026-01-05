@@ -215,6 +215,42 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          document_url: string | null
+          email_reminder_enabled: boolean
+          expiry_date: string
+          id: string
+          license_plate: string
+          reminder_sent: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          document_url?: string | null
+          email_reminder_enabled?: boolean
+          expiry_date: string
+          id?: string
+          license_plate: string
+          reminder_sent?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          document_url?: string | null
+          email_reminder_enabled?: boolean
+          expiry_date?: string
+          id?: string
+          license_plate?: string
+          reminder_sent?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vehicle_requests: {
         Row: {
           created_at: string
