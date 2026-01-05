@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Users, Gauge, Settings, Car, FileText, Wrench, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
 import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
+import { useVehicleDocumentsQuery, useUpsertVehicleDocument } from "@/hooks/queries/useVehicleDocumentsQuery";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -25,13 +27,90 @@ export default function VehicleProfile() {
   
   const { data: vehicles = [], isLoading: vehiclesLoading } = useVehiclesQuery();
   const { data: drivers = [], isLoading: driversLoading } = useDriversQuery();
+  const { data: documents = [], isLoading: documentsLoading } = useVehicleDocumentsQuery(licensePlate || "");
+  const upsertDocument = useUpsertVehicleDocument();
 
   const [assignment, setAssignment] = useState("");
   const [mileage, setMileage] = useState("");
   const [status, setStatus] = useState("maintenance");
   const [nextServiceMileage, setNextServiceMileage] = useState("");
 
+  // Document states
+  const [licenseExpiryDate, setLicenseExpiryDate] = useState("");
+  const [licenseReminderEnabled, setLicenseReminderEnabled] = useState(false);
+  const [insuranceExpiryDate, setInsuranceExpiryDate] = useState("");
+  const [insuranceReminderEnabled, setInsuranceReminderEnabled] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load document data when fetched
+  useEffect(() => {
+    if (documents.length > 0) {
+      const licenseDoc = documents.find(d => d.document_type === 'license');
+      const insuranceDoc = documents.find(d => d.document_type === 'insurance');
+
+      if (licenseDoc) {
+        setLicenseExpiryDate(licenseDoc.expiry_date);
+        setLicenseReminderEnabled(licenseDoc.email_reminder_enabled);
+      }
+      if (insuranceDoc) {
+        setInsuranceExpiryDate(insuranceDoc.expiry_date);
+        setInsuranceReminderEnabled(insuranceDoc.email_reminder_enabled);
+      }
+    }
+  }, [documents]);
+
   const vehicle = vehicles.find((v) => v.license_plate === licensePlate);
+
+  const isDocumentExpired = (expiryDate: string) => {
+    if (!expiryDate) return false;
+    return new Date(expiryDate) < new Date();
+  };
+
+  const isDocumentExpiringSoon = (expiryDate: string) => {
+    if (!expiryDate) return false;
+    const expiry = new Date(expiryDate);
+    const today = new Date();
+    const oneMonthFromNow = new Date();
+    oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+    return expiry >= today && expiry <= oneMonthFromNow;
+  };
+
+  const handleSaveDocuments = async () => {
+    if (!licensePlate) return;
+
+    setIsSaving(true);
+    try {
+      const promises = [];
+
+      if (licenseExpiryDate) {
+        promises.push(
+          upsertDocument.mutateAsync({
+            license_plate: licensePlate,
+            document_type: 'license',
+            expiry_date: licenseExpiryDate,
+            email_reminder_enabled: licenseReminderEnabled,
+          })
+        );
+      }
+
+      if (insuranceExpiryDate) {
+        promises.push(
+          upsertDocument.mutateAsync({
+            license_plate: licensePlate,
+            document_type: 'insurance',
+            expiry_date: insuranceExpiryDate,
+            email_reminder_enabled: insuranceReminderEnabled,
+          })
+        );
+      }
+
+      await Promise.all(promises);
+    } catch (error) {
+      console.error("Error saving documents:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (vehiclesLoading) {
     return (
@@ -204,14 +283,31 @@ export default function VehicleProfile() {
             <Label>Vehicle License</Label>
             <div className="flex gap-3">
               <Input type="file" className="flex-1" />
-              <Input type="date" className="w-48" defaultValue="2025-08-28" />
+              <Input 
+                type="date" 
+                className="w-48" 
+                value={licenseExpiryDate}
+                onChange={(e) => setLicenseExpiryDate(e.target.value)}
+              />
             </div>
-            <div className="text-sm text-red-600 flex items-center gap-2">
-              <span>⚠</span>
-              <span>Document has expired.</span>
-            </div>
+            {licenseExpiryDate && isDocumentExpired(licenseExpiryDate) && (
+              <div className="text-sm text-red-600 flex items-center gap-2">
+                <span>⚠</span>
+                <span>Document has expired.</span>
+              </div>
+            )}
+            {licenseExpiryDate && isDocumentExpiringSoon(licenseExpiryDate) && !isDocumentExpired(licenseExpiryDate) && (
+              <div className="text-sm text-amber-600 flex items-center gap-2">
+                <span>⚠</span>
+                <span>Document expires within 1 month.</span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
-              <Checkbox id="email-reminder-license" />
+              <Checkbox 
+                id="email-reminder-license" 
+                checked={licenseReminderEnabled}
+                onCheckedChange={(checked) => setLicenseReminderEnabled(checked === true)}
+              />
               <label htmlFor="email-reminder-license" className="text-sm">
                 Email reminder 1 month before expiry
               </label>
@@ -223,17 +319,44 @@ export default function VehicleProfile() {
             <Label>Vehicle Insurance</Label>
             <div className="flex gap-3">
               <Input type="file" className="flex-1" />
-              <Input type="date" className="w-48" placeholder="dd/mm/yyyy" />
+              <Input 
+                type="date" 
+                className="w-48" 
+                value={insuranceExpiryDate}
+                onChange={(e) => setInsuranceExpiryDate(e.target.value)}
+              />
             </div>
+            {insuranceExpiryDate && isDocumentExpired(insuranceExpiryDate) && (
+              <div className="text-sm text-red-600 flex items-center gap-2">
+                <span>⚠</span>
+                <span>Document has expired.</span>
+              </div>
+            )}
+            {insuranceExpiryDate && isDocumentExpiringSoon(insuranceExpiryDate) && !isDocumentExpired(insuranceExpiryDate) && (
+              <div className="text-sm text-amber-600 flex items-center gap-2">
+                <span>⚠</span>
+                <span>Document expires within 1 month.</span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
-              <Checkbox id="email-reminder-insurance" />
+              <Checkbox 
+                id="email-reminder-insurance" 
+                checked={insuranceReminderEnabled}
+                onCheckedChange={(checked) => setInsuranceReminderEnabled(checked === true)}
+              />
               <label htmlFor="email-reminder-insurance" className="text-sm">
                 Email reminder 1 month before expiry
               </label>
             </div>
           </div>
 
-          <Button className="w-full">Save Documents</Button>
+          <Button 
+            className="w-full" 
+            onClick={handleSaveDocuments}
+            disabled={isSaving || (!licenseExpiryDate && !insuranceExpiryDate)}
+          >
+            {isSaving ? "Saving..." : "Save Documents"}
+          </Button>
         </CardContent>
       </Card>
 
