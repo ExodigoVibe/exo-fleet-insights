@@ -189,6 +189,7 @@ export default function VehicleProfile() {
                 <SelectValue placeholder="Select driver" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {drivers.map((driver) => (
                   <SelectItem key={driver.driver_id} value={driver.driver_id.toString()}>
                     {driver.first_name} {driver.last_name}
