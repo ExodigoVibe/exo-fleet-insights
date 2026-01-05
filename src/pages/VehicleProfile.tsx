@@ -12,6 +12,7 @@ import {
   Loader2,
   Check,
   ChevronsUpDown,
+  CalendarIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,8 +45,13 @@ import {
 } from '@/hooks/queries/useVehicleDocumentsQuery';
 import { useVehicleOdometerQuery } from '@/hooks/queries/useVehicleOdometerQuery';
 import { useVehicleTripsQuery } from '@/hooks/queries/useVehicleTripsQuery';
+import {
+  useVehicleAssignmentByPlateQuery,
+  useUpsertVehicleAssignment,
+} from '@/hooks/queries/useVehicleAssignmentsQuery';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Table,
   TableBody,
@@ -70,11 +76,17 @@ export default function VehicleProfile() {
   const { data: vehicleTrips = [], isLoading: tripsLoading } = useVehicleTripsQuery(
     licensePlate || '',
   );
+  const { data: existingAssignment, isLoading: assignmentLoading } = useVehicleAssignmentByPlateQuery(
+    licensePlate || '',
+  );
   const upsertDocument = useUpsertVehicleDocument();
+  const upsertAssignment = useUpsertVehicleAssignment();
 
   const [assignment, setAssignment] = useState('');
   const [assignmentDropdownOpen, setAssignmentDropdownOpen] = useState(false);
-  const [status, setStatus] = useState('maintenance');
+  const [status, setStatus] = useState('available');
+  const [assignmentStartDate, setAssignmentStartDate] = useState<Date | undefined>(undefined);
+  const [assignmentEndDate, setAssignmentEndDate] = useState<Date | undefined>(undefined);
   const [nextServiceMileage, setNextServiceMileage] = useState('');
 
   // Document states
@@ -83,6 +95,20 @@ export default function VehicleProfile() {
   const [insuranceExpiryDate, setInsuranceExpiryDate] = useState('');
   const [insuranceReminderEnabled, setInsuranceReminderEnabled] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Load existing assignment data
+  useEffect(() => {
+    if (existingAssignment) {
+      setAssignment(existingAssignment.driver_id || 'unassigned');
+      setStatus(existingAssignment.status);
+      if (existingAssignment.start_date) {
+        setAssignmentStartDate(new Date(existingAssignment.start_date));
+      }
+      if (existingAssignment.end_date) {
+        setAssignmentEndDate(new Date(existingAssignment.end_date));
+      }
+    }
+  }, [existingAssignment]);
 
   // Load document data when fetched
   useEffect(() => {
@@ -183,6 +209,26 @@ export default function VehicleProfile() {
         ? `${assignedDriver.first_name} ${assignedDriver.last_name}`
         : '';
 
+  const handleApplyAssignment = async () => {
+    if (!licensePlate || !assignmentStartDate) {
+      toast.error('Please select a start date');
+      return;
+    }
+
+    const driverName = assignedDriver
+      ? `${assignedDriver.first_name} ${assignedDriver.last_name}`
+      : null;
+
+    await upsertAssignment.mutateAsync({
+      license_plate: licensePlate,
+      driver_id: assignment === 'unassigned' ? null : assignment,
+      driver_name: assignment === 'unassigned' ? null : driverName,
+      status,
+      start_date: format(assignmentStartDate, 'yyyy-MM-dd'),
+      end_date: assignmentEndDate ? format(assignmentEndDate, 'yyyy-MM-dd') : null,
+    });
+  };
+
   return (
     <div className="space-y-6 p-8 bg-gray-50 min-h-screen">
       <div className="flex items-center gap-3">
@@ -197,147 +243,227 @@ export default function VehicleProfile() {
         <h1 className="text-3xl font-bold">Vehicle Profile: {vehicleTitle}</h1>
       </div>
 
-      {/* Top Section: Assignment, Mileage, Status */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Assignment */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base text-primary">
-              <Users className="h-4 w-4" />
-              Assignment
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Popover open={assignmentDropdownOpen} onOpenChange={setAssignmentDropdownOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={assignmentDropdownOpen}
-                  className="w-full justify-between"
-                  disabled={driversLoading}
-                >
-                  {assignmentLabel || 'Select driver'}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                <Command>
-                  <CommandInput placeholder="Search driver..." />
-                  <CommandList>
-                    <CommandEmpty>No driver found.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="unassigned"
-                        onSelect={() => {
-                          setAssignment('unassigned');
-                          setAssignmentDropdownOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            assignment === 'unassigned' ? 'opacity-100' : 'opacity-0',
-                          )}
-                        />
-                        Unassigned
-                      </CommandItem>
-
-                      {driversLoading ? (
-                        <CommandItem disabled value="loading">
-                          Loading...
+      {/* Top Section: Assignment, Dates, Status, Apply */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl">Vehicle Assignment & Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Assignment */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-medium">
+                <Users className="h-4 w-4" />
+                Assignment
+              </Label>
+              <Popover open={assignmentDropdownOpen} onOpenChange={setAssignmentDropdownOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={assignmentDropdownOpen}
+                    className="w-full justify-between"
+                    disabled={driversLoading}
+                  >
+                    {assignmentLabel || 'Select driver'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search driver..." />
+                    <CommandList>
+                      <CommandEmpty>No driver found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="unassigned"
+                          onSelect={() => {
+                            setAssignment('unassigned');
+                            setAssignmentDropdownOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              assignment === 'unassigned' ? 'opacity-100' : 'opacity-0',
+                            )}
+                          />
+                          Unassigned
                         </CommandItem>
-                      ) : (
-                        drivers.map((driver) => {
-                          const id = driver.driver_id.toString();
-                          const label = `${driver.first_name} ${driver.last_name}`;
-                          const searchValue = `${label} ${driver.email || ''} ${driver.driver_code || ''}`;
 
-                          return (
-                            <CommandItem
-                              key={driver.driver_id}
-                              value={searchValue}
-                              onSelect={() => {
-                                setAssignment(id);
-                                setAssignmentDropdownOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  'mr-2 h-4 w-4',
-                                  assignment === id ? 'opacity-100' : 'opacity-0',
-                                )}
-                              />
-                              {label}
-                            </CommandItem>
-                          );
-                        })
+                        {driversLoading ? (
+                          <CommandItem disabled value="loading">
+                            Loading...
+                          </CommandItem>
+                        ) : (
+                          drivers.map((driver) => {
+                            const id = driver.driver_id.toString();
+                            const label = `${driver.first_name} ${driver.last_name}`;
+                            const searchValue = `${label} ${driver.email || ''} ${driver.driver_code || ''}`;
+
+                            return (
+                              <CommandItem
+                                key={driver.driver_id}
+                                value={searchValue}
+                                onSelect={() => {
+                                  setAssignment(id);
+                                  setAssignmentDropdownOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    assignment === id ? 'opacity-100' : 'opacity-0',
+                                  )}
+                                />
+                                {label}
+                              </CommandItem>
+                            );
+                          })
+                        )}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Dates */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-medium">
+                <CalendarIcon className="h-4 w-4" />
+                Assignment Dates
+              </Label>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !assignmentStartDate && 'text-muted-foreground',
                       )}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-            {assignedDriver && (
-              <div className="bg-green-50 border border-green-200 rounded p-2 text-sm text-green-800">
-                Assigned to: {assignedDriver.first_name} {assignedDriver.last_name}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {assignmentStartDate ? format(assignmentStartDate, 'dd/MM/yy') : 'From'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={assignmentStartDate}
+                      onSelect={setAssignmentStartDate}
+                      initialFocus
+                      className={cn('p-3 pointer-events-auto')}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !assignmentEndDate && 'text-muted-foreground',
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {assignmentEndDate ? format(assignmentEndDate, 'dd/MM/yy') : 'To'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={assignmentEndDate}
+                      onSelect={setAssignmentEndDate}
+                      disabled={(date) =>
+                        assignmentStartDate ? date < assignmentStartDate : false
+                      }
+                      initialFocus
+                      className={cn('p-3 pointer-events-auto')}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
 
-        {/* Mileage */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base text-primary">
-              <Gauge className="h-4 w-4" />
-              Mileage
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="text-center">
-              <div className="text-4xl font-bold">
-                {odometerLoading ? (
-                  <Loader2 className="h-10 w-10 animate-spin text-primary ml-7" />
-                ) : currentOdometer ? (
-                  `${currentOdometer.toLocaleString()} km`
+            {/* Status */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-medium">
+                <Settings className="h-4 w-4" />
+                Status
+              </Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="available">Available</SelectItem>
+                  <SelectItem value="assigned">Assigned</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="retired">Retired</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Apply Button */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium invisible">Apply</Label>
+              <Button
+                className="w-full"
+                onClick={handleApplyAssignment}
+                disabled={upsertAssignment.isPending || !assignmentStartDate}
+              >
+                {upsertAssignment.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
                 ) : (
-                  'N/A'
+                  'Apply'
                 )}
-              </div>
-              <div className="text-sm text-muted-foreground">kilometers</div>
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Status */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base text-primary">
-              <Settings className="h-4 w-4" />
-              Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="available">Available</SelectItem>
-                <SelectItem value="assigned">Assigned</SelectItem>
-                <SelectItem value="maintenance">Maintenance</SelectItem>
-                <SelectItem value="retired">Retired</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex justify-center">
-              <Badge className="bg-amber-100 text-amber-800 border-amber-200">
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </Badge>
+          {assignedDriver && assignmentStartDate && (
+            <div className="mt-4 bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">
+              <strong>{vehicle.license_plate}</strong> is assigned to{' '}
+              <strong>{assignedDriver.first_name} {assignedDriver.last_name}</strong> from{' '}
+              <strong>{format(assignmentStartDate, 'dd/MM/yyyy')}</strong>
+              {assignmentEndDate && (
+                <>
+                  {' '}to <strong>{format(assignmentEndDate, 'dd/MM/yyyy')}</strong>
+                </>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Mileage Card */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base text-primary">
+            <Gauge className="h-4 w-4" />
+            Current Mileage
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center">
+            <div className="text-4xl font-bold">
+              {odometerLoading ? (
+                <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+              ) : currentOdometer ? (
+                `${currentOdometer.toLocaleString()} km`
+              ) : (
+                'N/A'
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground">kilometers</div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Car Information */}
       <Card>

@@ -215,6 +215,42 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_assignments: {
+        Row: {
+          created_at: string
+          driver_id: string | null
+          driver_name: string | null
+          end_date: string | null
+          id: string
+          license_plate: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id?: string | null
+          driver_name?: string | null
+          end_date?: string | null
+          id?: string
+          license_plate: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string | null
+          driver_name?: string | null
+          end_date?: string | null
+          id?: string
+          license_plate?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       vehicle_documents: {
         Row: {
           created_at: string
