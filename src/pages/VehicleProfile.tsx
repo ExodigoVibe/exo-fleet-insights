@@ -76,9 +76,8 @@ export default function VehicleProfile() {
   const { data: vehicleTrips = [], isLoading: tripsLoading } = useVehicleTripsQuery(
     licensePlate || '',
   );
-  const { data: existingAssignment, isLoading: assignmentLoading } = useVehicleAssignmentByPlateQuery(
-    licensePlate || '',
-  );
+  const { data: existingAssignment, isLoading: assignmentLoading } =
+    useVehicleAssignmentByPlateQuery(licensePlate || '');
   const upsertDocument = useUpsertVehicleDocument();
   const upsertAssignment = useUpsertVehicleAssignment();
 
@@ -429,11 +428,14 @@ export default function VehicleProfile() {
           {assignedDriver && assignmentStartDate && (
             <div className="mt-4 bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">
               <strong>{vehicle.license_plate}</strong> is assigned to{' '}
-              <strong>{assignedDriver.first_name} {assignedDriver.last_name}</strong> from{' '}
-              <strong>{format(assignmentStartDate, 'dd/MM/yyyy')}</strong>
+              <strong>
+                {assignedDriver.first_name} {assignedDriver.last_name}
+              </strong>{' '}
+              from <strong>{format(assignmentStartDate, 'dd/MM/yyyy')}</strong>
               {assignmentEndDate && (
                 <>
-                  {' '}to <strong>{format(assignmentEndDate, 'dd/MM/yyyy')}</strong>
+                  {' '}
+                  to <strong>{format(assignmentEndDate, 'dd/MM/yyyy')}</strong>
                 </>
               )}
             </div>
@@ -455,7 +457,7 @@ export default function VehicleProfile() {
               {odometerLoading ? (
                 <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
               ) : currentOdometer ? (
-                `${currentOdometer.toLocaleString()} km`
+                `${currentOdometer.toLocaleString()}`
               ) : (
                 'N/A'
               )}
@@ -699,9 +701,7 @@ export default function VehicleProfile() {
               </TableBody>
             </Table>
           ) : (
-            <div className="text-center text-muted-foreground py-8">
-              No trip history found
-            </div>
+            <div className="text-center text-muted-foreground py-8">No trip history found</div>
           )}
         </CardContent>
       </Card>
