@@ -56,7 +56,6 @@ export default function VehicleProfile() {
   const upsertDocument = useUpsertVehicleDocument();
 
   const [assignment, setAssignment] = useState('');
-  const [mileage, setMileage] = useState('');
   const [status, setStatus] = useState('maintenance');
   const [nextServiceMileage, setNextServiceMileage] = useState('');
 
@@ -83,13 +82,6 @@ export default function VehicleProfile() {
       }
     }
   }, [documents]);
-
-  // Set mileage from odometer API data
-  useEffect(() => {
-    if (currentOdometer) {
-      setMileage(currentOdometer.toString());
-    }
-  }, [currentOdometer]);
 
   const vehicle = vehicles.find((v) => v.license_plate === licensePlate);
 
@@ -223,7 +215,13 @@ export default function VehicleProfile() {
           <CardContent className="space-y-3">
             <div className="text-center">
               <div className="text-4xl font-bold">
-                {mileage ? parseInt(mileage).toLocaleString() : '-'}
+                {odometerLoading ? (
+                  <Loader2 className="h-10 w-10 animate-spin text-primary ml-7" />
+                ) : currentOdometer ? (
+                  `${currentOdometer.toLocaleString()} km`
+                ) : (
+                  'N/A'
+                )}
               </div>
               <div className="text-sm text-muted-foreground">kilometers</div>
             </div>
