@@ -1,18 +1,37 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Users, Gauge, Settings, Car, FileText, Wrench, History } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
-import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
-import { useVehicleDocumentsQuery, useUpsertVehicleDocument } from "@/hooks/queries/useVehicleDocumentsQuery";
-import { useVehicleOdometerQuery } from "@/hooks/queries/useVehicleOdometerQuery";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Users,
+  Gauge,
+  Settings,
+  Car,
+  FileText,
+  Wrench,
+  History,
+  Loader2,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useVehiclesQuery } from '@/hooks/queries/useVehiclesQuery';
+import { useDriversQuery } from '@/hooks/queries/useDriversQuery';
+import {
+  useVehicleDocumentsQuery,
+  useUpsertVehicleDocument,
+} from '@/hooks/queries/useVehicleDocumentsQuery';
+import { useVehicleOdometerQuery } from '@/hooks/queries/useVehicleOdometerQuery';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -20,35 +39,39 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 
 export default function VehicleProfile() {
   const { licensePlate } = useParams<{ licensePlate: string }>();
   const navigate = useNavigate();
-  
+
   const { data: vehicles = [], isLoading: vehiclesLoading } = useVehiclesQuery();
   const { data: drivers = [], isLoading: driversLoading } = useDriversQuery();
-  const { data: documents = [], isLoading: documentsLoading } = useVehicleDocumentsQuery(licensePlate || "");
-  const { data: currentOdometer, isLoading: odometerLoading } = useVehicleOdometerQuery(licensePlate || "");
+  const { data: documents = [], isLoading: documentsLoading } = useVehicleDocumentsQuery(
+    licensePlate || '',
+  );
+  const { data: currentOdometer, isLoading: odometerLoading } = useVehicleOdometerQuery(
+    licensePlate || '',
+  );
   const upsertDocument = useUpsertVehicleDocument();
 
-  const [assignment, setAssignment] = useState("");
-  const [mileage, setMileage] = useState("");
-  const [status, setStatus] = useState("maintenance");
-  const [nextServiceMileage, setNextServiceMileage] = useState("");
+  const [assignment, setAssignment] = useState('');
+  const [mileage, setMileage] = useState('');
+  const [status, setStatus] = useState('maintenance');
+  const [nextServiceMileage, setNextServiceMileage] = useState('');
 
   // Document states
-  const [licenseExpiryDate, setLicenseExpiryDate] = useState("");
+  const [licenseExpiryDate, setLicenseExpiryDate] = useState('');
   const [licenseReminderEnabled, setLicenseReminderEnabled] = useState(false);
-  const [insuranceExpiryDate, setInsuranceExpiryDate] = useState("");
+  const [insuranceExpiryDate, setInsuranceExpiryDate] = useState('');
   const [insuranceReminderEnabled, setInsuranceReminderEnabled] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Load document data when fetched
   useEffect(() => {
     if (documents.length > 0) {
-      const licenseDoc = documents.find(d => d.document_type === 'license');
-      const insuranceDoc = documents.find(d => d.document_type === 'insurance');
+      const licenseDoc = documents.find((d) => d.document_type === 'license');
+      const insuranceDoc = documents.find((d) => d.document_type === 'insurance');
 
       if (licenseDoc) {
         setLicenseExpiryDate(licenseDoc.expiry_date);
@@ -91,7 +114,7 @@ export default function VehicleProfile() {
             document_type: 'license',
             expiry_date: licenseExpiryDate,
             email_reminder_enabled: licenseReminderEnabled,
-          })
+          }),
         );
       }
 
@@ -102,13 +125,13 @@ export default function VehicleProfile() {
             document_type: 'insurance',
             expiry_date: insuranceExpiryDate,
             email_reminder_enabled: insuranceReminderEnabled,
-          })
+          }),
         );
       }
 
       await Promise.all(promises);
     } catch (error) {
-      console.error("Error saving documents:", error);
+      console.error('Error saving documents:', error);
     } finally {
       setIsSaving(false);
     }
@@ -125,7 +148,7 @@ export default function VehicleProfile() {
   if (!vehicle) {
     return (
       <div className="space-y-6 p-8">
-        <Button variant="outline" onClick={() => navigate("/vehicle-fleet")} className="gap-2">
+        <Button variant="outline" onClick={() => navigate('/vehicle-fleet')} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Back to Vehicle Fleet
         </Button>
@@ -143,7 +166,7 @@ export default function VehicleProfile() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate("/vehicle-fleet")}
+          onClick={() => navigate('/vehicle-fleet')}
           className="rounded-full"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -192,7 +215,9 @@ export default function VehicleProfile() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-center">
-              <div className="text-4xl font-bold">{mileage ? parseInt(mileage).toLocaleString() : '-'}</div>
+              <div className="text-4xl font-bold">
+                {mileage ? parseInt(mileage).toLocaleString() : '-'}
+              </div>
               <div className="text-sm text-muted-foreground">kilometers</div>
             </div>
             <div className="flex gap-2">
@@ -285,9 +310,9 @@ export default function VehicleProfile() {
             <Label>Vehicle License</Label>
             <div className="flex gap-3">
               <Input type="file" className="flex-1" />
-              <Input 
-                type="date" 
-                className="w-48" 
+              <Input
+                type="date"
+                className="w-48"
                 value={licenseExpiryDate}
                 onChange={(e) => setLicenseExpiryDate(e.target.value)}
               />
@@ -298,15 +323,17 @@ export default function VehicleProfile() {
                 <span>Document has expired.</span>
               </div>
             )}
-            {licenseExpiryDate && isDocumentExpiringSoon(licenseExpiryDate) && !isDocumentExpired(licenseExpiryDate) && (
-              <div className="text-sm text-amber-600 flex items-center gap-2">
-                <span>⚠</span>
-                <span>Document expires within 1 month.</span>
-              </div>
-            )}
+            {licenseExpiryDate &&
+              isDocumentExpiringSoon(licenseExpiryDate) &&
+              !isDocumentExpired(licenseExpiryDate) && (
+                <div className="text-sm text-amber-600 flex items-center gap-2">
+                  <span>⚠</span>
+                  <span>Document expires within 1 month.</span>
+                </div>
+              )}
             <div className="flex items-center gap-2">
-              <Checkbox 
-                id="email-reminder-license" 
+              <Checkbox
+                id="email-reminder-license"
                 checked={licenseReminderEnabled}
                 onCheckedChange={(checked) => setLicenseReminderEnabled(checked === true)}
               />
@@ -321,9 +348,9 @@ export default function VehicleProfile() {
             <Label>Vehicle Insurance</Label>
             <div className="flex gap-3">
               <Input type="file" className="flex-1" />
-              <Input 
-                type="date" 
-                className="w-48" 
+              <Input
+                type="date"
+                className="w-48"
                 value={insuranceExpiryDate}
                 onChange={(e) => setInsuranceExpiryDate(e.target.value)}
               />
@@ -334,15 +361,17 @@ export default function VehicleProfile() {
                 <span>Document has expired.</span>
               </div>
             )}
-            {insuranceExpiryDate && isDocumentExpiringSoon(insuranceExpiryDate) && !isDocumentExpired(insuranceExpiryDate) && (
-              <div className="text-sm text-amber-600 flex items-center gap-2">
-                <span>⚠</span>
-                <span>Document expires within 1 month.</span>
-              </div>
-            )}
+            {insuranceExpiryDate &&
+              isDocumentExpiringSoon(insuranceExpiryDate) &&
+              !isDocumentExpired(insuranceExpiryDate) && (
+                <div className="text-sm text-amber-600 flex items-center gap-2">
+                  <span>⚠</span>
+                  <span>Document expires within 1 month.</span>
+                </div>
+              )}
             <div className="flex items-center gap-2">
-              <Checkbox 
-                id="email-reminder-insurance" 
+              <Checkbox
+                id="email-reminder-insurance"
                 checked={insuranceReminderEnabled}
                 onCheckedChange={(checked) => setInsuranceReminderEnabled(checked === true)}
               />
@@ -352,12 +381,12 @@ export default function VehicleProfile() {
             </div>
           </div>
 
-          <Button 
-            className="w-full" 
+          <Button
+            className="w-full"
             onClick={handleSaveDocuments}
             disabled={isSaving || (!licenseExpiryDate && !insuranceExpiryDate)}
           >
-            {isSaving ? "Saving..." : "Save Documents"}
+            {isSaving ? 'Saving...' : 'Save Documents'}
           </Button>
         </CardContent>
       </Card>
@@ -373,7 +402,7 @@ export default function VehicleProfile() {
               <p className="text-sm text-muted-foreground">Current Mileage</p>
               <p className="text-2xl font-bold">
                 {odometerLoading ? (
-                  <span className="text-muted-foreground">Loading...</span>
+                  <Loader2 className="h-10 w-10 animate-spin text-primary ml-7" />
                 ) : currentOdometer ? (
                   `${currentOdometer.toLocaleString()} km`
                 ) : (
@@ -384,8 +413,8 @@ export default function VehicleProfile() {
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Mileage to Next Service</p>
               <p className="text-2xl font-bold">
-                {currentOdometer && nextServiceMileage 
-                  ? `${(parseInt(nextServiceMileage) - currentOdometer).toLocaleString()} km` 
+                {currentOdometer && nextServiceMileage
+                  ? `${(parseInt(nextServiceMileage) - currentOdometer).toLocaleString()} km`
                   : 'N/A'}
               </p>
             </div>
