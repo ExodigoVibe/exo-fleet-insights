@@ -91,4 +91,5 @@ export interface FleetFilters {
   safetyGradeMin: number;
   safetyGradeMax: number;
   tripStatus: string[];
+  driverStatus: 'all' | 'active' | 'blocked';
 }

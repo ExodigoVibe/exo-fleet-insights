@@ -99,6 +99,7 @@ const Trips = () => {
     safetyGradeMin: 0,
     safetyGradeMax: 100,
     tripStatus: [],
+    driverStatus: 'all',
   });
 
   // Fetch trips from Snowflake
@@ -137,8 +138,8 @@ const Trips = () => {
     // IMPORTANT: ignore the currently selected plate so options stay stable
     effectiveFilters.licensePlates = [];
 
-    return filterTrips(allTrips, effectiveFilters);
-  }, [allTrips, filters, tripsLoading, loadedDateRange, driverOptions, hasAdminAccess]);
+    return filterTrips(allTrips, effectiveFilters, snowflakeDrivers);
+  }, [allTrips, filters, tripsLoading, loadedDateRange, driverOptions, hasAdminAccess, snowflakeDrivers]);
 
   const userHistoryLicensePlates = useMemo(() => {
     return Array.from(
@@ -169,8 +170,8 @@ const Trips = () => {
       effectiveFilters.drivers = [driverOptions[0]];
     }
 
-    return filterTrips(allTrips, effectiveFilters);
-  }, [allTrips, filters, tripsLoading, loadedDateRange, driverOptions, hasAdminAccess]);
+    return filterTrips(allTrips, effectiveFilters, snowflakeDrivers);
+  }, [allTrips, filters, tripsLoading, loadedDateRange, driverOptions, hasAdminAccess, snowflakeDrivers]);
 
   const vehicleMetrics = useMemo(
     () => calculateVehicleUsageMetrics(filteredTrips, allVehicles),
@@ -197,6 +198,7 @@ const Trips = () => {
           filters={filters}
           onFiltersChange={setFilters}
           drivers={driverOptions}
+          driversData={snowflakeDrivers}
           licensePlates={licensePlateOptions}
           loading={tripsLoading}
           userHistoryLicensePlates={userHistoryLicensePlates}

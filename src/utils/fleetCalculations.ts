@@ -1,6 +1,15 @@
-import { Trip, Vehicle, VehicleUsageMetrics, DailyUsageMetrics, FleetFilters } from "@/types/fleet";
+import { Trip, Vehicle, VehicleUsageMetrics, DailyUsageMetrics, FleetFilters, Driver } from "@/types/fleet";
 
-export function filterTrips(trips: Trip[], filters: FleetFilters): Trip[] {
+export function filterTrips(trips: Trip[], filters: FleetFilters, driversData?: Driver[]): Trip[] {
+  // Create a map of driver names to their blocked status
+  const driverBlockedMap = new Map<string, boolean>();
+  if (driversData) {
+    driversData.forEach((driver) => {
+      const fullName = `${driver.first_name} ${driver.last_name}`;
+      driverBlockedMap.set(fullName, driver.is_blocked);
+    });
+  }
+
   return trips.filter((trip) => {
     const tripDate = new Date(trip.start_location.timestamp).toISOString().split("T")[0];
 
@@ -14,6 +23,13 @@ export function filterTrips(trips: Trip[], filters: FleetFilters): Trip[] {
     if (trip.safety.safety_grade < filters.safetyGradeMin || trip.safety.safety_grade > filters.safetyGradeMax) return false;
     
     if (filters.tripStatus.length > 0 && !filters.tripStatus.includes(trip.trip_status)) return false;
+    
+    // Apply driver status filter
+    if (filters.driverStatus && filters.driverStatus !== 'all' && driversData) {
+      const isBlocked = driverBlockedMap.get(trip.driver_name);
+      if (filters.driverStatus === 'blocked' && !isBlocked) return false;
+      if (filters.driverStatus === 'active' && isBlocked) return false;
+    }
     
     return true;
   });
