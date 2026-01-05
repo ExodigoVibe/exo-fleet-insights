@@ -13,14 +13,16 @@ import {
 } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { formatDuration } from "@/utils/fleetCalculations";
-import { ArrowLeft, Activity, Clock, TrendingUp, Gauge, Shield } from "lucide-react";
+import { ArrowLeft, Activity, Clock, TrendingUp, Gauge, Shield, Car } from "lucide-react";
 import { useSnowflakeVehicles } from "@/hooks/useSnowflakeVehicles";
 import { useSnowflakeTrips } from "@/hooks/useSnowflakeTrips";
 import { useInitialDateRange } from "@/hooks/useInitialData";
+import { useVehicleOdometerQuery } from "@/hooks/queries/useVehicleOdometerQuery";
 
 const VehicleDetail = () => {
   const { licensePlate } = useParams<{ licensePlate: string }>();
   const { vehicles: allVehicles } = useSnowflakeVehicles();
+  const { data: currentOdometer, isLoading: odometerLoading } = useVehicleOdometerQuery(licensePlate || "");
   
   // Get trips for the last 90 days for vehicle detail view
   const { dateFrom, dateTo } = useInitialDateRange();
@@ -111,7 +113,12 @@ const VehicleDetail = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+          <KPICard
+            title="Current Mileage"
+            value={odometerLoading ? "Loading..." : currentOdometer ? `${currentOdometer.toLocaleString()} km` : "N/A"}
+            icon={Car}
+          />
           <KPICard
             title="Active Time"
             value={formatDuration(totalActiveTime)}
