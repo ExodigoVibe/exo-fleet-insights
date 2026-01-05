@@ -1,33 +1,51 @@
 import { useState, useMemo } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Car } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useVehicleRequestsQuery, VehicleRequest } from "@/hooks/queries/useVehicleRequestsQuery";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, parseISO } from "date-fns";
+import { useVehicleAssignmentsQuery, VehicleAssignment } from "@/hooks/queries/useVehicleAssignmentsQuery";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, isToday, parseISO, isWithinInterval } from "date-fns";
 
 interface CalendarEvent {
   id: string;
   title: string;
   date: Date;
+  endDate?: Date;
   status: string;
-  request: VehicleRequest;
+  type: 'request' | 'assignment';
+  request?: VehicleRequest;
+  assignment?: VehicleAssignment;
 }
 
 const Calendar = () => {
   const navigate = useNavigate();
-  const { data: requests = [], isLoading } = useVehicleRequestsQuery();
+  const { data: requests = [], isLoading: requestsLoading } = useVehicleRequestsQuery();
+  const { data: assignments = [], isLoading: assignmentsLoading } = useVehicleAssignmentsQuery();
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Map requests to calendar events
+  // Map requests and assignments to calendar events
   const events = useMemo(() => {
-    return requests.map((req): CalendarEvent => ({
+    const requestEvents: CalendarEvent[] = requests.map((req) => ({
       id: req.id,
       title: req.full_name,
       date: parseISO(req.start_date),
       status: req.status,
+      type: 'request' as const,
       request: req,
     }));
-  }, [requests]);
+
+    const assignmentEvents: CalendarEvent[] = assignments.map((assignment) => ({
+      id: assignment.id,
+      title: `${assignment.license_plate}${assignment.driver_name ? ` - ${assignment.driver_name}` : ''}`,
+      date: parseISO(assignment.start_date),
+      endDate: assignment.end_date ? parseISO(assignment.end_date) : undefined,
+      status: assignment.status,
+      type: 'assignment' as const,
+      assignment,
+    }));
+
+    return [...requestEvents, ...assignmentEvents];
+  }, [requests, assignments]);
 
   // Get calendar days for current month view
   const calendarDays = useMemo(() => {
@@ -39,9 +57,17 @@ const Calendar = () => {
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentMonth]);
 
-  // Get events for a specific day
+  // Get events for a specific day (including multi-day assignments)
   const getEventsForDay = (day: Date) => {
-    return events.filter(event => isSameDay(event.date, day));
+    return events.filter(event => {
+      if (event.type === 'assignment' && event.endDate) {
+        // For assignments with date range, check if day falls within range
+        return isWithinInterval(day, { start: event.date, end: event.endDate }) || 
+               isSameDay(event.date, day) || 
+               isSameDay(event.endDate, day);
+      }
+      return isSameDay(event.date, day);
+    });
   };
 
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
@@ -106,18 +132,22 @@ const Calendar = () => {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-6 mb-4">
+        <div className="flex flex-wrap items-center gap-6 mb-4">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-primary" />
-            <span className="text-sm text-muted-foreground">Approved</span>
+            <span className="text-sm text-muted-foreground">Approved Request</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-yellow-400/50 border border-yellow-500" />
-            <span className="text-sm text-muted-foreground">Pending (Tentative)</span>
+            <span className="text-sm text-muted-foreground">Pending Request</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded bg-destructive/30 border border-destructive/50" />
-            <span className="text-sm text-muted-foreground">Rejected</span>
+            <span className="text-sm text-muted-foreground">Rejected Request</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-blue-500" />
+            <span className="text-sm text-muted-foreground">Vehicle Assignment</span>
           </div>
         </div>
 
@@ -158,18 +188,27 @@ const Calendar = () => {
                   <div className="space-y-1">
                     {dayEvents.slice(0, 3).map((event) => (
                       <div
-                        key={event.id}
-                        onClick={() => navigate(`/requests/${event.id}`)}
-                        className={`text-xs px-2 py-1 rounded truncate cursor-pointer transition-opacity hover:opacity-80 ${
-                          event.status === "approved"
-                            ? "bg-primary text-primary-foreground"
-                            : event.status === "rejected"
-                              ? "bg-destructive/30 text-destructive border border-destructive/50"
-                              : "bg-yellow-400/50 text-yellow-800 border border-yellow-500 dark:text-yellow-200"
+                        key={`${event.type}-${event.id}`}
+                        onClick={() => {
+                          if (event.type === 'request') {
+                            navigate(`/requests/${event.id}`);
+                          } else if (event.assignment) {
+                            navigate(`/vehicle-fleet/${event.assignment.license_plate}`);
+                          }
+                        }}
+                        className={`text-xs px-2 py-1 rounded truncate cursor-pointer transition-opacity hover:opacity-80 flex items-center gap-1 ${
+                          event.type === 'assignment'
+                            ? "bg-blue-500 text-white"
+                            : event.status === "approved"
+                              ? "bg-primary text-primary-foreground"
+                              : event.status === "rejected"
+                                ? "bg-destructive/30 text-destructive border border-destructive/50"
+                                : "bg-yellow-400/50 text-yellow-800 border border-yellow-500 dark:text-yellow-200"
                         }`}
-                        title={`${event.title} - ${event.status}`}
+                        title={`${event.title} - ${event.status}${event.type === 'assignment' ? ' (Vehicle Assignment)' : ''}`}
                       >
-                        {event.title}
+                        {event.type === 'assignment' && <Car className="h-3 w-3 flex-shrink-0" />}
+                        <span className="truncate">{event.title}</span>
                       </div>
                     ))}
                     {dayEvents.length > 3 && (
@@ -184,9 +223,9 @@ const Calendar = () => {
           </div>
         </div>
 
-        {isLoading && (
+        {(requestsLoading || assignmentsLoading) && (
           <div className="flex items-center justify-center py-8">
-            <p className="text-muted-foreground">Loading requests...</p>
+            <p className="text-muted-foreground">Loading...</p>
           </div>
         )}
       </div>
