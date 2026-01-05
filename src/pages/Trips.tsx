@@ -99,7 +99,7 @@ const Trips = () => {
     safetyGradeMin: 0,
     safetyGradeMax: 100,
     tripStatus: [],
-    driverStatus: 'all',
+    driverStatus: 'active',
   });
 
   // Fetch trips from Snowflake
