@@ -43,7 +43,9 @@ import {
   useUpsertVehicleDocument,
 } from '@/hooks/queries/useVehicleDocumentsQuery';
 import { useVehicleOdometerQuery } from '@/hooks/queries/useVehicleOdometerQuery';
+import { useVehicleTripsQuery } from '@/hooks/queries/useVehicleTripsQuery';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import {
   Table,
   TableBody,
@@ -63,6 +65,9 @@ export default function VehicleProfile() {
     licensePlate || '',
   );
   const { data: currentOdometer, isLoading: odometerLoading } = useVehicleOdometerQuery(
+    licensePlate || '',
+  );
+  const { data: vehicleTrips = [], isLoading: tripsLoading } = useVehicleTripsQuery(
     licensePlate || '',
   );
   const upsertDocument = useUpsertVehicleDocument();
@@ -524,28 +529,54 @@ export default function VehicleProfile() {
         </CardContent>
       </Card>
 
-      {/* Car History */}
+      {/* Car History - Trips */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Car History</CardTitle>
+          <CardTitle className="text-xl">Car History - Previous Trips</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Details</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                  No car history found
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          {tripsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : vehicleTrips && vehicleTrips.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Driver</TableHead>
+                  <TableHead>Start</TableHead>
+                  <TableHead>End</TableHead>
+                  <TableHead>Distance</TableHead>
+                  <TableHead>Duration</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vehicleTrips.slice(0, 20).map((trip) => (
+                  <TableRow key={trip.trip_id}>
+                    <TableCell className="text-sm">
+                      {format(new Date(trip.start_location.timestamp), 'dd/MM/yyyy HH:mm')}
+                    </TableCell>
+                    <TableCell className="text-sm">{trip.driver_name}</TableCell>
+                    <TableCell className="text-sm truncate max-w-[150px]">
+                      {trip.start_location.location.address.location || '-'}
+                    </TableCell>
+                    <TableCell className="text-sm truncate max-w-[150px]">
+                      {trip.end_location.location.address.location || '-'}
+                    </TableCell>
+                    <TableCell className="text-sm">{trip.distance.toFixed(1)} km</TableCell>
+                    <TableCell className="text-sm">
+                      {Math.round(trip.duration_in_seconds / 60)} min
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center text-muted-foreground py-8">
+              No trip history found
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
