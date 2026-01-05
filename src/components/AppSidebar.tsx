@@ -1,5 +1,5 @@
 import { FileText, Wrench, Users, CheckSquare, AlertTriangle, Settings, Car, Shield, LogOut, Route, ClipboardList, CalendarDays } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
@@ -23,9 +23,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
-  { title: "Dashboard", url: "/", icon: FileText, roles: ["admin", "coordinator", "employee"] },
+  { title: "Dashboard", url: "/", icon: FileText, roles: ["admin", "coordinator", "employee"], exact: true },
   { title: "Trips", url: "/trips", icon: Route, roles: ["admin", "coordinator", "employee"] },
   { title: "Vehicle Fleet", url: "/vehicle-fleet", icon: Wrench, roles: ["admin", "coordinator"] },
   { title: "Vehicle Assign Groups", url: "/vehicle-assign-groups", icon: ClipboardList, roles: ["admin"] },
@@ -38,6 +39,7 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
+  const location = useLocation();
   const { data: requests = [] } = useVehicleRequestsQuery();
   const { data: eventReports = [] } = useEventReportsQuery();
   const { user, logout, isAdmin, isCoordinator, hasAdminAccess } = useAuth();
@@ -63,6 +65,14 @@ export function AppSidebar() {
 
   // Determine if user has admin/coordinator access
   const hasFullAccess = isAdmin || isCoordinator;
+
+  // Check if a route is active (exact match for dashboard, prefix match for others)
+  const isRouteActive = (url: string, exact?: boolean) => {
+    if (exact) {
+      return location.pathname === url;
+    }
+    return location.pathname === url || location.pathname.startsWith(url + "/");
+  };
 
   // Filter menu items based on user role
   const filteredMenuItems = menuItems.filter(item => 
@@ -98,21 +108,25 @@ export function AppSidebar() {
           <SidebarGroupLabel>NAVIGATION</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredMenuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end
-                      className="flex items-center gap-3 hover:bg-primary/10 text-foreground"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {<span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {filteredMenuItems.map((item) => {
+                const isActive = isRouteActive(item.url, item.exact);
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <Link
+                        to={item.url}
+                        className={cn(
+                          "flex items-center gap-3 hover:bg-primary/10 text-foreground",
+                          isActive && "bg-primary/10 text-primary font-medium"
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
