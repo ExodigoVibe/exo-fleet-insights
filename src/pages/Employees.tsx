@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDriversQuery } from '@/hooks/queries/useDriversQuery';
 import {
   Table,
   TableBody,
@@ -8,32 +8,32 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Users, Search, Download, UserCheck, UserX } from "lucide-react";
-import * as XLSX from "xlsx";
-import { toast } from "sonner";
+} from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Users, Search, Download, UserCheck, UserX } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
 
 const Employees = () => {
   const navigate = useNavigate();
   const { data: drivers, isLoading, error } = useDriversQuery();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "blocked">("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'blocked'>('all');
 
   const filteredDrivers = useMemo(() => {
     if (!drivers) return [];
-    
+
     let filtered = drivers;
 
     // Apply status filter
-    if (statusFilter === "active") {
-      filtered = filtered.filter(d => !d.is_blocked);
-    } else if (statusFilter === "blocked") {
-      filtered = filtered.filter(d => d.is_blocked);
+    if (statusFilter === 'active') {
+      filtered = filtered.filter((d) => !d.is_blocked);
+    } else if (statusFilter === 'blocked') {
+      filtered = filtered.filter((d) => d.is_blocked);
     }
 
     // Apply search filter
@@ -42,9 +42,9 @@ const Employees = () => {
       filtered = filtered.filter((driver) => {
         const fullName = `${driver.first_name} ${driver.last_name}`.toLowerCase();
         const driverCode = driver.driver_code.toString();
-        const email = driver.email?.toLowerCase() || "";
-        const phone = driver.phone?.toLowerCase() || "";
-        const cellular = driver.cellular?.toLowerCase() || "";
+        const email = driver.email?.toLowerCase() || '';
+        const phone = driver.phone?.toLowerCase() || '';
+        const cellular = driver.cellular?.toLowerCase() || '';
 
         return (
           fullName.includes(search) ||
@@ -61,22 +61,22 @@ const Employees = () => {
 
   const handleExportToExcel = () => {
     if (!filteredDrivers.length) {
-      toast.error("No data to export");
+      toast.error('No data to export');
       return;
     }
 
     const exportData = filteredDrivers.map((driver) => ({
-      "Driver ID": driver.driver_id,
-      "Name": `${driver.first_name} ${driver.last_name}`,
-      "Driver Code": driver.driver_code || "-",
-      "Email": driver.email || "-",
-      "Phone Number": driver.phone || driver.cellular || "-",
-      "Status": driver.is_blocked ? "Blocked" : "Not Blocked",
+      'Driver ID': driver.driver_id,
+      Name: `${driver.first_name} ${driver.last_name}`,
+      'Driver Code': driver.driver_code || '-',
+      Email: driver.email || '-',
+      'Phone Number': driver.phone || driver.cellular || '-',
+      Status: driver.is_blocked ? 'Blocked' : 'Not Blocked',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Employees");
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees');
 
     XLSX.writeFile(workbook, `employees_${new Date().toISOString().split('T')[0]}.xlsx`);
     toast.success(`Exported ${filteredDrivers.length} employees to Excel`);
@@ -84,34 +84,32 @@ const Employees = () => {
 
   return (
     <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-primary" />
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">Employees</h1>
-                <p className="text-muted-foreground mt-1">
-                  Manage driver information and contacts
-                </p>
-              </div>
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Users className="h-8 w-8 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Employees</h1>
+              <p className="text-muted-foreground mt-1">Manage driver information and contacts</p>
             </div>
-            <Button
-              onClick={handleExportToExcel}
-              disabled={isLoading || !filteredDrivers.length}
-              variant="outline"
-              className="gap-2"
-            >
-              Excel <Download className="h-4 w-4" />
-            </Button>
           </div>
+          <Button
+            onClick={handleExportToExcel}
+            disabled={isLoading || !filteredDrivers.length}
+            variant="outline"
+            className="gap-2"
+          >
+            Excel <Download className="h-4 w-4" />
+          </Button>
         </div>
+      </div>
 
       <div className="container mx-auto px-4 py-6">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card 
-            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "all" ? "border-2 border-primary" : ""}`}
-            onClick={() => setStatusFilter("all")}
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'all' ? 'border-2 border-primary' : ''}`}
+            onClick={() => setStatusFilter('all')}
           >
             <CardContent className="pt-6 text-center">
               <Users className="h-8 w-8 text-primary mx-auto mb-3" />
@@ -120,24 +118,28 @@ const Employees = () => {
             </CardContent>
           </Card>
 
-          <Card 
-            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "active" ? "border-2 border-primary" : ""}`}
-            onClick={() => setStatusFilter("active")}
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'active' ? 'border-2 border-primary' : ''}`}
+            onClick={() => setStatusFilter('active')}
           >
             <CardContent className="pt-6 text-center">
               <UserCheck className="h-8 w-8 text-green-600 mx-auto mb-3" />
-              <div className="text-4xl font-bold text-green-600 mb-1">{drivers?.filter(d => !d.is_blocked).length || 0}</div>
+              <div className="text-4xl font-bold text-green-600 mb-1">
+                {drivers?.filter((d) => !d.is_blocked).length || 0}
+              </div>
               <div className="text-sm text-muted-foreground">Active Drivers</div>
             </CardContent>
           </Card>
 
-          <Card 
-            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === "blocked" ? "border-2 border-primary" : ""}`}
-            onClick={() => setStatusFilter("blocked")}
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'blocked' ? 'border-2 border-primary' : ''}`}
+            onClick={() => setStatusFilter('blocked')}
           >
             <CardContent className="pt-6 text-center">
               <UserX className="h-8 w-8 text-destructive mx-auto mb-3" />
-              <div className="text-4xl font-bold text-destructive mb-1">{drivers?.filter(d => d.is_blocked).length || 0}</div>
+              <div className="text-4xl font-bold text-destructive mb-1">
+                {drivers?.filter((d) => d.is_blocked).length || 0}
+              </div>
               <div className="text-sm text-muted-foreground">Blocked Drivers</div>
             </CardContent>
           </Card>
@@ -164,10 +166,10 @@ const Employees = () => {
             <CardTitle>Employees List ({filteredDrivers.length})</CardTitle>
             <CardDescription>
               {isLoading ? (
-                "Loading drivers..."
+                'Loading drivers...'
               ) : error ? (
                 <span className="text-destructive">Failed to load drivers</span>
-              ) : statusFilter !== "all" ? (
+              ) : statusFilter !== 'all' ? (
                 `Showing ${statusFilter} drivers`
               ) : (
                 `Total: ${drivers?.length || 0} drivers`
@@ -200,7 +202,7 @@ const Employees = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredDrivers.map((driver) => (
-                      <TableRow 
+                      <TableRow
                         key={driver.driver_id}
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => navigate(`/employees/${driver.driver_id}`)}
@@ -209,14 +211,16 @@ const Employees = () => {
                         <TableCell>
                           {driver.first_name} {driver.last_name}
                         </TableCell>
-                        <TableCell>{driver.driver_code || "-"}</TableCell>
-                        <TableCell>{driver.email || "-"}</TableCell>
-                        <TableCell>{driver.phone || driver.cellular || "-"}</TableCell>
+                        <TableCell>{driver.driver_code || '-'}</TableCell>
+                        <TableCell>{driver.email || '-'}</TableCell>
+                        <TableCell>{driver.phone || driver.cellular || '-'}</TableCell>
                         <TableCell>
                           {driver.is_blocked ? (
                             <Badge variant="destructive">Blocked</Badge>
                           ) : (
-                            <Badge variant="default" className="bg-green-600">Not Blocked</Badge>
+                            <Badge variant="default" className="bg-green-600">
+                              Active
+                            </Badge>
                           )}
                         </TableCell>
                       </TableRow>
@@ -229,9 +233,7 @@ const Employees = () => {
                 No drivers matching "{searchTerm}"
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                No drivers found
-              </div>
+              <div className="text-center py-8 text-muted-foreground">No drivers found</div>
             )}
           </CardContent>
         </Card>
