@@ -214,7 +214,7 @@ export function FilterPanel({
             </Select>
           </div>
         </div>
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label>
             Safety Grade Range: {pendingFilters.safetyGradeMin} - {pendingFilters.safetyGradeMax}
           </Label>
@@ -233,7 +233,7 @@ export function FilterPanel({
             className="w-full"
             disabled={loading}
           />
-        </div>
+        </div> */}
       </CardContent>
     </Card>
   );
