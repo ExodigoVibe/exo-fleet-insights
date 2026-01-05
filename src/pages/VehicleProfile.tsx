@@ -84,6 +84,13 @@ export default function VehicleProfile() {
     }
   }, [documents]);
 
+  // Set mileage from odometer API data
+  useEffect(() => {
+    if (currentOdometer) {
+      setMileage(currentOdometer.toString());
+    }
+  }, [currentOdometer]);
+
   const vehicle = vehicles.find((v) => v.license_plate === licensePlate);
 
   const isDocumentExpired = (expiryDate: string) => {

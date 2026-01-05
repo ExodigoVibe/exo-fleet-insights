@@ -55,6 +55,9 @@ export function Breadcrumbs() {
         label: parentRoutes[segment].label,
         isLast: false,
       });
+      // Skip adding "Vehicle Profile" since it doesn't have its own page
+      // Just add the license plate as the final breadcrumb
+      return;
     }
     
     breadcrumbs.push({ path, label, isLast });
