@@ -10,6 +10,8 @@ import {
   Wrench,
   History,
   Loader2,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +25,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useVehiclesQuery } from '@/hooks/queries/useVehiclesQuery';
 import { useDriversQuery } from '@/hooks/queries/useDriversQuery';
@@ -56,6 +68,7 @@ export default function VehicleProfile() {
   const upsertDocument = useUpsertVehicleDocument();
 
   const [assignment, setAssignment] = useState('');
+  const [assignmentDropdownOpen, setAssignmentDropdownOpen] = useState(false);
   const [status, setStatus] = useState('maintenance');
   const [nextServiceMileage, setNextServiceMileage] = useState('');
 
@@ -158,6 +171,12 @@ export default function VehicleProfile() {
 
   const vehicleTitle = `${vehicle.make_name} ${vehicle.model_name}`;
   const assignedDriver = drivers.find((d) => d.driver_id.toString() === assignment);
+  const assignmentLabel =
+    assignment === 'unassigned'
+      ? 'Unassigned'
+      : assignedDriver
+        ? `${assignedDriver.first_name} ${assignedDriver.last_name}`
+        : '';
 
   return (
     <div className="space-y-6 p-8 bg-gray-50 min-h-screen">
@@ -184,19 +203,76 @@ export default function VehicleProfile() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Select value={assignment} onValueChange={setAssignment}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select driver" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-                {drivers.map((driver) => (
-                  <SelectItem key={driver.driver_id} value={driver.driver_id.toString()}>
-                    {driver.first_name} {driver.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={assignmentDropdownOpen} onOpenChange={setAssignmentDropdownOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={assignmentDropdownOpen}
+                  className="w-full justify-between"
+                  disabled={driversLoading}
+                >
+                  {assignmentLabel || 'Select driver'}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                  <CommandInput placeholder="Search driver..." />
+                  <CommandList>
+                    <CommandEmpty>No driver found.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="unassigned"
+                        onSelect={() => {
+                          setAssignment('unassigned');
+                          setAssignmentDropdownOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            assignment === 'unassigned' ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                        Unassigned
+                      </CommandItem>
+
+                      {driversLoading ? (
+                        <CommandItem disabled value="loading">
+                          Loading...
+                        </CommandItem>
+                      ) : (
+                        drivers.map((driver) => {
+                          const id = driver.driver_id.toString();
+                          const label = `${driver.first_name} ${driver.last_name}`;
+                          const searchValue = `${label} ${driver.email || ''} ${driver.driver_code || ''}`;
+
+                          return (
+                            <CommandItem
+                              key={driver.driver_id}
+                              value={searchValue}
+                              onSelect={() => {
+                                setAssignment(id);
+                                setAssignmentDropdownOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  assignment === id ? 'opacity-100' : 'opacity-0',
+                                )}
+                              />
+                              {label}
+                            </CommandItem>
+                          );
+                        })
+                      )}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
             {assignedDriver && (
               <div className="bg-green-50 border border-green-200 rounded p-2 text-sm text-green-800">
                 Assigned to: {assignedDriver.first_name} {assignedDriver.last_name}
@@ -417,26 +493,6 @@ export default function VehicleProfile() {
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Last Service</p>
               <p className="text-2xl font-bold">N/A</p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Label>Next Service Mileage</Label>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                value={nextServiceMileage}
-                onChange={(e) => setNextServiceMileage(e.target.value)}
-                className="flex-1"
-                placeholder="Enter service mileage"
-              />
-              <Button>Set</Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox id="service-notification" />
-              <label htmlFor="service-notification" className="text-sm">
-                Email notification 1 month before service due
-              </label>
             </div>
           </div>
         </CardContent>
