@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   { title: "Dashboard", url: "/", icon: FileText, roles: ["admin", "coordinator", "employee"], exact: true },
   { title: "Trips", url: "/trips", icon: Route, roles: ["admin", "coordinator", "employee"] },
-  { title: "Vehicle Fleet", url: "/vehicle-fleet", icon: Wrench, roles: ["admin", "coordinator"] },
+  { title: "Vehicle Fleet", url: "/vehicle-fleet", icon: Wrench, roles: ["admin", "coordinator"], aliases: ["/vehicle"] },
   { title: "Vehicle Assign Groups", url: "/vehicle-assign-groups", icon: ClipboardList, roles: ["admin"] },
   { title: "Calendar", url: "/calendar", icon: CalendarDays, roles: ["admin"] },
   { title: "Employees", url: "/employees", icon: Users, roles: ["admin", "coordinator"] },
@@ -66,12 +66,25 @@ export function AppSidebar() {
   // Determine if user has admin/coordinator access
   const hasFullAccess = isAdmin || isCoordinator;
 
-  // Check if a route is active (exact match for dashboard, prefix match for others)
-  const isRouteActive = (url: string, exact?: boolean) => {
+  // Check if a route is active (exact match for dashboard, prefix match for others, plus aliases)
+  const isRouteActive = (url: string, exact?: boolean, aliases?: string[]) => {
+    const pathname = location.pathname;
+    
     if (exact) {
-      return location.pathname === url;
+      return pathname === url;
     }
-    return location.pathname === url || location.pathname.startsWith(url + "/");
+    
+    // Check main URL
+    if (pathname === url || pathname.startsWith(url + "/")) {
+      return true;
+    }
+    
+    // Check aliases (for routes like /vehicle that should highlight Vehicle Fleet)
+    if (aliases) {
+      return aliases.some(alias => pathname === alias || pathname.startsWith(alias + "/"));
+    }
+    
+    return false;
   };
 
   // Filter menu items based on user role
@@ -109,7 +122,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredMenuItems.map((item) => {
-                const isActive = isRouteActive(item.url, item.exact);
+                const isActive = isRouteActive(item.url, item.exact, item.aliases);
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
