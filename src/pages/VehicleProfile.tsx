@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useVehiclesQuery } from "@/hooks/queries/useVehiclesQuery";
 import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
 import { useVehicleDocumentsQuery, useUpsertVehicleDocument } from "@/hooks/queries/useVehicleDocumentsQuery";
+import { useVehicleOdometerQuery } from "@/hooks/queries/useVehicleOdometerQuery";
 import { toast } from "sonner";
 import {
   Table,
@@ -28,6 +29,7 @@ export default function VehicleProfile() {
   const { data: vehicles = [], isLoading: vehiclesLoading } = useVehiclesQuery();
   const { data: drivers = [], isLoading: driversLoading } = useDriversQuery();
   const { data: documents = [], isLoading: documentsLoading } = useVehicleDocumentsQuery(licensePlate || "");
+  const { data: currentOdometer, isLoading: odometerLoading } = useVehicleOdometerQuery(licensePlate || "");
   const upsertDocument = useUpsertVehicleDocument();
 
   const [assignment, setAssignment] = useState("");
@@ -369,13 +371,21 @@ export default function VehicleProfile() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Current Mileage</p>
-              <p className="text-2xl font-bold">{mileage ? `${parseInt(mileage).toLocaleString()} km` : 'N/A'}</p>
+              <p className="text-2xl font-bold">
+                {odometerLoading ? (
+                  <span className="text-muted-foreground">Loading...</span>
+                ) : currentOdometer ? (
+                  `${currentOdometer.toLocaleString()} km`
+                ) : (
+                  'N/A'
+                )}
+              </p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Mileage to Next Service</p>
               <p className="text-2xl font-bold">
-                {mileage && nextServiceMileage 
-                  ? `${(parseInt(nextServiceMileage) - parseInt(mileage)).toLocaleString()} km` 
+                {currentOdometer && nextServiceMileage 
+                  ? `${(parseInt(nextServiceMileage) - currentOdometer).toLocaleString()} km` 
                   : 'N/A'}
               </p>
             </div>
