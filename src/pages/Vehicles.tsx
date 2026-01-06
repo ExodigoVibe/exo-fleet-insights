@@ -2,7 +2,10 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useVehiclesQuery } from '@/hooks/queries/useVehiclesQuery';
 import { useAssignedVehiclesQuery } from '@/hooks/queries/useAssignedVehiclesQuery';
+import { useVehicleAssignmentsQuery } from '@/hooks/queries/useVehicleAssignmentsQuery';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Table,
   TableBody,
@@ -22,17 +25,53 @@ import { toast } from 'sonner';
 
 const Vehicles = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: vehicles, isLoading, error } = useVehiclesQuery();
   const { data: assignedVehiclesData } = useAssignedVehiclesQuery();
+  const { data: vehicleAssignments } = useVehicleAssignmentsQuery();
   const { hasAdminAccess } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'parking' | 'assigned' | 'driving' | 'other'
   >('all');
 
-  // Build a map of license plate to employee name for assignments
-  const assignmentMap = useMemo(() => {
+  // Subscribe to real-time updates for vehicle_assignments
+  useEffect(() => {
+    const channel = supabase
+      .channel('vehicle-assignments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'vehicle_assignments',
+        },
+        () => {
+          // Invalidate the query to refetch data
+          queryClient.invalidateQueries({ queryKey: ['vehicle-assignments'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  // Build a map of license plate to driver name from vehicle_assignments (new table)
+  const newAssignmentMap = useMemo(() => {
+    const map = new Map<string, string>();
+    vehicleAssignments?.forEach((assignment) => {
+      if (assignment.driver_name) {
+        map.set(assignment.license_plate, assignment.driver_name);
+      }
+    });
+    return map;
+  }, [vehicleAssignments]);
+
+  // Build a map of license plate to employee name for assignments (legacy table)
+  const legacyAssignmentMap = useMemo(() => {
     const map = new Map<string, string>();
     assignedVehiclesData?.forEach((assignment) => {
       assignment.license_plates.forEach((plate) => {
@@ -42,14 +81,26 @@ const Vehicles = () => {
     return map;
   }, [assignedVehiclesData]);
 
-  // Get all assigned license plates
+  // Get assignment for a license plate - prioritize new table, fallback to legacy
+  const getAssignmentName = (licensePlate: string): string | null => {
+    return newAssignmentMap.get(licensePlate) || legacyAssignmentMap.get(licensePlate) || null;
+  };
+
+  // Get all assigned license plates (from both tables)
   const assignedLicensePlates = useMemo(() => {
     const plates = new Set<string>();
+    // From new vehicle_assignments table
+    vehicleAssignments?.forEach((assignment) => {
+      if (assignment.driver_id) {
+        plates.add(assignment.license_plate);
+      }
+    });
+    // From legacy assigned_vehicles table
     assignedVehiclesData?.forEach((assignment) => {
       assignment.license_plates.forEach((plate) => plates.add(plate));
     });
     return plates;
-  }, [assignedVehiclesData]);
+  }, [vehicleAssignments, assignedVehiclesData]);
 
   // Read filter from URL on mount
   useEffect(() => {
@@ -323,8 +374,8 @@ const Vehicles = () => {
                           {vehicle.make_name} {vehicle.model_name}
                         </TableCell>
                         <TableCell>
-                          {assignmentMap.has(vehicle.license_plate) ? (
-                            <span className="font-medium text-blue-600">{assignmentMap.get(vehicle.license_plate)}</span>
+                          {getAssignmentName(vehicle.license_plate) ? (
+                            <span className="font-medium text-blue-600">{getAssignmentName(vehicle.license_plate)}</span>
                           ) : (
                             <span className="text-muted-foreground">Unassigned</span>
                           )}
