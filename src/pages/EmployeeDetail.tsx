@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -10,6 +10,9 @@ import {
   FileText,
   AlertTriangle,
   Clock,
+  Upload,
+  ExternalLink,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,19 +30,27 @@ import { useDriversQuery } from '@/hooks/queries/useDriversQuery';
 import { useVehicleRequestsQuery } from '@/hooks/queries/useVehicleRequestsQuery';
 import { useEventReportsQuery } from '@/hooks/queries/useEventReportsQuery';
 import { useTripsQuery } from '@/hooks/queries/useTripsQuery';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 export default function EmployeeDetail() {
   const { driverId } = useParams<{ driverId: string }>();
   const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState('car-usage');
+  const [isUploadingLicense, setIsUploadingLicense] = useState(false);
+  const [isUploadingForm, setIsUploadingForm] = useState(false);
+  const licenseInputRef = useRef<HTMLInputElement>(null);
+  const formInputRef = useRef<HTMLInputElement>(null);
 
   // Default date range: last 30 days
   const dateTo = format(new Date(), 'yyyy-MM-dd');
   const dateFrom = format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
 
   const { data: drivers = [], isLoading: driversLoading } = useDriversQuery();
-  const { data: requests = [], isLoading: requestsLoading } = useVehicleRequestsQuery();
+  const { data: requests = [], isLoading: requestsLoading, refetch: refetchRequests } = useVehicleRequestsQuery();
   const { data: eventReports = [], isLoading: eventsLoading } = useEventReportsQuery();
   const { data: tripsData, isLoading: tripsLoading } = useTripsQuery(dateFrom, dateTo);
 
@@ -70,6 +81,127 @@ export default function EmployeeDetail() {
     const eventEmployeeName = event.employee_name.toLowerCase();
     return driverFullName === eventEmployeeName;
   });
+
+  // Check if viewing own profile
+  const isOwnProfile = useMemo(() => {
+    if (!user || !driver) return false;
+    const userEmail = user.email?.toLowerCase();
+    const driverEmail = driver.email?.toLowerCase();
+    return userEmail === driverEmail;
+  }, [user, driver]);
+
+  const canUpload = isOwnProfile || isAdmin;
+
+  // Get documents from employee's vehicle requests
+  const employeeDocuments = useMemo(() => {
+    const licenseFiles: { url: string; requestId: string; date: string }[] = [];
+    const signedForms: { url: string; requestId: string; date: string }[] = [];
+
+    employeeRequests.forEach((request) => {
+      if (request.license_file_url) {
+        licenseFiles.push({
+          url: request.license_file_url,
+          requestId: request.id,
+          date: request.created_at,
+        });
+      }
+      if (request.signature_url) {
+        signedForms.push({
+          url: request.signature_url,
+          requestId: request.id,
+          date: request.signed_at || request.created_at,
+        });
+      }
+    });
+
+    return { licenseFiles, signedForms };
+  }, [employeeRequests]);
+
+  // Handle file upload for Driver's License
+  const handleLicenseUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !driver) return;
+
+    setIsUploadingLicense(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${driver.driver_id}_license_${Date.now()}.${fileExt}`;
+      const filePath = `driver-licenses/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('vehicle-request-files')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('vehicle-request-files')
+        .getPublicUrl(filePath);
+
+      // Find the latest request for this employee and update it
+      const latestRequest = employeeRequests[0];
+      if (latestRequest) {
+        const { error: updateError } = await supabase
+          .from('vehicle_requests')
+          .update({ license_file_url: publicUrl })
+          .eq('id', latestRequest.id);
+
+        if (updateError) throw updateError;
+      }
+
+      toast.success('Driver license uploaded successfully');
+      refetchRequests();
+    } catch (error) {
+      console.error('Error uploading license:', error);
+      toast.error('Failed to upload driver license');
+    } finally {
+      setIsUploadingLicense(false);
+      if (licenseInputRef.current) licenseInputRef.current.value = '';
+    }
+  };
+
+  // Handle file upload for Signed Forms
+  const handleFormUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !driver) return;
+
+    setIsUploadingForm(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${driver.driver_id}_form_${Date.now()}.${fileExt}`;
+      const filePath = `signed-forms/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('vehicle-request-files')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('vehicle-request-files')
+        .getPublicUrl(filePath);
+
+      // Find the latest request for this employee and update it
+      const latestRequest = employeeRequests[0];
+      if (latestRequest) {
+        const { error: updateError } = await supabase
+          .from('vehicle_requests')
+          .update({ signature_url: publicUrl })
+          .eq('id', latestRequest.id);
+
+        if (updateError) throw updateError;
+      }
+
+      toast.success('Signed form uploaded successfully');
+      refetchRequests();
+    } catch (error) {
+      console.error('Error uploading form:', error);
+      toast.error('Failed to upload signed form');
+    } finally {
+      setIsUploadingForm(false);
+      if (formInputRef.current) formInputRef.current.value = '';
+    }
+  };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -248,26 +380,134 @@ export default function EmployeeDetail() {
       {/* Driver's License */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-primary">
-            <Shield className="h-5 w-5" />
-            Driver's License
+          <CardTitle className="flex items-center justify-between text-primary">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Driver's License
+            </div>
+            {canUpload && (
+              <>
+                <input
+                  type="file"
+                  ref={licenseInputRef}
+                  onChange={handleLicenseUpload}
+                  accept="image/*,.pdf"
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => licenseInputRef.current?.click()}
+                  disabled={isUploadingLicense}
+                >
+                  {isUploadingLicense ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">No driver license information on file.</p>
+          {employeeDocuments.licenseFiles.length > 0 ? (
+            <div className="space-y-3">
+              {employeeDocuments.licenseFiles.map((doc, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Driver's License</p>
+                      <p className="text-xs text-muted-foreground">
+                        Uploaded: {format(new Date(doc.date), 'MMM dd, yyyy')}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" asChild>
+                    <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No driver license information on file.</p>
+          )}
         </CardContent>
       </Card>
 
       {/* Signed Forms */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-primary">
-            <FileText className="h-5 w-5" />
-            Signed Forms
+          <CardTitle className="flex items-center justify-between text-primary">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Signed Forms
+            </div>
+            {canUpload && (
+              <>
+                <input
+                  type="file"
+                  ref={formInputRef}
+                  onChange={handleFormUpload}
+                  accept="image/*,.pdf"
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => formInputRef.current?.click()}
+                  disabled={isUploadingForm}
+                >
+                  {isUploadingForm ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">No signed forms found for this employee.</p>
+          {employeeDocuments.signedForms.length > 0 ? (
+            <div className="space-y-3">
+              {employeeDocuments.signedForms.map((doc, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Signed Form</p>
+                      <p className="text-xs text-muted-foreground">
+                        Signed: {format(new Date(doc.date), 'MMM dd, yyyy')}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" asChild>
+                    <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No signed forms found for this employee.</p>
+          )}
         </CardContent>
       </Card>
 
