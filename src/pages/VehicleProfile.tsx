@@ -49,6 +49,7 @@ import {
   useVehicleAssignmentByPlateQuery,
   useUpsertVehicleAssignment,
 } from '@/hooks/queries/useVehicleAssignmentsQuery';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
@@ -64,6 +65,7 @@ import {
 export default function VehicleProfile() {
   const { licensePlate } = useParams<{ licensePlate: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const { data: vehicles = [], isLoading: vehiclesLoading } = useVehiclesQuery();
   const { data: drivers = [], isLoading: driversLoading } = useDriversQuery();
@@ -225,6 +227,8 @@ export default function VehicleProfile() {
       status,
       start_date: format(assignmentStartDate, 'yyyy-MM-dd'),
       end_date: assignmentEndDate ? format(assignmentEndDate, 'yyyy-MM-dd') : null,
+      assigned_by_id: user?.id || null,
+      assigned_by_name: user?.name || user?.email || null,
     });
   };
 

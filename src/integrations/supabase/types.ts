@@ -217,6 +217,8 @@ export type Database = {
       }
       vehicle_assignments: {
         Row: {
+          assigned_by_id: string | null
+          assigned_by_name: string | null
           created_at: string
           driver_id: string | null
           driver_name: string | null
@@ -228,6 +230,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_by_id?: string | null
+          assigned_by_name?: string | null
           created_at?: string
           driver_id?: string | null
           driver_name?: string | null
@@ -239,6 +243,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_by_id?: string | null
+          assigned_by_name?: string | null
           created_at?: string
           driver_id?: string | null
           driver_name?: string | null
