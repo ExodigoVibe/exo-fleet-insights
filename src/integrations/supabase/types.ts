@@ -68,6 +68,48 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_documents: {
+        Row: {
+          created_at: string
+          document_name: string | null
+          document_type: string
+          document_url: string | null
+          employee_email: string | null
+          employee_id: string
+          employee_name: string | null
+          expiry_date: string | null
+          id: string
+          updated_at: string
+          uploaded_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_name?: string | null
+          document_type: string
+          document_url?: string | null
+          employee_email?: string | null
+          employee_id: string
+          employee_name?: string | null
+          expiry_date?: string | null
+          id?: string
+          updated_at?: string
+          uploaded_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_name?: string | null
+          document_type?: string
+          document_url?: string | null
+          employee_email?: string | null
+          employee_id?: string
+          employee_name?: string | null
+          expiry_date?: string | null
+          id?: string
+          updated_at?: string
+          uploaded_at?: string
+        }
+        Relationships: []
+      }
       event_reports: {
         Row: {
           created_at: string

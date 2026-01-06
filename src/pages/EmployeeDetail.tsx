@@ -30,6 +30,10 @@ import { useDriversQuery } from '@/hooks/queries/useDriversQuery';
 import { useVehicleRequestsQuery } from '@/hooks/queries/useVehicleRequestsQuery';
 import { useEventReportsQuery } from '@/hooks/queries/useEventReportsQuery';
 import { useTripsQuery } from '@/hooks/queries/useTripsQuery';
+import { 
+  useEmployeeDocumentsQuery, 
+  useCreateEmployeeDocument 
+} from '@/hooks/queries/useEmployeeDocumentsQuery';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -50,12 +54,19 @@ export default function EmployeeDetail() {
   const dateFrom = format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
 
   const { data: drivers = [], isLoading: driversLoading } = useDriversQuery();
-  const { data: requests = [], isLoading: requestsLoading, refetch: refetchRequests } = useVehicleRequestsQuery();
+  const { data: requests = [], isLoading: requestsLoading } = useVehicleRequestsQuery();
   const { data: eventReports = [], isLoading: eventsLoading } = useEventReportsQuery();
   const { data: tripsData, isLoading: tripsLoading } = useTripsQuery(dateFrom, dateTo);
+  
+  const driver = drivers.find((d) => d.driver_id === Number(driverId));
+  
+  // Fetch employee documents from the new table
+  const { data: employeeDocuments = [], refetch: refetchDocuments } = useEmployeeDocumentsQuery(
+    driverId || ''
+  );
+  const createDocument = useCreateEmployeeDocument();
 
   const trips = tripsData?.trips || [];
-  const driver = drivers.find((d) => d.driver_id === Number(driverId));
 
   // Find vehicle requests for this employee by matching email or name
   const employeeRequests = useMemo(() => {
@@ -103,36 +114,14 @@ export default function EmployeeDetail() {
 
   const canUpload = isOwnProfile || isAdmin;
 
-  // Get documents from employee's vehicle requests
-  const employeeDocuments = useMemo(() => {
-    const licenseFiles: { url: string; requestId: string; date: string }[] = [];
-    const signedForms: { url: string; requestId: string; date: string }[] = [];
+  // Filter documents by type
+  const licenseDocuments = useMemo(() => {
+    return employeeDocuments.filter(doc => doc.document_type === 'drivers_license');
+  }, [employeeDocuments]);
 
-    // Debug logging
-    console.log('Employee requests for documents:', employeeRequests.length);
-    console.log('Driver info:', driver ? { email: driver.email, name: `${driver.first_name} ${driver.last_name}` } : 'no driver');
-    console.log('All requests:', requests.map(r => ({ email: r.email, name: r.full_name, license: r.license_file_url, sig: r.signature_url })));
-
-    employeeRequests.forEach((request) => {
-      if (request.license_file_url) {
-        licenseFiles.push({
-          url: request.license_file_url,
-          requestId: request.id,
-          date: request.created_at,
-        });
-      }
-      if (request.signature_url) {
-        signedForms.push({
-          url: request.signature_url,
-          requestId: request.id,
-          date: request.signed_at || request.created_at,
-        });
-      }
-    });
-
-    console.log('Found license files:', licenseFiles.length, 'signed forms:', signedForms.length);
-    return { licenseFiles, signedForms };
-  }, [employeeRequests, driver, requests]);
+  const signedFormDocuments = useMemo(() => {
+    return employeeDocuments.filter(doc => doc.document_type === 'signed_form');
+  }, [employeeDocuments]);
 
   // Handle file upload for Driver's License
   const handleLicenseUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,19 +144,17 @@ export default function EmployeeDetail() {
         .from('vehicle-request-files')
         .getPublicUrl(filePath);
 
-      // Find the latest request for this employee and update it
-      const latestRequest = employeeRequests[0];
-      if (latestRequest) {
-        const { error: updateError } = await supabase
-          .from('vehicle_requests')
-          .update({ license_file_url: publicUrl })
-          .eq('id', latestRequest.id);
+      // Save to employee_documents table
+      await createDocument.mutateAsync({
+        employee_id: driver.driver_id.toString(),
+        employee_email: driver.email || null,
+        employee_name: `${driver.first_name} ${driver.last_name}`,
+        document_type: 'drivers_license',
+        document_url: publicUrl,
+        document_name: file.name,
+      });
 
-        if (updateError) throw updateError;
-      }
-
-      toast.success('Driver license uploaded successfully');
-      refetchRequests();
+      refetchDocuments();
     } catch (error) {
       console.error('Error uploading license:', error);
       toast.error('Failed to upload driver license');
@@ -198,19 +185,17 @@ export default function EmployeeDetail() {
         .from('vehicle-request-files')
         .getPublicUrl(filePath);
 
-      // Find the latest request for this employee and update it
-      const latestRequest = employeeRequests[0];
-      if (latestRequest) {
-        const { error: updateError } = await supabase
-          .from('vehicle_requests')
-          .update({ signature_url: publicUrl })
-          .eq('id', latestRequest.id);
+      // Save to employee_documents table
+      await createDocument.mutateAsync({
+        employee_id: driver.driver_id.toString(),
+        employee_email: driver.email || null,
+        employee_name: `${driver.first_name} ${driver.last_name}`,
+        document_type: 'signed_form',
+        document_url: publicUrl,
+        document_name: file.name,
+      });
 
-        if (updateError) throw updateError;
-      }
-
-      toast.success('Signed form uploaded successfully');
-      refetchRequests();
+      refetchDocuments();
     } catch (error) {
       console.error('Error uploading form:', error);
       toast.error('Failed to upload signed form');
@@ -431,27 +416,30 @@ export default function EmployeeDetail() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {employeeDocuments.licenseFiles.length > 0 ? (
+          {licenseDocuments.length > 0 ? (
             <div className="space-y-3">
-              {employeeDocuments.licenseFiles.map((doc, index) => (
+              {licenseDocuments.map((doc) => (
                 <div
-                  key={index}
+                  key={doc.id}
                   className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
                 >
                   <div className="flex items-center gap-3">
                     <FileText className="h-5 w-5 text-primary" />
                     <div>
-                      <p className="text-sm font-medium">Driver's License</p>
+                      <p className="text-sm font-medium">{doc.document_name || "Driver's License"}</p>
                       <p className="text-xs text-muted-foreground">
-                        Uploaded: {format(new Date(doc.date), 'MMM dd, yyyy')}
+                        Uploaded: {format(new Date(doc.uploaded_at), 'MMM dd, yyyy')}
+                        {doc.expiry_date && ` • Expires: ${format(new Date(doc.expiry_date), 'MMM dd, yyyy')}`}
                       </p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" asChild>
-                    <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
+                  {doc.document_url && (
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={doc.document_url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -498,27 +486,29 @@ export default function EmployeeDetail() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {employeeDocuments.signedForms.length > 0 ? (
+          {signedFormDocuments.length > 0 ? (
             <div className="space-y-3">
-              {employeeDocuments.signedForms.map((doc, index) => (
+              {signedFormDocuments.map((doc) => (
                 <div
-                  key={index}
+                  key={doc.id}
                   className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
                 >
                   <div className="flex items-center gap-3">
                     <FileText className="h-5 w-5 text-primary" />
                     <div>
-                      <p className="text-sm font-medium">Signed Form</p>
+                      <p className="text-sm font-medium">{doc.document_name || 'Signed Form'}</p>
                       <p className="text-xs text-muted-foreground">
-                        Signed: {format(new Date(doc.date), 'MMM dd, yyyy')}
+                        Uploaded: {format(new Date(doc.uploaded_at), 'MMM dd, yyyy')}
                       </p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" asChild>
-                    <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
+                  {doc.document_url && (
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={doc.document_url} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
