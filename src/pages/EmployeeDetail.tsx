@@ -1,10 +1,20 @@
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, User, Shield, Mail, Phone, Key, FileText, AlertTriangle, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  ArrowLeft,
+  User,
+  Shield,
+  Mail,
+  Phone,
+  Key,
+  FileText,
+  AlertTriangle,
+  Clock,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -12,22 +22,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useDriversQuery } from "@/hooks/queries/useDriversQuery";
-import { useVehicleRequestsQuery } from "@/hooks/queries/useVehicleRequestsQuery";
-import { useEventReportsQuery } from "@/hooks/queries/useEventReportsQuery";
-import { useTripsQuery } from "@/hooks/queries/useTripsQuery";
-import { format } from "date-fns";
+} from '@/components/ui/table';
+import { useDriversQuery } from '@/hooks/queries/useDriversQuery';
+import { useVehicleRequestsQuery } from '@/hooks/queries/useVehicleRequestsQuery';
+import { useEventReportsQuery } from '@/hooks/queries/useEventReportsQuery';
+import { useTripsQuery } from '@/hooks/queries/useTripsQuery';
+import { format } from 'date-fns';
 
 export default function EmployeeDetail() {
   const { driverId } = useParams<{ driverId: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("requests");
-  
+  const [activeTab, setActiveTab] = useState('car-usage');
+
   // Default date range: last 30 days
-  const dateTo = format(new Date(), "yyyy-MM-dd");
-  const dateFrom = format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd");
-  
+  const dateTo = format(new Date(), 'yyyy-MM-dd');
+  const dateFrom = format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+
   const { data: drivers = [], isLoading: driversLoading } = useDriversQuery();
   const { data: requests = [], isLoading: requestsLoading } = useVehicleRequestsQuery();
   const { data: eventReports = [], isLoading: eventsLoading } = useEventReportsQuery();
@@ -41,7 +51,8 @@ export default function EmployeeDetail() {
     if (!driver) return false;
     const driverFullName = `${driver.first_name} ${driver.last_name}`.toLowerCase();
     const requestFullName = req.full_name.toLowerCase();
-    const emailMatch = driver.email && req.email && driver.email.toLowerCase() === req.email.toLowerCase();
+    const emailMatch =
+      driver.email && req.email && driver.email.toLowerCase() === req.email.toLowerCase();
     const nameMatch = driverFullName === requestFullName;
     return emailMatch || nameMatch;
   });
@@ -62,25 +73,25 @@ export default function EmployeeDetail() {
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case "pending_manager":
-        return "bg-amber-50 text-amber-700 border-amber-200";
-      case "approved":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "rejected":
-        return "bg-red-50 text-red-700 border-red-200";
+      case 'pending_manager':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'approved':
+        return 'bg-green-50 text-green-700 border-green-200';
+      case 'rejected':
+        return 'bg-red-50 text-red-700 border-red-200';
       default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
+        return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "pending_manager":
-        return "Pending Manager";
-      case "approved":
-        return "Approved";
-      case "rejected":
-        return "Rejected";
+      case 'pending_manager':
+        return 'Pending Manager';
+      case 'approved':
+        return 'Approved';
+      case 'rejected':
+        return 'Rejected';
       default:
         return status;
     }
@@ -97,7 +108,7 @@ export default function EmployeeDetail() {
   if (!driver) {
     return (
       <div className="space-y-6 p-8">
-        <Button variant="outline" onClick={() => navigate("/employees")} className="gap-2">
+        <Button variant="outline" onClick={() => navigate('/employees')} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Back to Employees
         </Button>
@@ -112,7 +123,7 @@ export default function EmployeeDetail() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate("/employees")}
+          onClick={() => navigate('/employees')}
           className="rounded-full"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -146,7 +157,7 @@ export default function EmployeeDetail() {
               <Key className="h-5 w-5 text-muted-foreground mt-1" />
               <div>
                 <p className="text-sm text-muted-foreground">Driver Code</p>
-                <p className="text-base font-medium">{driver.driver_code || "-"}</p>
+                <p className="text-base font-medium">{driver.driver_code || '-'}</p>
               </div>
             </div>
 
@@ -167,7 +178,9 @@ export default function EmployeeDetail() {
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
                 {driver.is_blocked ? (
-                  <Badge variant="destructive" className="mt-1">Blocked</Badge>
+                  <Badge variant="destructive" className="mt-1">
+                    Blocked
+                  </Badge>
                 ) : (
                   <Badge className="bg-green-600 mt-1">Active</Badge>
                 )}
@@ -210,7 +223,7 @@ export default function EmployeeDetail() {
       </Card>
 
       {/* Vehicle Access */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-primary">
             <Key className="h-5 w-5" />
@@ -230,7 +243,7 @@ export default function EmployeeDetail() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Driver's License */}
       <Card>
@@ -269,26 +282,16 @@ export default function EmployeeDetail() {
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="requests">
-                Requests ({employeeRequests.length})
-              </TabsTrigger>
-              <TabsTrigger value="car-usage">
-                Car Usage ({employeeTrips.length})
-              </TabsTrigger>
-              <TabsTrigger value="events">
-                Events ({employeeEvents.length})
-              </TabsTrigger>
+              <TabsTrigger value="car-usage">Car Usage ({employeeTrips.length})</TabsTrigger>
+              <TabsTrigger value="requests">Requests ({employeeRequests.length})</TabsTrigger>
+              <TabsTrigger value="events">Events ({employeeEvents.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="requests" className="mt-4">
               {requestsLoading ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Loading requests...
-                </div>
+                <div className="text-center py-8 text-muted-foreground">Loading requests...</div>
               ) : employeeRequests.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No requests found
-                </div>
+                <div className="text-center py-8 text-muted-foreground">No requests found</div>
               ) : (
                 <Table>
                   <TableHeader>
@@ -310,12 +313,15 @@ export default function EmployeeDetail() {
                             variant="outline"
                             className="bg-purple-50 text-purple-700 border-purple-200"
                           >
-                            {request.usage_type === "single_use" ? "Single Use" : "Permanent Driver"}
+                            {request.usage_type === 'single_use'
+                              ? 'Single Use'
+                              : 'Permanent Driver'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {format(new Date(request.start_date), "MMM dd, yyyy")}
-                          {request.end_date && ` - ${format(new Date(request.end_date), "MMM dd, yyyy")}`}
+                          {format(new Date(request.start_date), 'MMM dd, yyyy')}
+                          {request.end_date &&
+                            ` - ${format(new Date(request.end_date), 'MMM dd, yyyy')}`}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={getStatusBadgeColor(request.status)}>
@@ -331,13 +337,9 @@ export default function EmployeeDetail() {
 
             <TabsContent value="car-usage" className="mt-4">
               {tripsLoading ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Loading car usage...
-                </div>
+                <div className="text-center py-8 text-muted-foreground">Loading car usage...</div>
               ) : employeeTrips.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No car usage found
-                </div>
+                <div className="text-center py-8 text-muted-foreground">No car usage found</div>
               ) : (
                 <Table>
                   <TableHeader>
@@ -353,13 +355,11 @@ export default function EmployeeDetail() {
                       <TableRow key={trip.trip_id}>
                         <TableCell className="font-medium">{trip.license_plate}</TableCell>
                         <TableCell>
-                          {format(new Date(trip.start_location.timestamp), "MMM dd, yyyy HH:mm")}
+                          {format(new Date(trip.start_location.timestamp), 'MMM dd, yyyy HH:mm')}
                         </TableCell>
+                        <TableCell>{Math.round(trip.duration_in_seconds / 60)} min</TableCell>
                         <TableCell>
-                          {Math.round(trip.duration_in_seconds / 60)} min
-                        </TableCell>
-                        <TableCell>
-                          {trip.distance ? `${trip.distance.toFixed(1)} km` : "-"}
+                          {trip.distance ? `${trip.distance.toFixed(1)} km` : '-'}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -370,13 +370,9 @@ export default function EmployeeDetail() {
 
             <TabsContent value="events" className="mt-4">
               {eventsLoading ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Loading events...
-                </div>
+                <div className="text-center py-8 text-muted-foreground">Loading events...</div>
               ) : employeeEvents.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No events found
-                </div>
+                <div className="text-center py-8 text-muted-foreground">No events found</div>
               ) : (
                 <Table>
                   <TableHeader>
@@ -394,27 +390,25 @@ export default function EmployeeDetail() {
                           <Badge
                             variant="outline"
                             className={
-                              event.severity === "extensive"
-                                ? "bg-red-50 text-red-700 border-red-200"
-                                : "bg-amber-50 text-amber-700 border-amber-200"
+                              event.severity === 'extensive'
+                                ? 'bg-red-50 text-red-700 border-red-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
                             }
                           >
-                            {event.severity === "extensive" ? "Extensive" : "Slight"} Damage
+                            {event.severity === 'extensive' ? 'Extensive' : 'Slight'} Damage
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          {format(new Date(event.event_date), "MMM dd, yyyy")}
-                        </TableCell>
+                        <TableCell>{format(new Date(event.event_date), 'MMM dd, yyyy')}</TableCell>
                         <TableCell>{event.location}</TableCell>
                         <TableCell>
                           <Badge
                             variant="outline"
                             className={
-                              event.status === "pending"
-                                ? "bg-amber-50 text-amber-700 border-amber-200"
-                                : event.status === "reviewed"
-                                ? "bg-blue-50 text-blue-700 border-blue-200"
-                                : "bg-gray-50 text-gray-700 border-gray-200"
+                              event.status === 'pending'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : event.status === 'reviewed'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                  : 'bg-gray-50 text-gray-700 border-gray-200'
                             }
                           >
                             {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
