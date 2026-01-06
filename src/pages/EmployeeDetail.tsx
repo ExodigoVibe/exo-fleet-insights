@@ -58,15 +58,26 @@ export default function EmployeeDetail() {
   const driver = drivers.find((d) => d.driver_id === Number(driverId));
 
   // Find vehicle requests for this employee by matching email or name
-  const employeeRequests = requests.filter((req) => {
-    if (!driver) return false;
-    const driverFullName = `${driver.first_name} ${driver.last_name}`.toLowerCase();
-    const requestFullName = req.full_name.toLowerCase();
-    const emailMatch =
-      driver.email && req.email && driver.email.toLowerCase() === req.email.toLowerCase();
-    const nameMatch = driverFullName === requestFullName;
-    return emailMatch || nameMatch;
-  });
+  const employeeRequests = useMemo(() => {
+    return requests.filter((req) => {
+      if (!driver) return false;
+      const driverFullName = `${driver.first_name} ${driver.last_name}`.toLowerCase().trim();
+      const requestFullName = req.full_name.toLowerCase().trim();
+      const emailMatch =
+        driver.email && req.email && driver.email.toLowerCase().trim() === req.email.toLowerCase().trim();
+      const nameMatch = driverFullName === requestFullName;
+      
+      // Also try partial name matching (first name + last name)
+      const driverFirstLower = driver.first_name?.toLowerCase().trim() || '';
+      const driverLastLower = driver.last_name?.toLowerCase().trim() || '';
+      const requestNameParts = requestFullName.split(' ');
+      const partialNameMatch = requestNameParts.some(part => 
+        part === driverFirstLower || part === driverLastLower
+      ) && requestNameParts.length >= 2;
+
+      return emailMatch || nameMatch || partialNameMatch;
+    });
+  }, [requests, driver]);
 
   // Find trips for this employee by matching driver code
   const employeeTrips = trips.filter((trip) => {
@@ -97,6 +108,11 @@ export default function EmployeeDetail() {
     const licenseFiles: { url: string; requestId: string; date: string }[] = [];
     const signedForms: { url: string; requestId: string; date: string }[] = [];
 
+    // Debug logging
+    console.log('Employee requests for documents:', employeeRequests.length);
+    console.log('Driver info:', driver ? { email: driver.email, name: `${driver.first_name} ${driver.last_name}` } : 'no driver');
+    console.log('All requests:', requests.map(r => ({ email: r.email, name: r.full_name, license: r.license_file_url, sig: r.signature_url })));
+
     employeeRequests.forEach((request) => {
       if (request.license_file_url) {
         licenseFiles.push({
@@ -114,8 +130,9 @@ export default function EmployeeDetail() {
       }
     });
 
+    console.log('Found license files:', licenseFiles.length, 'signed forms:', signedForms.length);
     return { licenseFiles, signedForms };
-  }, [employeeRequests]);
+  }, [employeeRequests, driver, requests]);
 
   // Handle file upload for Driver's License
   const handleLicenseUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
