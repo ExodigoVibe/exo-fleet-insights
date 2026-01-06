@@ -218,56 +218,17 @@ export default function EmployeeDetail() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {requestsLoading ? (
-            <div className="text-center py-4 text-muted-foreground">
-              Loading vehicle access history...
+          <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg border">
+            <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full">
+              <Key className="h-6 w-6 text-primary" />
             </div>
-          ) : employeeRequests.length === 0 ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-red-900">No Active or Past Requests</p>
-                  <p className="text-sm text-red-700">
-                    This employee has no vehicle access history.
-                  </p>
-                </div>
-              </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Driver Code (Ituran)</p>
+              <p className="text-2xl font-bold text-primary">
+                {driver.driver_code || "N/A"}
+              </p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {employeeRequests.map((request) => (
-                <div
-                  key={request.id}
-                  className="border rounded-lg p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/requests/${request.id}`)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className="bg-purple-50 text-purple-700 border-purple-200"
-                        >
-                          {request.usage_type === "single_use" ? "Single Use" : "Permanent Driver"}
-                        </Badge>
-                        <Badge variant="outline" className={getStatusBadgeColor(request.status)}>
-                          {getStatusLabel(request.status)}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(request.start_date), "MMM dd, yyyy")}
-                        {request.end_date && ` - ${format(new Date(request.end_date), "MMM dd, yyyy")}`}
-                      </p>
-                      {request.purpose && (
-                        <p className="text-sm mt-1">{request.purpose}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
