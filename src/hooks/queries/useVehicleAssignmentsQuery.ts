@@ -10,6 +10,8 @@ export interface VehicleAssignment {
   status: string;
   start_date: string;
   end_date: string | null;
+  assigned_by_id: string | null;
+  assigned_by_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -55,6 +57,8 @@ interface UpsertAssignmentParams {
   status: string;
   start_date: string;
   end_date: string | null;
+  assigned_by_id: string | null;
+  assigned_by_name: string | null;
 }
 
 export function useUpsertVehicleAssignment() {
@@ -79,6 +83,8 @@ export function useUpsertVehicleAssignment() {
             status: params.status,
             start_date: params.start_date,
             end_date: params.end_date,
+            assigned_by_id: params.assigned_by_id,
+            assigned_by_name: params.assigned_by_name,
           })
           .eq("id", existing.id)
           .select()
@@ -97,6 +103,8 @@ export function useUpsertVehicleAssignment() {
             status: params.status,
             start_date: params.start_date,
             end_date: params.end_date,
+            assigned_by_id: params.assigned_by_id,
+            assigned_by_name: params.assigned_by_name,
           })
           .select()
           .single();
