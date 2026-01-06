@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -66,6 +68,32 @@ export default function VehicleProfile() {
   const { licensePlate } = useParams<{ licensePlate: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Set up real-time subscription for vehicle_documents
+  useEffect(() => {
+    if (!licensePlate) return;
+
+    const channel = supabase
+      .channel('vehicle-documents-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'vehicle_documents',
+          filter: `license_plate=eq.${licensePlate}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['vehicle-documents', licensePlate] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [licensePlate, queryClient]);
 
   const { data: vehicles = [], isLoading: vehiclesLoading } = useVehiclesQuery();
   const { data: drivers = [], isLoading: driversLoading } = useDriversQuery();
@@ -593,10 +621,15 @@ export default function VehicleProfile() {
           <Button
             className="w-full"
             onClick={handleSaveDocuments}
-            disabled={isSaving || (!licenseExpiryDate && !insuranceExpiryDate)}
+            disabled={isSaving || !licenseExpiryDate || !insuranceExpiryDate}
           >
             {isSaving ? 'Saving...' : 'Save Documents'}
           </Button>
+          {(!licenseExpiryDate || !insuranceExpiryDate) && (
+            <p className="text-sm text-muted-foreground text-center">
+              Both Vehicle License and Insurance expiry dates are required to save.
+            </p>
+          )}
         </CardContent>
       </Card>
 
