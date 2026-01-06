@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useVehiclesQuery } from '@/hooks/queries/useVehiclesQuery';
-import { useVehicleAssignmentsQuery } from '@/hooks/queries/useVehicleAssignmentsQuery';
+import { useAssignedVehiclesQuery } from '@/hooks/queries/useAssignedVehiclesQuery';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Table,
@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Car, Search, Download, Plus, Wrench, Users, Circle } from 'lucide-react';
+import { Car, Search, Download, Plus, Wrench, Users, Circle, Activity } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 
@@ -24,35 +24,32 @@ const Vehicles = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: vehicles, isLoading, error } = useVehiclesQuery();
-  const { data: vehicleAssignments } = useVehicleAssignmentsQuery();
+  const { data: assignedVehiclesData } = useAssignedVehiclesQuery();
   const { hasAdminAccess } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'parking' | 'assigned' | 'driving' | 'other'
   >('all');
 
-  // Build a map of license plate to assignment data
+  // Build a map of license plate to employee name for assignments
   const assignmentMap = useMemo(() => {
-    const map = new Map<string, { driver_name: string | null; status: string }>();
-    vehicleAssignments?.forEach((assignment) => {
-      map.set(assignment.license_plate, {
-        driver_name: assignment.driver_name,
-        status: assignment.status,
+    const map = new Map<string, string>();
+    assignedVehiclesData?.forEach((assignment) => {
+      assignment.license_plates.forEach((plate) => {
+        map.set(plate, assignment.employee_name);
       });
     });
     return map;
-  }, [vehicleAssignments]);
+  }, [assignedVehiclesData]);
 
-  // Get all assigned license plates (vehicles with a driver assigned)
+  // Get all assigned license plates
   const assignedLicensePlates = useMemo(() => {
     const plates = new Set<string>();
-    vehicleAssignments?.forEach((assignment) => {
-      if (assignment.driver_id) {
-        plates.add(assignment.license_plate);
-      }
+    assignedVehiclesData?.forEach((assignment) => {
+      assignment.license_plates.forEach((plate) => plates.add(plate));
     });
     return plates;
-  }, [vehicleAssignments]);
+  }, [assignedVehiclesData]);
 
   // Read filter from URL on mount
   useEffect(() => {
@@ -327,9 +324,7 @@ const Vehicles = () => {
                         </TableCell>
                         <TableCell>
                           {assignmentMap.has(vehicle.license_plate) ? (
-                            <span className="font-medium text-blue-600">
-                              {assignmentMap.get(vehicle.license_plate)?.driver_name || 'Unassigned'}
-                            </span>
+                            <span className="font-medium text-blue-600">{assignmentMap.get(vehicle.license_plate)}</span>
                           ) : (
                             <span className="text-muted-foreground">Unassigned</span>
                           )}
