@@ -41,7 +41,7 @@ const Employees = () => {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter((driver) => {
         const fullName = `${driver.first_name} ${driver.last_name}`.toLowerCase();
-        const driverCode = driver.driver_code.toString();
+        const driverCode = driver.managed_code.toString();
         const email = driver.email?.toLowerCase() || '';
         const phone = driver.phone?.toLowerCase() || '';
         const cellular = driver.cellular?.toLowerCase() || '';
@@ -68,7 +68,7 @@ const Employees = () => {
     const exportData = filteredDrivers.map((driver) => ({
       'Driver ID': driver.driver_id,
       Name: `${driver.first_name} ${driver.last_name}`,
-      'Driver Code': driver.driver_code || '-',
+      'Driver Code': driver.managed_code || '-',
       Email: driver.email || '-',
       'Phone Number': driver.phone || driver.cellular || '-',
       Status: driver.is_blocked ? 'Blocked' : 'Not Blocked',
@@ -211,7 +211,7 @@ const Employees = () => {
                         <TableCell>
                           {driver.first_name} {driver.last_name}
                         </TableCell>
-                        <TableCell>{driver.driver_code || '-'}</TableCell>
+                        <TableCell>{driver.managed_code || '-'}</TableCell>
                         <TableCell>{driver.email || '-'}</TableCell>
                         <TableCell>{driver.phone || driver.cellular || '-'}</TableCell>
                         <TableCell>

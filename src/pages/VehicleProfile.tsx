@@ -86,7 +86,7 @@ export default function VehicleProfile() {
         },
         () => {
           queryClient.invalidateQueries({ queryKey: ['vehicle-documents', licensePlate] });
-        }
+        },
       )
       .subscribe();
 
@@ -330,7 +330,7 @@ export default function VehicleProfile() {
                           drivers.map((driver) => {
                             const id = driver.driver_id.toString();
                             const label = `${driver.first_name} ${driver.last_name}`;
-                            const searchValue = `${label} ${driver.email || ''} ${driver.driver_code || ''}`;
+                            const searchValue = `${label} ${driver.email || ''} ${driver.managed_code || ''}`;
 
                             return (
                               <CommandItem

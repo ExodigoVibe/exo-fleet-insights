@@ -30,9 +30,9 @@ import { useDriversQuery } from '@/hooks/queries/useDriversQuery';
 import { useVehicleRequestsQuery } from '@/hooks/queries/useVehicleRequestsQuery';
 import { useEventReportsQuery } from '@/hooks/queries/useEventReportsQuery';
 import { useTripsQuery } from '@/hooks/queries/useTripsQuery';
-import { 
-  useEmployeeDocumentsQuery, 
-  useCreateEmployeeDocument 
+import {
+  useEmployeeDocumentsQuery,
+  useCreateEmployeeDocument,
 } from '@/hooks/queries/useEmployeeDocumentsQuery';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,12 +57,12 @@ export default function EmployeeDetail() {
   const { data: requests = [], isLoading: requestsLoading } = useVehicleRequestsQuery();
   const { data: eventReports = [], isLoading: eventsLoading } = useEventReportsQuery();
   const { data: tripsData, isLoading: tripsLoading } = useTripsQuery(dateFrom, dateTo);
-  
+
   const driver = drivers.find((d) => d.driver_id === Number(driverId));
-  
+
   // Fetch employee documents from the new table
   const { data: employeeDocuments = [], refetch: refetchDocuments } = useEmployeeDocumentsQuery(
-    driverId || ''
+    driverId || '',
   );
   const createDocument = useCreateEmployeeDocument();
 
@@ -75,16 +75,18 @@ export default function EmployeeDetail() {
       const driverFullName = `${driver.first_name} ${driver.last_name}`.toLowerCase().trim();
       const requestFullName = req.full_name.toLowerCase().trim();
       const emailMatch =
-        driver.email && req.email && driver.email.toLowerCase().trim() === req.email.toLowerCase().trim();
+        driver.email &&
+        req.email &&
+        driver.email.toLowerCase().trim() === req.email.toLowerCase().trim();
       const nameMatch = driverFullName === requestFullName;
-      
+
       // Also try partial name matching (first name + last name)
       const driverFirstLower = driver.first_name?.toLowerCase().trim() || '';
       const driverLastLower = driver.last_name?.toLowerCase().trim() || '';
       const requestNameParts = requestFullName.split(' ');
-      const partialNameMatch = requestNameParts.some(part => 
-        part === driverFirstLower || part === driverLastLower
-      ) && requestNameParts.length >= 2;
+      const partialNameMatch =
+        requestNameParts.some((part) => part === driverFirstLower || part === driverLastLower) &&
+        requestNameParts.length >= 2;
 
       return emailMatch || nameMatch || partialNameMatch;
     });
@@ -93,7 +95,7 @@ export default function EmployeeDetail() {
   // Find trips for this employee by matching driver code
   const employeeTrips = trips.filter((trip) => {
     if (!driver) return false;
-    return trip.driver_code === driver.driver_code;
+    return trip.driver_code === driver.driver_code || trip.driver_code === driver.managed_code;
   });
 
   // Find event reports for this employee by matching name
@@ -116,11 +118,11 @@ export default function EmployeeDetail() {
 
   // Filter documents by type
   const licenseDocuments = useMemo(() => {
-    return employeeDocuments.filter(doc => doc.document_type === 'drivers_license');
+    return employeeDocuments.filter((doc) => doc.document_type === 'drivers_license');
   }, [employeeDocuments]);
 
   const signedFormDocuments = useMemo(() => {
-    return employeeDocuments.filter(doc => doc.document_type === 'signed_form');
+    return employeeDocuments.filter((doc) => doc.document_type === 'signed_form');
   }, [employeeDocuments]);
 
   // Handle file upload for Driver's License
@@ -140,9 +142,9 @@ export default function EmployeeDetail() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('vehicle-request-files')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('vehicle-request-files').getPublicUrl(filePath);
 
       // Save to employee_documents table
       await createDocument.mutateAsync({
@@ -181,9 +183,9 @@ export default function EmployeeDetail() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('vehicle-request-files')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('vehicle-request-files').getPublicUrl(filePath);
 
       // Save to employee_documents table
       await createDocument.mutateAsync({
@@ -291,7 +293,7 @@ export default function EmployeeDetail() {
               <Key className="h-5 w-5 text-muted-foreground mt-1" />
               <div>
                 <p className="text-sm text-muted-foreground">Driver Code</p>
-                <p className="text-base font-medium">{driver.driver_code || '-'}</p>
+                <p className="text-base font-medium">{driver.managed_code || '-'}</p>
               </div>
             </div>
 
@@ -426,10 +428,13 @@ export default function EmployeeDetail() {
                   <div className="flex items-center gap-3">
                     <FileText className="h-5 w-5 text-primary" />
                     <div>
-                      <p className="text-sm font-medium">{doc.document_name || "Driver's License"}</p>
+                      <p className="text-sm font-medium">
+                        {doc.document_name || "Driver's License"}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         Uploaded: {format(new Date(doc.uploaded_at), 'MMM dd, yyyy')}
-                        {doc.expiry_date && ` • Expires: ${format(new Date(doc.expiry_date), 'MMM dd, yyyy')}`}
+                        {doc.expiry_date &&
+                          ` • Expires: ${format(new Date(doc.expiry_date), 'MMM dd, yyyy')}`}
                       </p>
                     </div>
                   </div>
