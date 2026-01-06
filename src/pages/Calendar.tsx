@@ -34,15 +34,18 @@ const Calendar = () => {
       request: req,
     }));
 
-    const assignmentEvents: CalendarEvent[] = assignments.map((assignment) => ({
-      id: assignment.id,
-      title: `${assignment.license_plate}${assignment.driver_name ? ` - ${assignment.driver_name}` : ''}`,
-      date: parseISO(assignment.start_date),
-      endDate: assignment.end_date ? parseISO(assignment.end_date) : undefined,
-      status: assignment.status,
-      type: 'assignment' as const,
-      assignment,
-    }));
+    // Only show assignments that have a driver assigned (not unassigned)
+    const assignmentEvents: CalendarEvent[] = assignments
+      .filter((assignment) => assignment.driver_id !== null)
+      .map((assignment) => ({
+        id: assignment.id,
+        title: `${assignment.license_plate}${assignment.driver_name ? ` - ${assignment.driver_name}` : ''}`,
+        date: parseISO(assignment.start_date),
+        endDate: assignment.end_date ? parseISO(assignment.end_date) : undefined,
+        status: assignment.status,
+        type: 'assignment' as const,
+        assignment,
+      }));
 
     return [...requestEvents, ...assignmentEvents];
   }, [requests, assignments]);
