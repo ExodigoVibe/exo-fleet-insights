@@ -124,6 +124,12 @@ export default function VehicleProfile() {
   const [insuranceReminderEnabled, setInsuranceReminderEnabled] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Service info states
+  const [nextServiceMileage, setNextServiceMileage] = useState('');
+  const [lastServiceDate, setLastServiceDate] = useState('');
+  const [isEditingService, setIsEditingService] = useState(false);
+  const [isSavingService, setIsSavingService] = useState(false);
+
   // Load existing assignment data
   useEffect(() => {
     if (existingAssignment) {
@@ -143,6 +149,7 @@ export default function VehicleProfile() {
     if (documents.length > 0) {
       const licenseDoc = documents.find((d) => d.document_type === 'license');
       const insuranceDoc = documents.find((d) => d.document_type === 'insurance');
+      const serviceDoc = documents.find((d) => d.document_type === 'service');
 
       if (licenseDoc) {
         setLicenseExpiryDate(licenseDoc.expiry_date);
@@ -151,6 +158,10 @@ export default function VehicleProfile() {
       if (insuranceDoc) {
         setInsuranceExpiryDate(insuranceDoc.expiry_date);
         setInsuranceReminderEnabled(insuranceDoc.email_reminder_enabled);
+      }
+      if (serviceDoc) {
+        setNextServiceMileage(serviceDoc.next_service_mileage?.toString() || '');
+        setLastServiceDate(serviceDoc.last_service_date || '');
       }
     }
   }, [documents]);
@@ -205,6 +216,25 @@ export default function VehicleProfile() {
       console.error('Error saving documents:', error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSaveServiceInfo = async () => {
+    if (!licensePlate) return;
+
+    setIsSavingService(true);
+    try {
+      await upsertDocument.mutateAsync({
+        license_plate: licensePlate,
+        document_type: 'service',
+        next_service_mileage: nextServiceMileage ? parseInt(nextServiceMileage) : null,
+        last_service_date: lastServiceDate || null,
+      });
+      setIsEditingService(false);
+    } catch (error) {
+      console.error('Error saving service info:', error);
+    } finally {
+      setIsSavingService(false);
     }
   };
 
@@ -635,8 +665,13 @@ export default function VehicleProfile() {
 
       {/* Service Information */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-xl">Service Information</CardTitle>
+          {isAdmin && !isEditingService && (
+            <Button variant="outline" size="sm" onClick={() => setIsEditingService(true)}>
+              Edit
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -654,13 +689,69 @@ export default function VehicleProfile() {
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Mileage to Next Service</p>
-              <p className="text-2xl font-bold">N/A</p>
+              {isEditingService ? (
+                <Input
+                  type="number"
+                  placeholder="Enter target mileage"
+                  value={nextServiceMileage}
+                  onChange={(e) => setNextServiceMileage(e.target.value)}
+                  className="text-lg"
+                />
+              ) : (
+                <p className="text-2xl font-bold">
+                  {currentOdometer && nextServiceMileage
+                    ? `${(parseInt(nextServiceMileage) - currentOdometer).toLocaleString()} km`
+                    : 'N/A'}
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Last Service</p>
-              <p className="text-2xl font-bold">N/A</p>
+              {isEditingService ? (
+                <Input
+                  type="date"
+                  value={lastServiceDate}
+                  onChange={(e) => setLastServiceDate(e.target.value)}
+                  className="text-lg"
+                />
+              ) : (
+                <p className="text-2xl font-bold">
+                  {lastServiceDate
+                    ? format(new Date(lastServiceDate), 'dd/MM/yyyy')
+                    : 'N/A'}
+                </p>
+              )}
             </div>
           </div>
+          {isEditingService && (
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsEditingService(false);
+                  // Reset to original values from documents
+                  const serviceDoc = documents.find((d) => d.document_type === 'service');
+                  setNextServiceMileage(serviceDoc?.next_service_mileage?.toString() || '');
+                  setLastServiceDate(serviceDoc?.last_service_date || '');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveServiceInfo}
+                disabled={isSavingService}
+              >
+                {isSavingService ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
