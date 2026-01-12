@@ -51,6 +51,10 @@ import {
   useVehicleAssignmentByPlateQuery,
   useUpsertVehicleAssignment,
 } from '@/hooks/queries/useVehicleAssignmentsQuery';
+import {
+  useVehicleServiceInfoQuery,
+  useUpsertVehicleServiceInfo,
+} from '@/hooks/queries/useVehicleServiceInfoQuery';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -67,7 +71,7 @@ import {
 export default function VehicleProfile() {
   const { licensePlate } = useParams<{ licensePlate: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
 
   // Set up real-time subscription for vehicle_documents
@@ -108,8 +112,12 @@ export default function VehicleProfile() {
   );
   const { data: existingAssignment, isLoading: assignmentLoading } =
     useVehicleAssignmentByPlateQuery(licensePlate || '');
+  const { data: serviceInfo, isLoading: serviceInfoLoading } = useVehicleServiceInfoQuery(
+    licensePlate || '',
+  );
   const upsertDocument = useUpsertVehicleDocument();
   const upsertAssignment = useUpsertVehicleAssignment();
+  const upsertServiceInfo = useUpsertVehicleServiceInfo();
 
   const [assignment, setAssignment] = useState('');
   const [assignmentDropdownOpen, setAssignmentDropdownOpen] = useState(false);
@@ -117,6 +125,8 @@ export default function VehicleProfile() {
   const [assignmentStartDate, setAssignmentStartDate] = useState<Date | undefined>(undefined);
   const [assignmentEndDate, setAssignmentEndDate] = useState<Date | undefined>(undefined);
   const [nextServiceMileage, setNextServiceMileage] = useState('');
+  const [lastServiceDate, setLastServiceDate] = useState('');
+  const [isEditingService, setIsEditingService] = useState(false);
 
   // Document states
   const [licenseExpiryDate, setLicenseExpiryDate] = useState('');
@@ -155,6 +165,14 @@ export default function VehicleProfile() {
       }
     }
   }, [documents]);
+
+  // Load service info when fetched
+  useEffect(() => {
+    if (serviceInfo) {
+      setNextServiceMileage(serviceInfo.next_service_mileage?.toString() || '');
+      setLastServiceDate(serviceInfo.last_service_date || '');
+    }
+  }, [serviceInfo]);
 
   const vehicle = vehicles.find((v) => v.license_plate === licensePlate);
 
@@ -207,6 +225,17 @@ export default function VehicleProfile() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSaveServiceInfo = async () => {
+    if (!licensePlate) return;
+
+    await upsertServiceInfo.mutateAsync({
+      license_plate: licensePlate,
+      next_service_mileage: nextServiceMileage ? parseInt(nextServiceMileage) : null,
+      last_service_date: lastServiceDate || null,
+    });
+    setIsEditingService(false);
   };
 
   if (vehiclesLoading) {
@@ -635,8 +664,13 @@ export default function VehicleProfile() {
 
       {/* Service Information */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-xl">Service Information</CardTitle>
+          {isAdmin && !isEditingService && (
+            <Button variant="outline" size="sm" onClick={() => setIsEditingService(true)}>
+              Edit
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -654,17 +688,68 @@ export default function VehicleProfile() {
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Mileage to Next Service</p>
-              <p className="text-2xl font-bold">
-                {currentOdometer && nextServiceMileage
-                  ? `${(parseInt(nextServiceMileage) - currentOdometer).toLocaleString()} km`
-                  : 'N/A'}
-              </p>
+              {isEditingService ? (
+                <Input
+                  type="number"
+                  placeholder="Enter target mileage"
+                  value={nextServiceMileage}
+                  onChange={(e) => setNextServiceMileage(e.target.value)}
+                  className="text-lg"
+                />
+              ) : (
+                <p className="text-2xl font-bold">
+                  {currentOdometer && nextServiceMileage
+                    ? `${(parseInt(nextServiceMileage) - currentOdometer).toLocaleString()} km`
+                    : 'N/A'}
+                </p>
+              )}
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Last Service</p>
-              <p className="text-2xl font-bold">N/A</p>
+              {isEditingService ? (
+                <Input
+                  type="date"
+                  value={lastServiceDate}
+                  onChange={(e) => setLastServiceDate(e.target.value)}
+                  className="text-lg"
+                />
+              ) : (
+                <p className="text-2xl font-bold">
+                  {lastServiceDate
+                    ? format(new Date(lastServiceDate), 'dd/MM/yyyy')
+                    : 'N/A'}
+                </p>
+              )}
             </div>
           </div>
+          {isEditingService && (
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsEditingService(false);
+                  // Reset to original values
+                  setNextServiceMileage(serviceInfo?.next_service_mileage?.toString() || '');
+                  setLastServiceDate(serviceInfo?.last_service_date || '');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveServiceInfo}
+                disabled={upsertServiceInfo.isPending}
+              >
+                {upsertServiceInfo.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
