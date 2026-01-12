@@ -307,7 +307,9 @@ export type Database = {
           email_reminder_enabled: boolean
           expiry_date: string
           id: string
+          last_service_date: string | null
           license_plate: string
+          next_service_mileage: number | null
           reminder_sent: boolean
           updated_at: string
         }
@@ -318,7 +320,9 @@ export type Database = {
           email_reminder_enabled?: boolean
           expiry_date: string
           id?: string
+          last_service_date?: string | null
           license_plate: string
+          next_service_mileage?: number | null
           reminder_sent?: boolean
           updated_at?: string
         }
@@ -329,7 +333,9 @@ export type Database = {
           email_reminder_enabled?: boolean
           expiry_date?: string
           id?: string
+          last_service_date?: string | null
           license_plate?: string
+          next_service_mileage?: number | null
           reminder_sent?: boolean
           updated_at?: string
         }

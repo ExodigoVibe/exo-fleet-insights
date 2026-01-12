@@ -5,21 +5,25 @@ import { toast } from "sonner";
 export interface VehicleDocument {
   id: string;
   license_plate: string;
-  document_type: 'license' | 'insurance';
+  document_type: 'license' | 'insurance' | 'service';
   document_url: string | null;
   expiry_date: string;
   email_reminder_enabled: boolean;
   reminder_sent: boolean;
+  next_service_mileage: number | null;
+  last_service_date: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface UpsertVehicleDocumentInput {
   license_plate: string;
-  document_type: 'license' | 'insurance';
+  document_type: 'license' | 'insurance' | 'service';
   document_url?: string | null;
-  expiry_date: string;
-  email_reminder_enabled: boolean;
+  expiry_date?: string;
+  email_reminder_enabled?: boolean;
+  next_service_mileage?: number | null;
+  last_service_date?: string | null;
 }
 
 export function useVehicleDocumentsQuery(licensePlate: string) {
@@ -56,18 +60,22 @@ export function useUpsertVehicleDocument() {
         .single();
 
       // Reset reminder_sent if expiry_date changed
-      const shouldResetReminder = existing && existing.expiry_date !== input.expiry_date;
+      const shouldResetReminder = existing && input.expiry_date && existing.expiry_date !== input.expiry_date;
 
       if (existing) {
         // Update existing document
+        const updateData: Record<string, unknown> = {};
+        
+        if (input.document_url !== undefined) updateData.document_url = input.document_url;
+        if (input.expiry_date !== undefined) updateData.expiry_date = input.expiry_date;
+        if (input.email_reminder_enabled !== undefined) updateData.email_reminder_enabled = input.email_reminder_enabled;
+        if (input.next_service_mileage !== undefined) updateData.next_service_mileage = input.next_service_mileage;
+        if (input.last_service_date !== undefined) updateData.last_service_date = input.last_service_date;
+        if (shouldResetReminder) updateData.reminder_sent = false;
+
         const { data, error } = await supabase
           .from("vehicle_information")
-          .update({
-            document_url: input.document_url,
-            expiry_date: input.expiry_date,
-            email_reminder_enabled: input.email_reminder_enabled,
-            reminder_sent: shouldResetReminder ? false : existing.reminder_sent,
-          })
+          .update(updateData)
           .eq("id", existing.id)
           .select()
           .single();
@@ -81,9 +89,11 @@ export function useUpsertVehicleDocument() {
           .insert({
             license_plate: input.license_plate,
             document_type: input.document_type,
-            document_url: input.document_url,
-            expiry_date: input.expiry_date,
-            email_reminder_enabled: input.email_reminder_enabled,
+            document_url: input.document_url || null,
+            expiry_date: input.expiry_date || null,
+            email_reminder_enabled: input.email_reminder_enabled || false,
+            next_service_mileage: input.next_service_mileage || null,
+            last_service_date: input.last_service_date || null,
             reminder_sent: false,
           })
           .select()
@@ -95,11 +105,11 @@ export function useUpsertVehicleDocument() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["vehicle-documents", data.license_plate] });
-      toast.success("Document saved successfully");
+      toast.success("Saved successfully");
     },
     onError: (error: any) => {
-      console.error("Error saving vehicle document:", error);
-      toast.error("Failed to save document");
+      console.error("Error saving vehicle information:", error);
+      toast.error("Failed to save");
     },
   });
 }
