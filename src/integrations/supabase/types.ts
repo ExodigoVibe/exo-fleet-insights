@@ -415,6 +415,33 @@ export type Database = {
           },
         ]
       }
+      vehicle_service_info: {
+        Row: {
+          created_at: string
+          id: string
+          last_service_date: string | null
+          license_plate: string
+          next_service_mileage: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_service_date?: string | null
+          license_plate: string
+          next_service_mileage?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_service_date?: string | null
+          license_plate?: string
+          next_service_mileage?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
