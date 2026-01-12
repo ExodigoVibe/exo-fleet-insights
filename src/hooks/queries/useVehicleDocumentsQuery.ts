@@ -27,7 +27,7 @@ export function useVehicleDocumentsQuery(licensePlate: string) {
     queryKey: ["vehicle-documents", licensePlate],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("vehicle_documents")
+        .from("vehicle_information")
         .select("*")
         .eq("license_plate", licensePlate);
 
@@ -49,7 +49,7 @@ export function useUpsertVehicleDocument() {
     mutationFn: async (input: UpsertVehicleDocumentInput) => {
       // Check if document already exists
       const { data: existing } = await supabase
-        .from("vehicle_documents")
+        .from("vehicle_information")
         .select("id, reminder_sent, expiry_date")
         .eq("license_plate", input.license_plate)
         .eq("document_type", input.document_type)
@@ -61,7 +61,7 @@ export function useUpsertVehicleDocument() {
       if (existing) {
         // Update existing document
         const { data, error } = await supabase
-          .from("vehicle_documents")
+          .from("vehicle_information")
           .update({
             document_url: input.document_url,
             expiry_date: input.expiry_date,
@@ -77,7 +77,7 @@ export function useUpsertVehicleDocument() {
       } else {
         // Insert new document
         const { data, error } = await supabase
-          .from("vehicle_documents")
+          .from("vehicle_information")
           .insert({
             license_plate: input.license_plate,
             document_type: input.document_type,

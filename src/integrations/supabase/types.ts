@@ -299,7 +299,7 @@ export type Database = {
         }
         Relationships: []
       }
-      vehicle_documents: {
+      vehicle_information: {
         Row: {
           created_at: string
           document_type: string
@@ -414,33 +414,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      vehicle_service_info: {
-        Row: {
-          created_at: string
-          id: string
-          last_service_date: string | null
-          license_plate: string
-          next_service_mileage: number | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          last_service_date?: string | null
-          license_plate: string
-          next_service_mileage?: number | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          last_service_date?: string | null
-          license_plate?: string
-          next_service_mileage?: number | null
-          updated_at?: string
-        }
-        Relationships: []
       }
     }
     Views: {
