@@ -382,7 +382,13 @@ const Vehicles = () => {
                         </TableCell>
                         <TableCell>-</TableCell>
                         <TableCell>{vehicle.color || '-'}</TableCell>
-                        <TableCell>{getStatusBadge(vehicle.motion_status)}</TableCell>
+                        <TableCell>
+                          {getAssignmentName(vehicle.license_plate) ? (
+                            <Badge variant="default" className="bg-blue-600">Assigned</Badge>
+                          ) : (
+                            getStatusBadge(vehicle.motion_status)
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
