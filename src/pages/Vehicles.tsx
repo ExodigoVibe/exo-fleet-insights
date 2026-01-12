@@ -360,37 +360,40 @@ const Vehicles = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredVehicles.map((vehicle) => (
-                      <TableRow
-                        key={vehicle.vehicle_id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => navigate(`/vehicle/${vehicle.license_plate}`)}
-                      >
-                        <TableCell className="font-medium">{vehicle.license_plate}</TableCell>
-                        <TableCell>
-                          {vehicle.make_name} {vehicle.model_year}
-                        </TableCell>
-                        <TableCell>
-                          {vehicle.make_name} {vehicle.model_name}
-                        </TableCell>
-                        <TableCell>
-                          {getAssignmentName(vehicle.license_plate) ? (
-                            <span className="font-medium text-blue-600">{getAssignmentName(vehicle.license_plate)}</span>
-                          ) : (
-                            <span className="text-muted-foreground">Unassigned</span>
-                          )}
-                        </TableCell>
-                        <TableCell>-</TableCell>
-                        <TableCell>{vehicle.color || '-'}</TableCell>
-                        <TableCell>
-                          {getAssignmentName(vehicle.license_plate) ? (
-                            <Badge variant="default" className="bg-blue-600">Assigned</Badge>
-                          ) : (
-                            getStatusBadge(vehicle.motion_status)
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredVehicles.map((vehicle) => {
+                      const assignedTo = getAssignmentName(vehicle.license_plate);
+                      return (
+                        <TableRow
+                          key={vehicle.vehicle_id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => navigate(`/vehicle/${vehicle.license_plate}`)}
+                        >
+                          <TableCell className="font-medium">{vehicle.license_plate}</TableCell>
+                          <TableCell>
+                            {vehicle.make_name} {vehicle.model_year}
+                          </TableCell>
+                          <TableCell>
+                            {vehicle.make_name} {vehicle.model_name}
+                          </TableCell>
+                          <TableCell>
+                            {assignedTo ? (
+                              <span className="font-medium text-blue-600">{assignedTo}</span>
+                            ) : (
+                              <span className="text-muted-foreground">Unassigned</span>
+                            )}
+                          </TableCell>
+                          <TableCell>-</TableCell>
+                          <TableCell>{vehicle.color || '-'}</TableCell>
+                          <TableCell>
+                            {assignedTo ? (
+                              <Badge variant="default" className="bg-blue-600">Assigned</Badge>
+                            ) : (
+                              getStatusBadge(vehicle.motion_status)
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
