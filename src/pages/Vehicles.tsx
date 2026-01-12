@@ -121,8 +121,13 @@ const Vehicles = () => {
     let filtered = vehicles;
 
     // Apply status filter
-    if (statusFilter === 'parking' || statusFilter === 'driving') {
-      filtered = filtered.filter((v) => v.motion_status?.toLowerCase() === statusFilter);
+    if (statusFilter === 'parking') {
+      // Available = parking AND not assigned
+      filtered = filtered.filter(
+        (v) => v.motion_status?.toLowerCase() === 'parking' && !assignedLicensePlates.has(v.license_plate)
+      );
+    } else if (statusFilter === 'driving') {
+      filtered = filtered.filter((v) => v.motion_status?.toLowerCase() === 'driving');
     } else if (statusFilter === 'assigned') {
       // Show only vehicles that are in the assigned_vehicles database
       filtered = filtered.filter((v) => assignedLicensePlates.has(v.license_plate));
@@ -160,7 +165,7 @@ const Vehicles = () => {
   // Calculate KPIs
   const totalVehicles = vehicles?.length || 0;
   const availableVehicles =
-    vehicles?.filter((v) => v.motion_status?.toLowerCase() === 'parking')?.length || 0;
+    vehicles?.filter((v) => v.motion_status?.toLowerCase() === 'parking' && !assignedLicensePlates.has(v.license_plate))?.length || 0;
   const assignedVehiclesCount = assignedLicensePlates.size;
   const drivingVehicles =
     vehicles?.filter((v) => v.motion_status?.toLowerCase() === 'driving')?.length || 0;
