@@ -4,6 +4,8 @@ import { useDriversQuery } from '@/hooks/queries/useDriversQuery';
 import { useVehiclesQuery } from '@/hooks/queries/useVehiclesQuery';
 import { useVehicleRequestsQuery } from '@/hooks/queries/useVehicleRequestsQuery';
 import { useEventReportsQuery } from '@/hooks/queries/useEventReportsQuery';
+import { useAssignedVehiclesQuery } from '@/hooks/queries/useAssignedVehiclesQuery';
+import { useVehicleAssignmentsQuery } from '@/hooks/queries/useVehicleAssignmentsQuery';
 import {
   FileText,
   Wrench,
@@ -14,7 +16,8 @@ import {
   Calendar,
   User,
   ArrowRight,
-  Activity,
+  Users,
+  Circle,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -34,6 +37,8 @@ const Dashboard = () => {
   } = useVehiclesQuery();
   const { data: vehicleRequests } = useVehicleRequestsQuery();
   const { data: eventReports } = useEventReportsQuery();
+  const { data: assignedVehiclesData } = useAssignedVehiclesQuery();
+  const { data: vehicleAssignments } = useVehicleAssignmentsQuery();
   const { hasAdminAccess, user } = useAuth();
   const snowflakeDrivers = driversData ?? [];
   const snowflakeVehicles = vehiclesData ?? [];
@@ -65,19 +70,32 @@ const Dashboard = () => {
     return { total, pending };
   }, [vehicleRequests, hasAdminAccess, user?.email]);
 
-  // Calculate vehicle fleet recap data
+  // Get all assigned license plates (from both tables - same logic as Vehicles page)
+  const assignedLicensePlates = useMemo(() => {
+    const plates = new Set<string>();
+    // From new vehicle_assignments table
+    vehicleAssignments?.forEach((assignment) => {
+      if (assignment.driver_id) {
+        plates.add(assignment.license_plate);
+      }
+    });
+    // From legacy assigned_vehicles table
+    assignedVehiclesData?.forEach((assignment) => {
+      assignment.license_plates.forEach((plate) => plates.add(plate));
+    });
+    return plates;
+  }, [vehicleAssignments, assignedVehiclesData]);
+
+  // Calculate vehicle fleet recap data (aligned with Vehicles page)
   const vehicleFleetRecap = useMemo(() => {
     const total = snowflakeVehicles.length;
-    const available = snowflakeVehicles.filter((v) => v.motion_status === 'parking').length;
-    const driving = snowflakeVehicles.filter((v) => v.motion_status === 'driving').length;
+    const assigned = assignedLicensePlates.size;
+    const available = total - assigned;
     const maintenance = snowflakeVehicles.filter(
-      (v) =>
-        v.motion_status !== 'parking' &&
-        v.motion_status !== 'moving' &&
-        v.motion_status !== 'driving',
+      (v) => v.motion_status?.toLowerCase() === 'maintenance',
     ).length;
-    return { total, available, driving, maintenance };
-  }, [snowflakeVehicles]);
+    return { total, available, assigned, maintenance };
+  }, [snowflakeVehicles, assignedLicensePlates]);
 
   // Get recent requests (last 3) - filter by user email for non-admin users
   const recentRequests = useMemo(() => {
@@ -179,7 +197,7 @@ const Dashboard = () => {
               <Car className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">Vehicle Fleet</h2>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
               <div onClick={() => navigate('/vehicle-fleet?filter=all')} className="cursor-pointer">
                 <Card className="transition-all hover:shadow-md">
                   <CardContent className="p-6">
@@ -193,72 +211,72 @@ const Dashboard = () => {
                         </div>
                         <p className="text-xs text-muted-foreground">Entire fleet overview</p>
                       </div>
-                      <Car className="h-8 w-8 text-gray-600" />
+                      <Car className="h-8 w-8 text-primary" />
                     </div>
                   </CardContent>
                 </Card>
               </div>
               <div
-                onClick={() => navigate('/vehicle-fleet?filter=parking')}
+                onClick={() => navigate('/vehicle-fleet?filter=available')}
                 className="cursor-pointer"
               >
                 <Card className="transition-all hover:shadow-md">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Available Vehicles
-                        </p>
+                        <p className="text-sm font-medium text-muted-foreground">Available</p>
                         <div className="flex items-baseline gap-2">
-                          <h3 className="text-3xl font-bold text-foreground">
+                          <h3 className="text-3xl font-bold text-emerald-600">
                             {vehicleFleetRecap.available}
                           </h3>
                         </div>
                         <p className="text-xs text-muted-foreground">Ready for assignment</p>
                       </div>
-                      <CheckCircle2 className="h-8 w-8 text-green-600" />
+                      <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center">
+                        <Circle className="h-4 w-4 text-white fill-white" />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
-              {/* <div
-                onClick={() => navigate('/vehicle-fleet?filter=driving')}
+              <div
+                onClick={() => navigate('/vehicle-fleet?filter=assigned')}
                 className="cursor-pointer"
               >
                 <Card className="transition-all hover:shadow-md">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Driving</p>
+                        <p className="text-sm font-medium text-muted-foreground">Assigned</p>
                         <div className="flex items-baseline gap-2">
-                          <h3 className="text-3xl font-bold text-foreground">
-                            {vehicleFleetRecap.driving}
+                          <h3 className="text-3xl font-bold text-blue-600">
+                            {vehicleFleetRecap.assigned}
                           </h3>
                         </div>
-                        <p className="text-xs text-muted-foreground">Currently on the road</p>
+                        <p className="text-xs text-muted-foreground">Currently in use</p>
                       </div>
-                      <Activity className="h-8 w-8 text-blue-500" />
+                      <Users className="h-8 w-8 text-blue-600" />
                     </div>
                   </CardContent>
                 </Card>
-              </div> */}
+              </div>
               <div
-                onClick={() => navigate('/vehicle-fleet?filter=other')}
+                onClick={() => navigate('/vehicle-fleet?filter=maintenance')}
                 className="cursor-pointer"
               >
                 <Card className="transition-all hover:shadow-md">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">In Maintenance</p>
+                        <p className="text-sm font-medium text-muted-foreground">Maintenance</p>
                         <div className="flex items-baseline gap-2">
-                          <h3 className="text-3xl font-bold text-foreground">
+                          <h3 className="text-3xl font-bold text-amber-600">
                             {vehicleFleetRecap.maintenance}
                           </h3>
                         </div>
-                        <p className="text-xs text-muted-foreground">Currently being serviced</p>
+                        <p className="text-xs text-muted-foreground">Being serviced</p>
                       </div>
-                      <Wrench className="h-8 w-8 text-orange-500" />
+                      <Wrench className="h-8 w-8 text-amber-600" />
                     </div>
                   </CardContent>
                 </Card>
