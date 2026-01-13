@@ -244,6 +244,10 @@ export default function VehicleProfile() {
     legacyAssignment,
     user,
     upsertAssignment,
+    status,
+    assignment,
+    assignmentStartDate,
+    assignmentEndDate,
   ]);
 
   // Auto-update status when assignment changes (unless explicit status like maintenance is set)
