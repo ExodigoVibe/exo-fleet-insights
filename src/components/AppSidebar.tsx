@@ -41,7 +41,7 @@ const menuItems = [
 
 export function AppSidebar() {
   const location = useLocation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: requests = [] } = useVehicleRequestsQuery();
   const { data: eventReports = [] } = useEventReportsQuery();
   const { user, logout, isAdmin, isCoordinator, hasAdminAccess } = useAuth();
@@ -105,8 +105,11 @@ export function AppSidebar() {
     (report) =>  report.status === "pending"
   ).length;
 
+  // Determine sidebar side based on current language (RTL for Hebrew)
+  const isRTL = i18n.language === 'he';
+
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" side={isRTL ? 'right' : 'left'}>
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-3 px-2 py-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
