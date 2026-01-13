@@ -137,9 +137,7 @@ export default function VehicleProfile() {
   // Find legacy assignment for this vehicle (from assigned_vehicles table)
   const legacyAssignment = useMemo(() => {
     if (!licensePlate) return null;
-    const found = legacyAssignedVehicles.find((av) =>
-      av.license_plates.includes(licensePlate)
-    );
+    const found = legacyAssignedVehicles.find((av) => av.license_plates.includes(licensePlate));
     return found?.employee_name || null;
   }, [legacyAssignedVehicles, licensePlate]);
 
@@ -148,14 +146,20 @@ export default function VehicleProfile() {
     if (!legacyAssignment || drivers.length === 0) return null;
     // Try to find a driver whose name matches the legacy assignment
     const normalizedLegacy = legacyAssignment.toLowerCase().trim();
-    return drivers.find((d) => {
-      const fullName = `${d.first_name} ${d.last_name}`.toLowerCase().trim();
-      return fullName === normalizedLegacy || fullName.includes(normalizedLegacy) || normalizedLegacy.includes(fullName);
-    }) || null;
+    return (
+      drivers.find((d) => {
+        const fullName = `${d.first_name} ${d.last_name}`.toLowerCase().trim();
+        return (
+          fullName === normalizedLegacy ||
+          fullName.includes(normalizedLegacy) ||
+          normalizedLegacy.includes(fullName)
+        );
+      }) || null
+    );
   }, [legacyAssignment, drivers]);
 
   // Helper to get full driver name
-  const getDriverFullName = (driver: typeof drivers[0]) => {
+  const getDriverFullName = (driver: (typeof drivers)[0]) => {
     return `${driver.first_name} ${driver.last_name}`.trim();
   };
 
@@ -190,7 +194,14 @@ export default function VehicleProfile() {
         setStatus('available');
       }
     }
-  }, [existingAssignment, assignmentLoading, licensePlate, matchedDriver, legacyAssignment, driversLoading]);
+  }, [
+    existingAssignment,
+    assignmentLoading,
+    licensePlate,
+    matchedDriver,
+    legacyAssignment,
+    driversLoading,
+  ]);
 
   // Auto-save initial data to vehicle_assignments when there's legacy data but no new record
   useEffect(() => {
@@ -208,7 +219,7 @@ export default function VehicleProfile() {
     // Only auto-save if there's legacy data to migrate
     if (matchedDriver || legacyAssignment) {
       initialDataSavedRef.current = true;
-      
+
       const driverId = matchedDriver ? String(matchedDriver.driver_id) : null;
       const driverName = matchedDriver ? getDriverFullName(matchedDriver) : legacyAssignment;
       const initialStatus = driverId || legacyAssignment ? 'assigned' : 'available';
@@ -218,13 +229,22 @@ export default function VehicleProfile() {
         driver_id: driverId,
         driver_name: driverName,
         status: initialStatus,
-        start_date: new Date().toISOString().split('T')[0],
+        start_date: null,
         end_date: null,
         assigned_by_id: user.id,
         assigned_by_name: user.name || user.email || null,
       });
     }
-  }, [licensePlate, assignmentLoading, driversLoading, existingAssignment, matchedDriver, legacyAssignment, user, upsertAssignment]);
+  }, [
+    licensePlate,
+    assignmentLoading,
+    driversLoading,
+    existingAssignment,
+    matchedDriver,
+    legacyAssignment,
+    user,
+    upsertAssignment,
+  ]);
 
   // Auto-update status when assignment changes (unless explicit status like maintenance is set)
   useEffect(() => {
