@@ -33,7 +33,7 @@ const Vehicles = () => {
   const { hasAdminAccess } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<
-    'all' | 'parking' | 'assigned' | 'driving' | 'other'
+    'all' | 'available' | 'assigned' | 'maintenance'
   >('all');
 
   // Subscribe to real-time updates for vehicle_assignments
@@ -118,11 +118,10 @@ const Vehicles = () => {
   useEffect(() => {
     const filterParam = searchParams.get('filter') as
       | 'all'
-      | 'parking'
+      | 'available'
       | 'assigned'
-      | 'driving'
-      | 'other';
-    if (filterParam && ['all', 'parking', 'assigned', 'driving', 'other'].includes(filterParam)) {
+      | 'maintenance';
+    if (filterParam && ['all', 'available', 'assigned', 'maintenance'].includes(filterParam)) {
       setStatusFilter(filterParam);
     }
   }, [searchParams]);
@@ -133,24 +132,15 @@ const Vehicles = () => {
     let filtered = vehicles;
 
     // Apply status filter
-    if (statusFilter === 'parking') {
-      // Available = parking AND not assigned
-      filtered = filtered.filter(
-        (v) =>
-          v.motion_status?.toLowerCase() === 'parking' &&
-          unassignedLicensePlates.has(v.license_plate),
-      );
-    } else if (statusFilter === 'driving') {
-      filtered = filtered.filter((v) => v.motion_status?.toLowerCase() === 'driving');
+    if (statusFilter === 'available') {
+      // Available = not assigned
+      filtered = filtered.filter((v) => !assignedLicensePlates.has(v.license_plate));
     } else if (statusFilter === 'assigned') {
-      // Show only vehicles that are in the assigned_vehicles database
+      // Show only vehicles that are assigned
       filtered = filtered.filter((v) => assignedLicensePlates.has(v.license_plate));
-    } else if (statusFilter === 'other') {
-      // Show all vehicles that are NOT parking or driving
-      filtered = filtered.filter((v) => {
-        const status = v.motion_status?.toLowerCase();
-        return status === 'maintenance';
-      });
+    } else if (statusFilter === 'maintenance') {
+      // Show vehicles in maintenance
+      filtered = filtered.filter((v) => v.motion_status?.toLowerCase() === 'maintenance');
     }
 
     // Apply search filter
@@ -264,8 +254,8 @@ const Vehicles = () => {
             </Card>
 
             <Card
-              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'parking' ? 'border-2 border-primary' : ''}`}
-              onClick={() => setStatusFilter('parking')}
+              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'available' ? 'border-2 border-primary' : ''}`}
+              onClick={() => setStatusFilter('available')}
             >
               <CardContent className="pt-6 text-center">
                 <div className="h-8 w-8 rounded-full bg-emerald-500 mx-auto mb-3 flex items-center justify-center">
@@ -301,8 +291,8 @@ const Vehicles = () => {
             </Card> */}
 
             <Card
-              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'other' ? 'border-2 border-primary' : ''}`}
-              onClick={() => setStatusFilter('other')}
+              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'maintenance' ? 'border-2 border-primary' : ''}`}
+              onClick={() => setStatusFilter('maintenance')}
             >
               <CardContent className="pt-6 text-center">
                 <Wrench className="h-8 w-8 text-amber-600 mx-auto mb-3" />
@@ -337,13 +327,11 @@ const Vehicles = () => {
               <h2 className="text-xl font-bold">
                 {statusFilter === 'all'
                   ? 'All Vehicles'
-                  : statusFilter === 'parking'
+                  : statusFilter === 'available'
                     ? 'Available Vehicles'
                     : statusFilter === 'assigned'
                       ? 'Assigned Vehicles'
-                      : statusFilter === 'driving'
-                        ? 'Driving Vehicles'
-                        : 'Maintenance Vehicles'}{' '}
+                      : 'Maintenance Vehicles'}{' '}
                 ({filteredVehicles.length})
               </h2>
             </div>
