@@ -60,7 +60,7 @@ serve(async (req: Request) => {
     // 2. Haven't had a reminder sent yet
     // 3. Expire within the next month
     const { data: documents, error: fetchError } = await supabase
-      .from("vehicle_documents")
+      .from("vehicle_information")
       .select("*")
       .eq("email_reminder_enabled", true)
       .eq("reminder_sent", false)
@@ -142,7 +142,7 @@ serve(async (req: Request) => {
 
         // Mark reminder as sent
         const { error: updateError } = await supabase
-          .from("vehicle_documents")
+          .from("vehicle_information")
           .update({ reminder_sent: true })
           .eq("id", doc.id);
 
