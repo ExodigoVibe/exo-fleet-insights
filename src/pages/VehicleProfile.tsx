@@ -124,7 +124,7 @@ export default function VehicleProfile() {
   const [insuranceExpiryDate, setInsuranceExpiryDate] = useState('');
   const [insuranceReminderEnabled, setInsuranceReminderEnabled] = useState(false);
   const [insuranceReminderEmail, setInsuranceReminderEmail] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  
 
   // Service info states
   const [nextServiceMileage, setNextServiceMileage] = useState('');
@@ -186,42 +186,44 @@ export default function VehicleProfile() {
     return expiry >= today && expiry <= oneMonthFromNow;
   };
 
-  const handleSaveDocuments = async () => {
+  const [isSavingLicense, setIsSavingLicense] = useState(false);
+  const [isSavingInsurance, setIsSavingInsurance] = useState(false);
+
+  const handleSaveLicense = async () => {
     if (!licensePlate) return;
 
-    setIsSaving(true);
+    setIsSavingLicense(true);
     try {
-      const promises = [];
-
-      if (licenseExpiryDate) {
-        promises.push(
-          upsertDocument.mutateAsync({
-            license_plate: licensePlate,
-            document_type: 'license',
-            expiry_date: licenseExpiryDate,
-            email_reminder_enabled: licenseReminderEnabled,
-            reminder_email: licenseReminderEmail || null,
-          }),
-        );
-      }
-
-      if (insuranceExpiryDate) {
-        promises.push(
-          upsertDocument.mutateAsync({
-            license_plate: licensePlate,
-            document_type: 'insurance',
-            expiry_date: insuranceExpiryDate,
-            email_reminder_enabled: insuranceReminderEnabled,
-            reminder_email: insuranceReminderEmail || null,
-          }),
-        );
-      }
-
-      await Promise.all(promises);
+      await upsertDocument.mutateAsync({
+        license_plate: licensePlate,
+        document_type: 'license',
+        expiry_date: licenseExpiryDate || null,
+        email_reminder_enabled: licenseReminderEnabled,
+        reminder_email: licenseReminderEmail || null,
+      });
     } catch (error) {
-      console.error('Error saving documents:', error);
+      console.error('Error saving license document:', error);
     } finally {
-      setIsSaving(false);
+      setIsSavingLicense(false);
+    }
+  };
+
+  const handleSaveInsurance = async () => {
+    if (!licensePlate) return;
+
+    setIsSavingInsurance(true);
+    try {
+      await upsertDocument.mutateAsync({
+        license_plate: licensePlate,
+        document_type: 'insurance',
+        expiry_date: insuranceExpiryDate || null,
+        email_reminder_enabled: insuranceReminderEnabled,
+        reminder_email: insuranceReminderEmail || null,
+      });
+    } catch (error) {
+      console.error('Error saving insurance document:', error);
+    } finally {
+      setIsSavingInsurance(false);
     }
   };
 
@@ -727,6 +729,13 @@ export default function VehicleProfile() {
                 />
               </div>
             )}
+            <Button
+              size="sm"
+              onClick={handleSaveLicense}
+              disabled={isSavingLicense}
+            >
+              {isSavingLicense ? 'Saving...' : 'Save License'}
+            </Button>
           </div>
 
           {/* Vehicle Insurance */}
@@ -776,20 +785,14 @@ export default function VehicleProfile() {
                 />
               </div>
             )}
+            <Button
+              size="sm"
+              onClick={handleSaveInsurance}
+              disabled={isSavingInsurance}
+            >
+              {isSavingInsurance ? 'Saving...' : 'Save Insurance'}
+            </Button>
           </div>
-
-          <Button
-            className="w-full"
-            onClick={handleSaveDocuments}
-            disabled={isSaving || (!licenseExpiryDate && !insuranceExpiryDate)}
-          >
-            {isSaving ? 'Saving...' : 'Save Documents'}
-          </Button>
-          {!licenseExpiryDate && !insuranceExpiryDate && (
-            <p className="text-sm text-muted-foreground text-center">
-              Enter at least one expiry date to save.
-            </p>
-          )}
         </CardContent>
       </Card>
 
