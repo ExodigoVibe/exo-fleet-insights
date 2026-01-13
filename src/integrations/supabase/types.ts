@@ -267,7 +267,7 @@ export type Database = {
           end_date: string | null
           id: string
           license_plate: string
-          start_date: string
+          start_date: string | null
           status: string
           updated_at: string
         }
@@ -280,7 +280,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           license_plate: string
-          start_date: string
+          start_date?: string | null
           status?: string
           updated_at?: string
         }
@@ -293,7 +293,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           license_plate?: string
-          start_date?: string
+          start_date?: string | null
           status?: string
           updated_at?: string
         }

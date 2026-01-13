@@ -55,7 +55,7 @@ interface UpsertAssignmentParams {
   driver_id: string | null;
   driver_name: string | null;
   status: string;
-  start_date: string;
+  start_date: string | null;
   end_date: string | null;
   assigned_by_id: string | null;
   assigned_by_name: string | null;
