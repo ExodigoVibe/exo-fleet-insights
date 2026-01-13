@@ -10,6 +10,7 @@ export interface VehicleDocument {
   expiry_date: string;
   email_reminder_enabled: boolean;
   reminder_sent: boolean;
+  reminder_email: string | null;
   next_service_mileage: number | null;
   last_service_date: string | null;
   created_at: string;
@@ -22,6 +23,7 @@ export interface UpsertVehicleDocumentInput {
   document_url?: string | null;
   expiry_date?: string;
   email_reminder_enabled?: boolean;
+  reminder_email?: string | null;
   next_service_mileage?: number | null;
   last_service_date?: string | null;
 }
@@ -71,6 +73,7 @@ export function useUpsertVehicleDocument() {
         if (input.document_url !== undefined) updateData.document_url = input.document_url;
         if (input.expiry_date !== undefined) updateData.expiry_date = input.expiry_date;
         if (input.email_reminder_enabled !== undefined) updateData.email_reminder_enabled = input.email_reminder_enabled;
+        if (input.reminder_email !== undefined) updateData.reminder_email = input.reminder_email;
         if (input.next_service_mileage !== undefined) updateData.next_service_mileage = input.next_service_mileage;
         if (input.last_service_date !== undefined) updateData.last_service_date = input.last_service_date;
         if (shouldResetReminder) updateData.reminder_sent = false;
@@ -94,6 +97,7 @@ export function useUpsertVehicleDocument() {
             document_url: input.document_url || null,
             expiry_date: input.expiry_date || null,
             email_reminder_enabled: input.email_reminder_enabled || false,
+            reminder_email: input.reminder_email || null,
             next_service_mileage: input.next_service_mileage || null,
             last_service_date: input.last_service_date || null,
             reminder_sent: false,
