@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useDriversQuery } from '@/hooks/queries/useDriversQuery';
 import { useVehiclesQuery } from '@/hooks/queries/useVehiclesQuery';
 import { useVehicleRequestsQuery } from '@/hooks/queries/useVehicleRequestsQuery';
@@ -28,6 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const { data: driversData, isLoading: driversLoading, error: driversError } = useDriversQuery();
   const {
@@ -146,14 +148,13 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Fleet Dashboard</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t('dashboard.title')}</h1>
             <p className="text-muted-foreground mt-1">
-              Welcome to the Fleet Dashboard. Here you can view the status of the fleet and the
-              requests.
+              {t('dashboard.welcome')}
             </p>
           </div>
           <Button variant="destructive" className="gap-2" onClick={() => setReportDialogOpen(true)}>
-            <AlertTriangle className="h-4 w-4" /> Report Event
+            <AlertTriangle className="h-4 w-4" /> {t('dashboard.reportEvent')}
           </Button>
         </div>
       </div>
@@ -163,7 +164,7 @@ const Dashboard = () => {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold text-foreground">Requests</h2>
+            <h2 className="text-xl font-semibold text-foreground">{t('dashboard.requests')}</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div onClick={() => navigate('/requests?filter=all')} className="cursor-pointer">
@@ -171,14 +172,14 @@ const Dashboard = () => {
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">Total Requests</p>
+                      <p className="text-sm font-medium text-muted-foreground">{t('dashboard.totalRequests')}</p>
                       <div className="flex items-baseline gap-2">
                         <h3 className="text-3xl font-bold text-foreground">
                           {requestsRecap.total}
                         </h3>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        All vehicle requests submitted
+                        {t('dashboard.allRequestsSubmitted')}
                       </p>
                     </div>
                     <FileText className="h-8 w-8 text-blue-600" />
@@ -194,14 +195,14 @@ const Dashboard = () => {
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">Pending Requests</p>
+                      <p className="text-sm font-medium text-muted-foreground">{t('dashboard.pendingRequests')}</p>
                       <div className="flex items-baseline gap-2">
                         <h3 className="text-3xl font-bold text-foreground">
                           {requestsRecap.pending}
                         </h3>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Requests & reports awaiting action
+                        {t('dashboard.requestsAwaiting')}
                       </p>
                     </div>
                     <Clock className="h-8 w-8 text-orange-500" />
@@ -217,7 +218,7 @@ const Dashboard = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Car className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold text-foreground">Vehicle Fleet</h2>
+              <h2 className="text-xl font-semibold text-foreground">{t('dashboard.vehicleFleet')}</h2>
             </div>
             <div className="grid gap-4 md:grid-cols-4">
               <div onClick={() => navigate('/vehicle-fleet?filter=all')} className="cursor-pointer">
@@ -225,13 +226,13 @@ const Dashboard = () => {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Total Vehicles</p>
+                        <p className="text-sm font-medium text-muted-foreground">{t('dashboard.totalVehicles')}</p>
                         <div className="flex items-baseline gap-2">
                           <h3 className="text-3xl font-bold text-foreground">
                             {vehicleFleetRecap.total}
                           </h3>
                         </div>
-                        <p className="text-xs text-muted-foreground">Entire fleet overview</p>
+                        <p className="text-xs text-muted-foreground">{t('dashboard.entireFleet')}</p>
                       </div>
                       <Car className="h-8 w-8 text-primary" />
                     </div>
@@ -246,13 +247,13 @@ const Dashboard = () => {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Available</p>
+                        <p className="text-sm font-medium text-muted-foreground">{t('dashboard.available')}</p>
                         <div className="flex items-baseline gap-2">
                           <h3 className="text-3xl font-bold text-emerald-600">
                             {vehicleFleetRecap.available}
                           </h3>
                         </div>
-                        <p className="text-xs text-muted-foreground">Ready for assignment</p>
+                        <p className="text-xs text-muted-foreground">{t('dashboard.readyForAssignment')}</p>
                       </div>
                       <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center">
                         <Circle className="h-4 w-4 text-white fill-white" />
@@ -269,13 +270,13 @@ const Dashboard = () => {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Assigned</p>
+                        <p className="text-sm font-medium text-muted-foreground">{t('dashboard.assigned')}</p>
                         <div className="flex items-baseline gap-2">
                           <h3 className="text-3xl font-bold text-blue-600">
                             {vehicleFleetRecap.assigned}
                           </h3>
                         </div>
-                        <p className="text-xs text-muted-foreground">Currently in use</p>
+                        <p className="text-xs text-muted-foreground">{t('dashboard.currentlyInUse')}</p>
                       </div>
                       <Users className="h-8 w-8 text-blue-600" />
                     </div>
@@ -290,13 +291,13 @@ const Dashboard = () => {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Maintenance</p>
+                        <p className="text-sm font-medium text-muted-foreground">{t('dashboard.maintenance')}</p>
                         <div className="flex items-baseline gap-2">
                           <h3 className="text-3xl font-bold text-amber-600">
                             {vehicleFleetRecap.maintenance}
                           </h3>
                         </div>
-                        <p className="text-xs text-muted-foreground">Being serviced</p>
+                        <p className="text-xs text-muted-foreground">{t('dashboard.beingServiced')}</p>
                       </div>
                       <Wrench className="h-8 w-8 text-amber-600" />
                     </div>
@@ -314,7 +315,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-lg font-semibold text-foreground">Recent Requests</h2>
+                  <h2 className="text-lg font-semibold text-foreground">{t('dashboard.recentRequests')}</h2>
                 </div>
                 <Button
                   variant="ghost"
@@ -322,21 +323,21 @@ const Dashboard = () => {
                   className="text-primary hover:bg-gray-100 hover:text-foreground"
                   onClick={() => navigate('/requests')}
                 >
-                  View All <ArrowRight className="ml-2 h-4 w-4" />
+                  {t('common.viewAll')} <ArrowRight className="ms-2 h-4 w-4" />
                 </Button>
               </div>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-5 gap-4 pb-3 border-b text-sm font-medium text-muted-foreground">
-                  <div>Employee Name</div>
-                  <div>Type</div>
-                  <div>Date</div>
-                  <div>Status</div>
-                  <div>Actions</div>
+                  <div>{t('dashboard.employeeName')}</div>
+                  <div>{t('common.type')}</div>
+                  <div>{t('common.date')}</div>
+                  <div>{t('common.status')}</div>
+                  <div>{t('common.actions')}</div>
                 </div>
 
                 {recentRequests.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">No requests found</div>
+                  <div className="text-center py-8 text-muted-foreground">{t('dashboard.noRequestsFound')}</div>
                 ) : (
                   recentRequests.map((request) => (
                     <div
@@ -356,7 +357,7 @@ const Dashboard = () => {
                           variant="secondary"
                           className="bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-900"
                         >
-                          {request.usage_type === 'single_use' ? 'Single Use' : 'Permanent Driver'}
+                          {request.usage_type === 'single_use' ? t('dashboard.singleUse') : t('dashboard.permanentDriver')}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-foreground">
@@ -379,8 +380,10 @@ const Dashboard = () => {
                           }
                         >
                           {request.status === 'pending_manager'
-                            ? 'Pending HOD'
-                            : request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                            ? t('dashboard.pendingHOD')
+                            : request.status === 'approved'
+                              ? t('dashboard.approved')
+                              : t('dashboard.rejected')}
                         </Badge>
                       </div>
                       <div>{/* Empty column for Actions - click handled by row */}</div>
@@ -399,7 +402,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-red-600" />
-                  <h2 className="text-lg font-semibold text-foreground">Recent Event Reports</h2>
+                  <h2 className="text-lg font-semibold text-foreground">{t('dashboard.recentEventReports')}</h2>
                 </div>
                 <Button
                   variant="ghost"
@@ -407,40 +410,33 @@ const Dashboard = () => {
                   className="text-primary hover:bg-gray-100 hover:text-foreground"
                   onClick={() => navigate('/event-reports')}
                 >
-                  View All <ArrowRight className="ml-2 h-4 w-4" />
+                  {t('common.viewAll')} <ArrowRight className="ms-2 h-4 w-4" />
                 </Button>
               </div>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-5 gap-4 pb-3 border-b text-sm font-medium text-muted-foreground">
-                  <div>Vehicle</div>
-                  <div>Employee Name</div>
-                  <div>Date</div>
-                  <div>Severity</div>
-                  <div>Status</div>
+                  <div>{t('dashboard.employeeName')}</div>
+                  <div>{t('dashboard.vehicle')}</div>
+                  <div>{t('common.date')}</div>
+                  <div>{t('dashboard.severity')}</div>
+                  <div>{t('common.status')}</div>
                 </div>
 
                 {recentEventReports.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No event reports found
-                  </div>
+                  <div className="text-center py-8 text-muted-foreground">{t('dashboard.noEventReportsFound')}</div>
                 ) : (
                   recentEventReports.map((report) => (
                     <div
                       key={report.id}
                       className="grid grid-cols-5 gap-4 py-3 items-center hover:bg-muted/50 rounded-lg transition-colors cursor-pointer"
-                      onClick={() => navigate(`/event-reports?reportId=${report.id}`)}
+                      onClick={() => navigate('/event-reports')}
                     >
                       <div className="flex items-center gap-2">
-                        <Car className="h-4 w-4 text-muted-foreground" />
-                        <div className="font-medium text-foreground">
-                          {report.vehicle_license_plate}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <div className="text-sm text-foreground">{report.employee_name}</div>
+                        <div className="font-medium text-foreground">{report.employee_name}</div>
                       </div>
+                      <div className="text-foreground">{report.vehicle_license_plate}</div>
                       <div className="flex items-center gap-2 text-sm text-foreground">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         {new Date(report.event_date).toLocaleDateString('en-US', {
@@ -453,12 +449,12 @@ const Dashboard = () => {
                         <Badge
                           variant="secondary"
                           className={
-                            report.severity === 'slight'
-                              ? 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-900'
-                              : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-900'
+                            report.severity === 'extensive'
+                              ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-900'
+                              : 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-900'
                           }
                         >
-                          {report.severity === 'slight' ? 'Slight Damage' : 'Extensive Damage'}
+                          {report.severity.charAt(0).toUpperCase() + report.severity.slice(1)}
                         </Badge>
                       </div>
                       <div>
@@ -467,12 +463,10 @@ const Dashboard = () => {
                           className={
                             report.status === 'pending'
                               ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-900'
-                              : report.status === 'reviewed'
-                                ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-900'
-                                : 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-900'
+                              : 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-400 dark:border-gray-900'
                           }
                         >
-                          {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                          {report.status === 'pending' ? t('dashboard.pending') : t('dashboard.closed')}
                         </Badge>
                       </div>
                     </div>

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useDriversQuery } from '@/hooks/queries/useDriversQuery';
 import {
   Table,
@@ -20,6 +21,7 @@ import { toast } from 'sonner';
 
 const Employees = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { data: drivers, isLoading, error } = useDriversQuery();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'blocked'>('all');
@@ -61,7 +63,7 @@ const Employees = () => {
 
   const handleExportToExcel = () => {
     if (!filteredDrivers.length) {
-      toast.error('No data to export');
+      toast.error(t('vehicles.noDataToExport'));
       return;
     }
 
@@ -79,7 +81,7 @@ const Employees = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees');
 
     XLSX.writeFile(workbook, `employees_${new Date().toISOString().split('T')[0]}.xlsx`);
-    toast.success(`Exported ${filteredDrivers.length} employees to Excel`);
+    toast.success(t('employees.exportSuccess', { count: filteredDrivers.length }));
   };
 
   return (
@@ -89,8 +91,8 @@ const Employees = () => {
           <div className="flex items-center gap-3">
             <Users className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Employees</h1>
-              <p className="text-muted-foreground mt-1">Manage driver information and contacts</p>
+              <h1 className="text-3xl font-bold text-foreground">{t('employees.title')}</h1>
+              <p className="text-muted-foreground mt-1">{t('employees.subtitle')}</p>
             </div>
           </div>
           <Button
@@ -99,7 +101,7 @@ const Employees = () => {
             variant="outline"
             className="gap-2"
           >
-            Excel <Download className="h-4 w-4" />
+            {t('common.excel')} <Download className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -114,7 +116,7 @@ const Employees = () => {
             <CardContent className="pt-6 text-center">
               <Users className="h-8 w-8 text-primary mx-auto mb-3" />
               <div className="text-4xl font-bold mb-1">{drivers?.length || 0}</div>
-              <div className="text-sm text-muted-foreground">Total Employees</div>
+              <div className="text-sm text-muted-foreground">{t('employees.totalEmployees')}</div>
             </CardContent>
           </Card>
 
@@ -127,7 +129,7 @@ const Employees = () => {
               <div className="text-4xl font-bold text-green-600 mb-1">
                 {drivers?.filter((d) => !d.is_blocked).length || 0}
               </div>
-              <div className="text-sm text-muted-foreground">Active Drivers</div>
+              <div className="text-sm text-muted-foreground">{t('employees.activeDrivers')}</div>
             </CardContent>
           </Card>
 
@@ -140,7 +142,7 @@ const Employees = () => {
               <div className="text-4xl font-bold text-destructive mb-1">
                 {drivers?.filter((d) => d.is_blocked).length || 0}
               </div>
-              <div className="text-sm text-muted-foreground">Blocked Drivers</div>
+              <div className="text-sm text-muted-foreground">{t('employees.blockedDrivers')}</div>
             </CardContent>
           </Card>
         </div>
@@ -149,13 +151,13 @@ const Employees = () => {
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Search className="absolute start-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
-                placeholder="Search employees by name, email, driver code, phone..."
+                placeholder={t('employees.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="ps-10"
               />
             </div>
           </CardContent>
@@ -163,16 +165,16 @@ const Employees = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Employees List ({filteredDrivers.length})</CardTitle>
+            <CardTitle>{t('employees.employeesList')} ({filteredDrivers.length})</CardTitle>
             <CardDescription>
               {isLoading ? (
-                'Loading drivers...'
+                t('employees.loadingDrivers')
               ) : error ? (
-                <span className="text-destructive">Failed to load drivers</span>
+                <span className="text-destructive">{t('employees.failedToLoad')}</span>
               ) : statusFilter !== 'all' ? (
-                `Showing ${statusFilter} drivers`
+                t('employees.showingDrivers', { filter: statusFilter })
               ) : (
-                `Total: ${drivers?.length || 0} drivers`
+                t('employees.totalDrivers', { count: drivers?.length || 0 })
               )}
             </CardDescription>
           </CardHeader>
@@ -185,19 +187,19 @@ const Employees = () => {
               </div>
             ) : error ? (
               <div className="text-center py-8 text-muted-foreground">
-                Failed to load drivers data
+                {t('employees.failedToLoad')}
               </div>
             ) : filteredDrivers.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Driver ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Driver Code</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone Number</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>{t('employees.driverId')}</TableHead>
+                      <TableHead>{t('common.name')}</TableHead>
+                      <TableHead>{t('employees.driverCode')}</TableHead>
+                      <TableHead>{t('common.email')}</TableHead>
+                      <TableHead>{t('employees.phoneNumber')}</TableHead>
+                      <TableHead>{t('common.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -216,10 +218,10 @@ const Employees = () => {
                         <TableCell>{driver.phone || driver.cellular || '-'}</TableCell>
                         <TableCell>
                           {driver.is_blocked ? (
-                            <Badge variant="destructive">Blocked</Badge>
+                            <Badge variant="destructive">{t('employees.blocked')}</Badge>
                           ) : (
                             <Badge variant="default" className="bg-green-600">
-                              Active
+                              {t('employees.active')}
                             </Badge>
                           )}
                         </TableCell>
@@ -230,10 +232,10 @@ const Employees = () => {
               </div>
             ) : searchTerm ? (
               <div className="text-center py-8 text-muted-foreground">
-                No drivers matching "{searchTerm}"
+                {t('employees.noDriversMatching', { term: searchTerm })}
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">No drivers found</div>
+              <div className="text-center py-8 text-muted-foreground">{t('employees.noDriversFound')}</div>
             )}
           </CardContent>
         </Card>

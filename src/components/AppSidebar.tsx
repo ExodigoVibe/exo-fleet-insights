@@ -1,5 +1,6 @@
 import { FileText, Wrench, Users, CheckSquare, AlertTriangle, Settings, Car, Shield, LogOut, Route, ClipboardList, CalendarDays } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
@@ -26,20 +27,21 @@ import {
 import { cn } from "@/lib/utils";
 
 const menuItems = [
-  { title: "Dashboard", url: "/", icon: FileText, roles: ["admin", "coordinator", "employee"], exact: true },
-  { title: "Trips", url: "/trips", icon: Route, roles: ["admin", "coordinator", "employee"] },
-  { title: "Vehicle Fleet", url: "/vehicle-fleet", icon: Wrench, roles: ["admin", "coordinator"], aliases: ["/vehicle"] },
-  { title: "Vehicle Assign Groups", url: "/vehicle-assign-groups", icon: ClipboardList, roles: ["admin"] },
-  { title: "Calendar", url: "/calendar", icon: CalendarDays, roles: ["admin"] },
-  { title: "Employees", url: "/employees", icon: Users, roles: ["admin", "coordinator"] },
-  { title: "Requests", url: "/requests", icon: CheckSquare, roles: ["admin", "coordinator", "employee"] },
-  { title: "Event Reports", url: "/event-reports", icon: AlertTriangle, roles: ["admin", "coordinator", "employee"] },
-  { title: "Form Templates", url: "/form-templates", icon: Settings, roles: ["admin", "coordinator"] },
-  { title: "Roles", url: "/roles", icon: Shield, roles: ["admin", "coordinator"] },
+  { titleKey: "nav.dashboard", url: "/", icon: FileText, roles: ["admin", "coordinator", "employee"], exact: true },
+  { titleKey: "nav.trips", url: "/trips", icon: Route, roles: ["admin", "coordinator", "employee"] },
+  { titleKey: "nav.vehicleFleet", url: "/vehicle-fleet", icon: Wrench, roles: ["admin", "coordinator"], aliases: ["/vehicle"] },
+  { titleKey: "nav.vehicleAssignGroups", url: "/vehicle-assign-groups", icon: ClipboardList, roles: ["admin"] },
+  { titleKey: "nav.calendar", url: "/calendar", icon: CalendarDays, roles: ["admin"] },
+  { titleKey: "nav.employees", url: "/employees", icon: Users, roles: ["admin", "coordinator"] },
+  { titleKey: "nav.requests", url: "/requests", icon: CheckSquare, roles: ["admin", "coordinator", "employee"] },
+  { titleKey: "nav.eventReports", url: "/event-reports", icon: AlertTriangle, roles: ["admin", "coordinator", "employee"] },
+  { titleKey: "nav.formTemplates", url: "/form-templates", icon: Settings, roles: ["admin", "coordinator"] },
+  { titleKey: "nav.roles", url: "/roles", icon: Shield, roles: ["admin", "coordinator"] },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
+  const { t } = useTranslation();
   const { data: requests = [] } = useVehicleRequestsQuery();
   const { data: eventReports = [] } = useEventReportsQuery();
   const { user, logout, isAdmin, isCoordinator, hasAdminAccess } = useAuth();
@@ -112,19 +114,19 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col">
             <span className="text-base font-semibold text-foreground">FleetFlow</span>
-            <span className="text-xs text-muted-foreground">Vehicle Management</span>
+            <span className="text-xs text-muted-foreground">{t('nav.vehicleManagement')}</span>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>NAVIGATION</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('nav.navigation')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredMenuItems.map((item) => {
                 const isActive = isRouteActive(item.url, item.exact, item.aliases);
                 return (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.titleKey}>
                     <SidebarMenuButton asChild>
                       <Link
                         to={item.url}
@@ -134,7 +136,7 @@ export function AppSidebar() {
                         )}
                       >
                         <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
+                        <span>{t(item.titleKey)}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -145,11 +147,11 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>QUICK STATS</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('nav.quickStats')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <div className="space-y-3 px-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground">Pending Requests</span>
+                <span className="text-sm text-foreground">{t('sidebar.pendingRequests')}</span>
                   <Badge 
                     variant="outline" 
                     className="bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-900"
@@ -158,7 +160,7 @@ export function AppSidebar() {
                   </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground">Pending Event Reports</span>
+                <span className="text-sm text-foreground">{t('sidebar.pendingEventReports')}</span>
                   <Badge 
                     variant="outline" 
                     className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-900"
@@ -190,11 +192,11 @@ export function AppSidebar() {
           <DropdownMenuContent align="end" className="w-56">
             <div className="px-2 py-1.5 text-sm">
               <div className="font-medium">{currentUser.name}</div>
-              <div className="text-xs text-muted-foreground mt-1 capitalize">Role: {currentUser.role}</div>
+              <div className="text-xs text-muted-foreground mt-1 capitalize">{t('common.role')}: {currentUser.role}</div>
             </div>
             <DropdownMenuItem onClick={logout} className="cursor-pointer hover:bg-gray-100 hover:text-foreground">
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
+              <LogOut className="me-2 h-4 w-4" />
+              <span>{t('common.logout')}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
