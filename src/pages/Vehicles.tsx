@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useVehiclesQuery } from '@/hooks/queries/useVehiclesQuery';
 import { useAssignedVehiclesQuery } from '@/hooks/queries/useAssignedVehiclesQuery';
 import { useVehicleAssignmentsQuery } from '@/hooks/queries/useVehicleAssignmentsQuery';
@@ -25,6 +26,7 @@ import { toast } from 'sonner';
 
 const Vehicles = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: vehicles, isLoading, error } = useVehiclesQuery();
@@ -181,7 +183,7 @@ const Vehicles = () => {
 
   const handleExportToExcel = () => {
     if (!filteredVehicles.length) {
-      toast.error('No data to export');
+      toast.error(t('vehicles.noDataToExport'));
       return;
     }
 
@@ -199,17 +201,17 @@ const Vehicles = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Vehicles');
 
     XLSX.writeFile(workbook, `vehicles_${new Date().toISOString().split('T')[0]}.xlsx`);
-    toast.success(`Exported ${filteredVehicles.length} vehicles to Excel`);
+    toast.success(t('vehicles.exportSuccess', { count: filteredVehicles.length }));
   };
 
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'parking':
-        return <Badge variant="success">Available</Badge>;
+        return <Badge variant="success">{t('vehicles.available')}</Badge>;
       case 'driving':
         return <Badge variant="driving">Driving</Badge>;
       case 'maintenance':
-        return <Badge variant="warning">Maintenance</Badge>;
+        return <Badge variant="warning">{t('vehicles.maintenance')}</Badge>;
       case 'moving':
         return <Badge variant="driving">In Use</Badge>;
       default:
@@ -217,14 +219,21 @@ const Vehicles = () => {
     }
   };
 
+  const getTableTitle = () => {
+    if (statusFilter === 'all') return t('vehicles.allVehicles');
+    if (statusFilter === 'available') return t('vehicles.availableVehicles');
+    if (statusFilter === 'assigned') return t('vehicles.assignedVehicles');
+    return t('vehicles.maintenanceVehicles');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Vehicle Fleet</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t('vehicles.title')}</h1>
             <p className="text-muted-foreground mt-1">
-              Manage company vehicles and track usage history
+              {t('vehicles.subtitle')}
             </p>
           </div>
           <div className="flex gap-2">
@@ -234,11 +243,11 @@ const Vehicles = () => {
               variant="outline"
               className="gap-2"
             >
-              Excel <Download className="h-4 w-4" />
+              {t('common.excel')} <Download className="h-4 w-4" />
             </Button>
             <Button className="gap-2 bg-primary">
               <Plus className="h-4 w-4" />
-              Add Vehicle
+              {t('vehicles.addVehicle')}
             </Button>
           </div>
         </div>
@@ -255,7 +264,7 @@ const Vehicles = () => {
               <CardContent className="pt-6 text-center">
                 <Car className="h-8 w-8 text-primary mx-auto mb-3" />
                 <div className="text-4xl font-bold mb-1">{totalVehicles}</div>
-                <div className="text-sm text-muted-foreground">Total Vehicles</div>
+                <div className="text-sm text-muted-foreground">{t('vehicles.totalVehicles')}</div>
               </CardContent>
             </Card>
 
@@ -268,7 +277,7 @@ const Vehicles = () => {
                   <Circle className="h-4 w-4 text-white fill-white" />
                 </div>
                 <div className="text-4xl font-bold text-emerald-600 mb-1">{availableVehicles}</div>
-                <div className="text-sm text-muted-foreground">Available</div>
+                <div className="text-sm text-muted-foreground">{t('vehicles.available')}</div>
               </CardContent>
             </Card>
 
@@ -279,22 +288,9 @@ const Vehicles = () => {
               <CardContent className="pt-6 text-center">
                 <Users className="h-8 w-8 text-blue-600 mx-auto mb-3" />
                 <div className="text-4xl font-bold text-blue-600 mb-1">{assignedVehiclesCount}</div>
-                <div className="text-sm text-muted-foreground">Assigned</div>
+                <div className="text-sm text-muted-foreground">{t('vehicles.assigned')}</div>
               </CardContent>
             </Card>
-
-            {/* <Card
-              className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'driving' ? 'border-2 border-primary' : ''}`}
-              onClick={() => setStatusFilter('driving')}
-            >
-              <CardContent className="pt-6 text-center">
-                <div className="mx-auto mb-3 flex items-center justify-center">
-                  <Activity className="h-8 w-8 text-blue-500" />
-                </div>
-                <div className="text-4xl font-bold text-blue-600 mb-1">{drivingVehicles}</div>
-                <div className="text-sm text-muted-foreground">Driving</div>
-              </CardContent>
-            </Card> */}
 
             <Card
               className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'maintenance' ? 'border-2 border-primary' : ''}`}
@@ -303,7 +299,7 @@ const Vehicles = () => {
               <CardContent className="pt-6 text-center">
                 <Wrench className="h-8 w-8 text-amber-600 mx-auto mb-3" />
                 <div className="text-4xl font-bold text-amber-600 mb-1">{maintenanceVehicles}</div>
-                <div className="text-sm text-muted-foreground">Maintenance</div>
+                <div className="text-sm text-muted-foreground">{t('vehicles.maintenance')}</div>
               </CardContent>
             </Card>
           </div>
@@ -313,13 +309,13 @@ const Vehicles = () => {
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Search className="absolute start-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
-                placeholder="Search vehicles by license plate, manufacturer, or model..."
+                placeholder={t('vehicles.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="ps-10"
               />
             </div>
           </CardContent>
@@ -331,14 +327,7 @@ const Vehicles = () => {
             <div className="flex items-center gap-2 mb-4">
               <Car className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-bold">
-                {statusFilter === 'all'
-                  ? 'All Vehicles'
-                  : statusFilter === 'available'
-                    ? 'Available Vehicles'
-                    : statusFilter === 'assigned'
-                      ? 'Assigned Vehicles'
-                      : 'Maintenance Vehicles'}{' '}
-                ({filteredVehicles.length})
+                {getTableTitle()} ({filteredVehicles.length})
               </h2>
             </div>
 
@@ -350,20 +339,20 @@ const Vehicles = () => {
               </div>
             ) : error ? (
               <div className="text-center py-8 text-muted-foreground">
-                Failed to load vehicles data
+                {t('vehicles.failedToLoad')}
               </div>
             ) : filteredVehicles.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>License Plate</TableHead>
-                      <TableHead>Model & Year</TableHead>
-                      <TableHead>Car Name</TableHead>
-                      <TableHead>Assignment</TableHead>
-                      <TableHead>Current Mileage</TableHead>
-                      <TableHead>Color</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>{t('vehicles.licensePlate')}</TableHead>
+                      <TableHead>{t('vehicles.modelYear')}</TableHead>
+                      <TableHead>{t('vehicles.carName')}</TableHead>
+                      <TableHead>{t('vehicles.assignment')}</TableHead>
+                      <TableHead>{t('vehicles.currentMileage')}</TableHead>
+                      <TableHead>{t('vehicles.color')}</TableHead>
+                      <TableHead>{t('common.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -386,7 +375,7 @@ const Vehicles = () => {
                             {assignedTo ? (
                               <span className="font-medium text-blue-600">{assignedTo}</span>
                             ) : (
-                              <span className="text-muted-foreground">Unassigned</span>
+                              <span className="text-muted-foreground">{t('vehicles.unassigned')}</span>
                             )}
                           </TableCell>
                           <TableCell>-</TableCell>
@@ -395,15 +384,15 @@ const Vehicles = () => {
                             {(() => {
                               const status = getVehicleStatus(vehicle.license_plate);
                               if (status === 'maintenance') {
-                                return <Badge variant="warning">Maintenance</Badge>;
+                                return <Badge variant="warning">{t('vehicles.maintenance')}</Badge>;
                               } else if (status === 'assigned') {
                                 return (
                                   <Badge variant="default" className="bg-blue-600">
-                                    Assigned
+                                    {t('vehicles.assigned')}
                                   </Badge>
                                 );
                               } else {
-                                return <Badge variant="success">Available</Badge>;
+                                return <Badge variant="success">{t('vehicles.available')}</Badge>;
                               }
                             })()}
                           </TableCell>
@@ -415,10 +404,10 @@ const Vehicles = () => {
               </div>
             ) : searchTerm ? (
               <div className="text-center py-8 text-muted-foreground">
-                No vehicles matching "{searchTerm}"
+                {t('vehicles.noMatching', { term: searchTerm })}
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">No vehicles found</div>
+              <div className="text-center py-8 text-muted-foreground">{t('vehicles.noVehicles')}</div>
             )}
           </CardContent>
         </Card>

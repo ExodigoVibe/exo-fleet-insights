@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Download, Plus, User, Calendar, Check, Undo2, X, Paperclip, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,6 +27,7 @@ type RequestStatus = "all" | "pending_manager" | "approved" | "rejected";
 
 export default function Requests() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<RequestStatus>("all");
   const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
@@ -53,7 +55,7 @@ export default function Requests() {
   }, [searchParams]);
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this request?")) {
+    if (window.confirm(t('requests.deleteConfirm'))) {
       await deleteRequest.mutateAsync(id);
     }
   };
@@ -139,21 +141,21 @@ export default function Requests() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "pending_manager":
-        return "Pending Manager";
+        return t('requests.pendingManager');
       case "approved":
-        return "Approved";
+        return t('requests.approved');
       case "rejected":
-        return "Rejected";
+        return t('requests.rejected');
       default:
         return status;
     }
   };
 
   const getTableTitle = () => {
-    if (statusFilter === "pending_manager") return `Pending Manager (${pendingCount})`;
-    if (statusFilter === "approved") return `Approved (${approvedCount})`;
-    if (statusFilter === "rejected") return `Rejected (${rejectedCount})`;
-    return `All Requests (${allRequestsCount})`;
+    if (statusFilter === "pending_manager") return `${t('requests.pendingManager')} (${pendingCount})`;
+    if (statusFilter === "approved") return `${t('requests.approved')} (${approvedCount})`;
+    if (statusFilter === "rejected") return `${t('requests.rejected')} (${rejectedCount})`;
+    return `${t('requests.allRequests')} (${allRequestsCount})`;
   };
 
   return (
@@ -161,8 +163,8 @@ export default function Requests() {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">Vehicle Requests</h1>
-            <p className="text-muted-foreground mt-1">Manage all vehicle requests</p>
+            <h1 className="text-4xl font-bold tracking-tight">{t('requests.title')}</h1>
+            <p className="text-muted-foreground mt-1">{t('requests.subtitle')}</p>
           </div>
           <div className="flex gap-3">
             <Button
@@ -170,10 +172,10 @@ export default function Requests() {
               variant="outline"
               className="gap-2"
             >
-              Excel <Download className="h-4 w-4" />
+              {t('common.excel')} <Download className="h-4 w-4" />
             </Button>
             <Button className="gap-2" onClick={() => navigate("/requests/new")}>
-              <Plus className="h-4 w-4" /> New Request
+              <Plus className="h-4 w-4" /> {t('requests.newRequest')}
             </Button>
           </div>
         </div>
@@ -187,7 +189,7 @@ export default function Requests() {
           onClick={() => setStatusFilter("all")}
         >
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">All Requests</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('requests.allRequests')}</p>
             <p className="text-3xl font-bold">{allRequestsCount}</p>
           </div>
         </Card>
@@ -199,7 +201,7 @@ export default function Requests() {
           onClick={() => setStatusFilter("pending_manager")}
         >
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Pending Manager</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('requests.pendingManager')}</p>
             <p className="text-3xl font-bold">{pendingCount}</p>
           </div>
         </Card>
@@ -211,7 +213,7 @@ export default function Requests() {
           onClick={() => setStatusFilter("approved")}
         >
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Approved</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('requests.approved')}</p>
             <p className="text-3xl font-bold">{approvedCount}</p>
           </div>
         </Card>
@@ -223,7 +225,7 @@ export default function Requests() {
           onClick={() => setStatusFilter("rejected")}
         >
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">Rejected</p>
+            <p className="text-sm font-medium text-muted-foreground">{t('requests.rejected')}</p>
             <p className="text-3xl font-bold">{rejectedCount}</p>
           </div>
         </Card>
@@ -237,25 +239,25 @@ export default function Requests() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('requests.employee')}</TableHead>
+                <TableHead>{t('common.type')}</TableHead>
+                <TableHead>{t('common.date')}</TableHead>
+                <TableHead>{t('common.status')}</TableHead>
+                <TableHead>{t('common.priority')}</TableHead>
+                <TableHead className="text-end">{t('common.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    Loading requests...
+                    {t('requests.loadingRequests')}
                   </TableCell>
                 </TableRow>
               ) : filteredRequests.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    No requests found
+                    {t('requests.noRequestsFound')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -280,7 +282,7 @@ export default function Requests() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                        {request.usage_type === "single_use" ? "Single Use" : "Permanent Driver"}
+                        {request.usage_type === "single_use" ? t('requests.singleUse') : t('requests.permanentDriver')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -301,7 +303,7 @@ export default function Requests() {
                     <TableCell>
                       <span className="font-medium">{request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}</span>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <div className="flex justify-end gap-2">
                         {hasAttachments(request) && (
                           <Button 
@@ -311,7 +313,7 @@ export default function Requests() {
                             onClick={(e) => handleViewAttachments(request, e)}
                           >
                             <Paperclip className="h-4 w-4" />
-                            Files ({getAttachmentCount(request)})
+                            {t('requests.files')} ({getAttachmentCount(request)})
                           </Button>
                         )}
                         {hasAdminAccess && request.status === "pending_manager" && (
@@ -326,7 +328,7 @@ export default function Requests() {
                               }}
                             >
                               <Check className="h-4 w-4" />
-                              Approve
+                              {t('requests.approve')}
                             </Button>
                             <Button 
                               variant="ghost" 
@@ -338,7 +340,7 @@ export default function Requests() {
                               }}
                             >
                               <X className="h-4 w-4" />
-                              Reject
+                              {t('requests.reject')}
                             </Button>
                           </>
                         )}
@@ -353,7 +355,7 @@ export default function Requests() {
                             }}
                           >
                             <Undo2 className="h-4 w-4" />
-                            Undo
+                            {t('requests.undo')}
                           </Button>
                         )}
                         {hasAdminAccess && request.status === "rejected" && (
@@ -367,7 +369,7 @@ export default function Requests() {
                             }}
                           >
                             <Undo2 className="h-4 w-4" />
-                            Undo
+                            {t('requests.undo')}
                           </Button>
                         )}
                         <Button
@@ -379,7 +381,7 @@ export default function Requests() {
                             navigate(`/requests/edit/${request.id}`);
                           }}
                         >
-                          Edit
+                          {t('common.edit')}
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -390,7 +392,7 @@ export default function Requests() {
                             handleDelete(request.id);
                           }}
                         >
-                          Delete
+                          {t('common.delete')}
                         </Button>
                       </div>
                     </TableCell>
@@ -408,7 +410,7 @@ export default function Requests() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Paperclip className="h-5 w-5" />
-              Attached Files ({selectedFiles.length})
+              {t('requests.attachedFiles')} ({selectedFiles.length})
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -425,39 +427,26 @@ export default function Requests() {
                     <div className="w-full h-48 flex items-center justify-center bg-muted">
                       <div className="text-center">
                         <Paperclip className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">PDF Document</p>
+                        <p className="text-sm text-muted-foreground">{t('requests.pdfDocument')}</p>
                       </div>
                     </div>
                   ) : (
                     <div className="w-full h-48 flex items-center justify-center bg-muted">
                       <div className="text-center">
                         <Paperclip className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">File</p>
+                        <p className="text-sm text-muted-foreground">Document</p>
                       </div>
                     </div>
                   )}
-                  <div className="p-2 flex gap-2 justify-end bg-muted/50">
+                  <div className="p-2 bg-muted">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
+                      className="w-full gap-2"
                       onClick={() => window.open(url, '_blank')}
-                      className="gap-1"
                     >
-                      <Eye className="h-3 w-3" />
-                      Open
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = url.split('/').pop() || `file-${index + 1}`;
-                        link.click();
-                      }}
-                      className="gap-1"
-                    >
-                      <Download className="h-3 w-3" />
-                      Download
+                      <Eye className="h-4 w-4" />
+                      {t('requests.openInNewTab')}
                     </Button>
                   </div>
                 </div>
