@@ -571,6 +571,100 @@ export default function VehicleProfile() {
           <CardTitle className="text-xl">Car Documents</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Existing Documents Summary */}
+          {documentsLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span className="ml-2 text-muted-foreground">Loading documents...</span>
+            </div>
+          ) : documents.length > 0 ? (
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <h4 className="text-sm font-medium text-muted-foreground">Saved Documents</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="bg-background rounded-md border p-3 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium capitalize">
+                        {doc.document_type === 'license'
+                          ? 'Vehicle License'
+                          : doc.document_type === 'insurance'
+                            ? 'Vehicle Insurance'
+                            : 'Service Record'}
+                      </span>
+                      {doc.expiry_date && (
+                        <Badge
+                          variant={
+                            isDocumentExpired(doc.expiry_date)
+                              ? 'destructive'
+                              : isDocumentExpiringSoon(doc.expiry_date)
+                                ? 'secondary'
+                                : 'default'
+                          }
+                          className={cn(
+                            isDocumentExpiringSoon(doc.expiry_date) &&
+                              !isDocumentExpired(doc.expiry_date) &&
+                              'bg-amber-500 text-white hover:bg-amber-600'
+                          )}
+                        >
+                          {isDocumentExpired(doc.expiry_date)
+                            ? 'Expired'
+                            : isDocumentExpiringSoon(doc.expiry_date)
+                              ? 'Expiring Soon'
+                              : 'Valid'}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      {doc.expiry_date && (
+                        <p>
+                          <span className="font-medium">Expiry:</span>{' '}
+                          {format(new Date(doc.expiry_date), 'dd/MM/yyyy')}
+                        </p>
+                      )}
+                      {doc.document_type === 'service' && doc.next_service_mileage && (
+                        <p>
+                          <span className="font-medium">Next Service:</span>{' '}
+                          {doc.next_service_mileage.toLocaleString()} km
+                        </p>
+                      )}
+                      {doc.document_type === 'service' && doc.last_service_date && (
+                        <p>
+                          <span className="font-medium">Last Service:</span>{' '}
+                          {format(new Date(doc.last_service_date), 'dd/MM/yyyy')}
+                        </p>
+                      )}
+                      <p>
+                        <span className="font-medium">Email Reminder:</span>{' '}
+                        {doc.email_reminder_enabled ? 'Enabled' : 'Disabled'}
+                      </p>
+                      {doc.document_url && (
+                        <a
+                          href={doc.document_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline inline-flex items-center gap-1"
+                        >
+                          <FileText className="h-3 w-3" />
+                          View Document
+                        </a>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Updated: {format(new Date(doc.updated_at), 'dd/MM/yyyy HH:mm')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              No documents saved yet. Add expiry dates below to save documents.
+            </div>
+          )}
+
           {/* Vehicle License */}
           <div className="space-y-3">
             <Label>Vehicle License</Label>
@@ -650,13 +744,13 @@ export default function VehicleProfile() {
           <Button
             className="w-full"
             onClick={handleSaveDocuments}
-            disabled={isSaving || !licenseExpiryDate || !insuranceExpiryDate}
+            disabled={isSaving || (!licenseExpiryDate && !insuranceExpiryDate)}
           >
             {isSaving ? 'Saving...' : 'Save Documents'}
           </Button>
-          {(!licenseExpiryDate || !insuranceExpiryDate) && (
+          {!licenseExpiryDate && !insuranceExpiryDate && (
             <p className="text-sm text-muted-foreground text-center">
-              Both Vehicle License and Insurance expiry dates are required to save.
+              Enter at least one expiry date to save.
             </p>
           )}
         </CardContent>
