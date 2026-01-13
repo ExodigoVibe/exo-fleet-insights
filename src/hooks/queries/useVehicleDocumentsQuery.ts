@@ -52,12 +52,14 @@ export function useUpsertVehicleDocument() {
   return useMutation({
     mutationFn: async (input: UpsertVehicleDocumentInput) => {
       // Check if document already exists
-      const { data: existing } = await supabase
+      const { data: existing, error: fetchError } = await supabase
         .from("vehicle_information")
         .select("id, reminder_sent, expiry_date")
         .eq("license_plate", input.license_plate)
         .eq("document_type", input.document_type)
-        .single();
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
 
       // Reset reminder_sent if expiry_date changed
       const shouldResetReminder = existing && input.expiry_date && existing.expiry_date !== input.expiry_date;
