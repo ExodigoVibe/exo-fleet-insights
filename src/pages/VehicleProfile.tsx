@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -51,6 +51,7 @@ import {
   useVehicleAssignmentByPlateQuery,
   useUpsertVehicleAssignment,
 } from '@/hooks/queries/useVehicleAssignmentsQuery';
+import { useAssignedVehiclesQuery } from '@/hooks/queries/useAssignedVehiclesQuery';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -108,6 +109,7 @@ export default function VehicleProfile() {
   );
   const { data: existingAssignment, isLoading: assignmentLoading } =
     useVehicleAssignmentByPlateQuery(licensePlate || '');
+  const { data: legacyAssignedVehicles = [] } = useAssignedVehiclesQuery();
   const upsertDocument = useUpsertVehicleDocument();
   const upsertAssignment = useUpsertVehicleAssignment();
 
@@ -116,6 +118,7 @@ export default function VehicleProfile() {
   const [status, setStatus] = useState('available');
   const [assignmentStartDate, setAssignmentStartDate] = useState<Date | undefined>(undefined);
   const [assignmentEndDate, setAssignmentEndDate] = useState<Date | undefined>(undefined);
+  const initialDataSavedRef = useRef(false);
 
   // Document states
   const [licenseExpiryDate, setLicenseExpiryDate] = useState('');
@@ -131,12 +134,38 @@ export default function VehicleProfile() {
   const [isEditingService, setIsEditingService] = useState(false);
   const [isSavingService, setIsSavingService] = useState(false);
 
+  // Find legacy assignment for this vehicle (from assigned_vehicles table)
+  const legacyAssignment = useMemo(() => {
+    if (!licensePlate) return null;
+    const found = legacyAssignedVehicles.find((av) =>
+      av.license_plates.includes(licensePlate)
+    );
+    return found?.employee_name || null;
+  }, [legacyAssignedVehicles, licensePlate]);
+
+  // Match legacy assignment name to a driver from the drivers list
+  const matchedDriver = useMemo(() => {
+    if (!legacyAssignment || drivers.length === 0) return null;
+    // Try to find a driver whose name matches the legacy assignment
+    const normalizedLegacy = legacyAssignment.toLowerCase().trim();
+    return drivers.find((d) => {
+      const fullName = `${d.first_name} ${d.last_name}`.toLowerCase().trim();
+      return fullName === normalizedLegacy || fullName.includes(normalizedLegacy) || normalizedLegacy.includes(fullName);
+    }) || null;
+  }, [legacyAssignment, drivers]);
+
+  // Helper to get full driver name
+  const getDriverFullName = (driver: typeof drivers[0]) => {
+    return `${driver.first_name} ${driver.last_name}`.trim();
+  };
+
   // Load existing assignment data and set initial status based on data
   useEffect(() => {
+    if (assignmentLoading || driversLoading) return;
+
     if (existingAssignment) {
-      // Pre-populate with existing assignment data
+      // Pre-populate with existing assignment data from vehicle_assignments table
       setAssignment(existingAssignment.driver_id || 'unassigned');
-      // Use the saved status (e.g., maintenance takes priority)
       setStatus(existingAssignment.status || 'available');
       if (existingAssignment.start_date) {
         setAssignmentStartDate(new Date(existingAssignment.start_date));
@@ -144,13 +173,58 @@ export default function VehicleProfile() {
       if (existingAssignment.end_date) {
         setAssignmentEndDate(new Date(existingAssignment.end_date));
       }
-    } else if (!assignmentLoading && licensePlate) {
-      // No existing assignment record - set initial status based on driver
-      // This will be 'available' by default (unassigned)
-      setAssignment('unassigned');
-      setStatus('available');
+    } else if (licensePlate) {
+      // No existing record in vehicle_assignments - check legacy data
+      if (matchedDriver) {
+        // Found a matching driver from legacy data
+        setAssignment(String(matchedDriver.driver_id));
+        setStatus('assigned');
+      } else if (legacyAssignment) {
+        // Legacy assignment exists but couldn't match to a driver - still show as assigned
+        // User will need to select the correct driver from dropdown
+        setAssignment('unassigned');
+        setStatus('assigned'); // Keep status as assigned since there was a legacy assignment
+      } else {
+        // No assignment at all
+        setAssignment('unassigned');
+        setStatus('available');
+      }
     }
-  }, [existingAssignment, assignmentLoading, licensePlate]);
+  }, [existingAssignment, assignmentLoading, licensePlate, matchedDriver, legacyAssignment, driversLoading]);
+
+  // Auto-save initial data to vehicle_assignments when there's legacy data but no new record
+  useEffect(() => {
+    if (
+      !licensePlate ||
+      assignmentLoading ||
+      driversLoading ||
+      existingAssignment ||
+      initialDataSavedRef.current ||
+      !user
+    ) {
+      return;
+    }
+
+    // Only auto-save if there's legacy data to migrate
+    if (matchedDriver || legacyAssignment) {
+      initialDataSavedRef.current = true;
+      
+      const driverId = matchedDriver ? String(matchedDriver.driver_id) : null;
+      const driverName = matchedDriver ? getDriverFullName(matchedDriver) : legacyAssignment;
+      const initialStatus = driverId || legacyAssignment ? 'assigned' : 'available';
+
+      upsertAssignment.mutate({
+        license_plate: licensePlate,
+        driver_id: driverId,
+        driver_name: driverName,
+        status: initialStatus,
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: null,
+        assigned_by_id: user.id,
+        assigned_by_name: user.name || user.email || null,
+      });
+    }
+  }, [licensePlate, assignmentLoading, driversLoading, existingAssignment, matchedDriver, legacyAssignment, user, upsertAssignment]);
 
   // Auto-update status when assignment changes (unless explicit status like maintenance is set)
   useEffect(() => {
