@@ -238,7 +238,6 @@ export default function VehicleProfile() {
     }
   };
 
-
   if (vehiclesLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -706,7 +705,7 @@ export default function VehicleProfile() {
               )}
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Last Service</p>
+              <p className="text-sm text-muted-foreground">Last Service Date</p>
               {isEditingService ? (
                 <Input
                   type="date"
@@ -716,9 +715,7 @@ export default function VehicleProfile() {
                 />
               ) : (
                 <p className="text-2xl font-bold">
-                  {lastServiceDate
-                    ? format(new Date(lastServiceDate), 'dd/MM/yyyy')
-                    : 'N/A'}
+                  {lastServiceDate ? format(new Date(lastServiceDate), 'dd/MM/yyyy') : 'N/A'}
                 </p>
               )}
             </div>
@@ -737,10 +734,7 @@ export default function VehicleProfile() {
               >
                 Cancel
               </Button>
-              <Button
-                onClick={handleSaveServiceInfo}
-                disabled={isSavingService}
-              >
+              <Button onClick={handleSaveServiceInfo} disabled={isSavingService}>
                 {isSavingService ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
