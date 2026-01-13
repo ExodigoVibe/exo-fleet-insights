@@ -120,8 +120,10 @@ export default function VehicleProfile() {
   // Document states
   const [licenseExpiryDate, setLicenseExpiryDate] = useState('');
   const [licenseReminderEnabled, setLicenseReminderEnabled] = useState(false);
+  const [licenseReminderEmail, setLicenseReminderEmail] = useState('');
   const [insuranceExpiryDate, setInsuranceExpiryDate] = useState('');
   const [insuranceReminderEnabled, setInsuranceReminderEnabled] = useState(false);
+  const [insuranceReminderEmail, setInsuranceReminderEmail] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   // Service info states
@@ -152,12 +154,14 @@ export default function VehicleProfile() {
       const serviceDoc = documents.find((d) => d.document_type === 'service');
 
       if (licenseDoc) {
-        setLicenseExpiryDate(licenseDoc.expiry_date);
+        setLicenseExpiryDate(licenseDoc.expiry_date || '');
         setLicenseReminderEnabled(licenseDoc.email_reminder_enabled);
+        setLicenseReminderEmail(licenseDoc.reminder_email || '');
       }
       if (insuranceDoc) {
-        setInsuranceExpiryDate(insuranceDoc.expiry_date);
+        setInsuranceExpiryDate(insuranceDoc.expiry_date || '');
         setInsuranceReminderEnabled(insuranceDoc.email_reminder_enabled);
+        setInsuranceReminderEmail(insuranceDoc.reminder_email || '');
       }
       if (serviceDoc) {
         setNextServiceMileage(serviceDoc.next_service_mileage?.toString() || '');
@@ -196,6 +200,7 @@ export default function VehicleProfile() {
             document_type: 'license',
             expiry_date: licenseExpiryDate,
             email_reminder_enabled: licenseReminderEnabled,
+            reminder_email: licenseReminderEmail || null,
           }),
         );
       }
@@ -207,6 +212,7 @@ export default function VehicleProfile() {
             document_type: 'insurance',
             expiry_date: insuranceExpiryDate,
             email_reminder_enabled: insuranceReminderEnabled,
+            reminder_email: insuranceReminderEmail || null,
           }),
         );
       }
@@ -638,7 +644,16 @@ export default function VehicleProfile() {
                       )}
                       <p>
                         <span className="font-medium">Email Reminder:</span>{' '}
-                        {doc.email_reminder_enabled ? 'Enabled' : 'Disabled'}
+                        {doc.email_reminder_enabled ? (
+                          <>
+                            Enabled
+                            {doc.reminder_email && (
+                              <span className="text-muted-foreground"> ({doc.reminder_email})</span>
+                            )}
+                          </>
+                        ) : (
+                          'Disabled'
+                        )}
                       </p>
                       {doc.document_url && (
                         <a
@@ -701,6 +716,17 @@ export default function VehicleProfile() {
                 Email reminder 1 month before expiry
               </label>
             </div>
+            {licenseReminderEnabled && (
+              <div className="ml-6">
+                <Input
+                  type="email"
+                  placeholder="Enter email for reminder"
+                  value={licenseReminderEmail}
+                  onChange={(e) => setLicenseReminderEmail(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+            )}
           </div>
 
           {/* Vehicle Insurance */}
@@ -739,6 +765,17 @@ export default function VehicleProfile() {
                 Email reminder 1 month before expiry
               </label>
             </div>
+            {insuranceReminderEnabled && (
+              <div className="ml-6">
+                <Input
+                  type="email"
+                  placeholder="Enter email for reminder"
+                  value={insuranceReminderEmail}
+                  onChange={(e) => setInsuranceReminderEmail(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+            )}
           </div>
 
           <Button
