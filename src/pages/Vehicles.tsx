@@ -59,13 +59,14 @@ const Vehicles = () => {
     };
   }, [queryClient]);
 
-  // Build a map of license plate to driver name from vehicle_assignments (new table)
-  const newAssignmentMap = useMemo(() => {
-    const map = new Map<string, string>();
+  // Build a map of license plate to assignment info from vehicle_assignments (new table)
+  const vehicleAssignmentMap = useMemo(() => {
+    const map = new Map<string, { driverName: string | null; status: string }>();
     vehicleAssignments?.forEach((assignment) => {
-      if (assignment.driver_name) {
-        map.set(assignment.license_plate, assignment.driver_name);
-      }
+      map.set(assignment.license_plate, {
+        driverName: assignment.driver_name || null,
+        status: assignment.status || 'available',
+      });
     });
     return map;
   }, [vehicleAssignments]);
@@ -83,36 +84,45 @@ const Vehicles = () => {
 
   // Get assignment for a license plate - prioritize new table, fallback to legacy
   const getAssignmentName = (licensePlate: string): string | null => {
-    return newAssignmentMap.get(licensePlate) || legacyAssignmentMap.get(licensePlate) || null;
+    const newAssignment = vehicleAssignmentMap.get(licensePlate);
+    if (newAssignment?.driverName) return newAssignment.driverName;
+    return legacyAssignmentMap.get(licensePlate) || null;
   };
 
-  // Get all assigned license plates (from both tables)
-  const assignedLicensePlates = useMemo(() => {
-    const plates = new Set<string>();
-    // From new vehicle_assignments table
-    vehicleAssignments?.forEach((assignment) => {
-      if (assignment.driver_id) {
-        plates.add(assignment.license_plate);
-      }
-    });
-    // From legacy assigned_vehicles table
-    assignedVehiclesData?.forEach((assignment) => {
-      assignment.license_plates.forEach((plate) => plates.add(plate));
-    });
-    return plates;
-  }, [vehicleAssignments, assignedVehiclesData]);
+  // Get the effective status for a vehicle
+  // Priority: explicit status (maintenance) > assigned/available based on driver
+  const getVehicleStatus = (licensePlate: string): 'available' | 'assigned' | 'maintenance' => {
+    const assignment = vehicleAssignmentMap.get(licensePlate);
+    
+    // If there's an explicit status like "maintenance", it takes priority
+    if (assignment?.status?.toLowerCase() === 'maintenance') {
+      return 'maintenance';
+    }
+    
+    // Check if driver is assigned (from new table or legacy table)
+    const hasDriver = assignment?.driverName || legacyAssignmentMap.has(licensePlate);
+    return hasDriver ? 'assigned' : 'available';
+  };
 
-  // Get all unassigned license plates (from vehicles minus assignments)
-  const unassignedLicensePlates = useMemo(() => {
-    const plates = new Set<string>();
+  // Get vehicles by calculated status
+  const vehiclesByStatus = useMemo(() => {
+    const available: string[] = [];
+    const assigned: string[] = [];
+    const maintenance: string[] = [];
+
     vehicles?.forEach((vehicle) => {
-      const plate = vehicle.license_plate;
-      if (plate && !assignedLicensePlates.has(plate)) {
-        plates.add(plate);
+      const status = getVehicleStatus(vehicle.license_plate);
+      if (status === 'maintenance') {
+        maintenance.push(vehicle.license_plate);
+      } else if (status === 'assigned') {
+        assigned.push(vehicle.license_plate);
+      } else {
+        available.push(vehicle.license_plate);
       }
     });
-    return plates;
-  }, [vehicles, assignedLicensePlates]);
+
+    return { available, assigned, maintenance };
+  }, [vehicles, vehicleAssignmentMap, legacyAssignmentMap]);
 
   // Read filter from URL on mount
   useEffect(() => {
@@ -131,16 +141,13 @@ const Vehicles = () => {
 
     let filtered = vehicles;
 
-    // Apply status filter
+    // Apply status filter based on calculated status
     if (statusFilter === 'available') {
-      // Available = not assigned
-      filtered = filtered.filter((v) => !assignedLicensePlates.has(v.license_plate));
+      filtered = filtered.filter((v) => vehiclesByStatus.available.includes(v.license_plate));
     } else if (statusFilter === 'assigned') {
-      // Show only vehicles that are assigned
-      filtered = filtered.filter((v) => assignedLicensePlates.has(v.license_plate));
+      filtered = filtered.filter((v) => vehiclesByStatus.assigned.includes(v.license_plate));
     } else if (statusFilter === 'maintenance') {
-      // Show vehicles in maintenance
-      filtered = filtered.filter((v) => v.motion_status?.toLowerCase() === 'maintenance');
+      filtered = filtered.filter((v) => vehiclesByStatus.maintenance.includes(v.license_plate));
     }
 
     // Apply search filter
@@ -164,14 +171,13 @@ const Vehicles = () => {
     }
 
     return filtered;
-  }, [vehicles, searchTerm, statusFilter, assignedLicensePlates, unassignedLicensePlates]);
+  }, [vehicles, searchTerm, statusFilter, vehiclesByStatus]);
 
   // Calculate KPIs
   const totalVehicles = vehicles?.length || 0;
-  const availableVehicles = unassignedLicensePlates.size || 0;
-  const assignedVehiclesCount = assignedLicensePlates.size || 0;
-  const maintenanceVehicles =
-    vehicles?.filter((v) => v.motion_status === 'maintenance')?.length || 0;
+  const availableVehicles = vehiclesByStatus.available.length;
+  const assignedVehiclesCount = vehiclesByStatus.assigned.length;
+  const maintenanceVehicles = vehiclesByStatus.maintenance.length;
 
   const handleExportToExcel = () => {
     if (!filteredVehicles.length) {
@@ -386,13 +392,20 @@ const Vehicles = () => {
                           <TableCell>-</TableCell>
                           <TableCell>{vehicle.color || '-'}</TableCell>
                           <TableCell>
-                            {assignedTo ? (
-                              <Badge variant="default" className="bg-blue-600">
-                                Assigned
-                              </Badge>
-                            ) : (
-                              getStatusBadge(vehicle.motion_status)
-                            )}
+                            {(() => {
+                              const status = getVehicleStatus(vehicle.license_plate);
+                              if (status === 'maintenance') {
+                                return <Badge variant="warning">Maintenance</Badge>;
+                              } else if (status === 'assigned') {
+                                return (
+                                  <Badge variant="default" className="bg-blue-600">
+                                    Assigned
+                                  </Badge>
+                                );
+                              } else {
+                                return <Badge variant="success">Available</Badge>;
+                              }
+                            })()}
                           </TableCell>
                         </TableRow>
                       );

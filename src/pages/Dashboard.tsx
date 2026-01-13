@@ -70,32 +70,54 @@ const Dashboard = () => {
     return { total, pending };
   }, [vehicleRequests, hasAdminAccess, user?.email]);
 
-  // Get all assigned license plates (from both tables - same logic as Vehicles page)
-  const assignedLicensePlates = useMemo(() => {
-    const plates = new Set<string>();
-    // From new vehicle_assignments table
+  // Build assignment maps (same logic as Vehicles page)
+  const vehicleAssignmentMap = useMemo(() => {
+    const map = new Map<string, { driverName: string | null; status: string }>();
     vehicleAssignments?.forEach((assignment) => {
-      if (assignment.driver_id) {
-        plates.add(assignment.license_plate);
-      }
+      map.set(assignment.license_plate, {
+        driverName: assignment.driver_name || null,
+        status: assignment.status || 'available',
+      });
     });
-    // From legacy assigned_vehicles table
-    assignedVehiclesData?.forEach((assignment) => {
-      assignment.license_plates.forEach((plate) => plates.add(plate));
-    });
-    return plates;
-  }, [vehicleAssignments, assignedVehiclesData]);
+    return map;
+  }, [vehicleAssignments]);
 
-  // Calculate vehicle fleet recap data (aligned with Vehicles page)
+  const legacyAssignmentMap = useMemo(() => {
+    const map = new Map<string, string>();
+    assignedVehiclesData?.forEach((assignment) => {
+      assignment.license_plates.forEach((plate) => {
+        map.set(plate, assignment.employee_name);
+      });
+    });
+    return map;
+  }, [assignedVehiclesData]);
+
+  // Calculate vehicle fleet recap data with priority: maintenance status > assigned/available
   const vehicleFleetRecap = useMemo(() => {
     const total = snowflakeVehicles.length;
-    const assigned = assignedLicensePlates.size;
-    const available = total - assigned;
-    const maintenance = snowflakeVehicles.filter(
-      (v) => v.motion_status?.toLowerCase() === 'maintenance',
-    ).length;
+    let available = 0;
+    let assigned = 0;
+    let maintenance = 0;
+
+    snowflakeVehicles.forEach((vehicle) => {
+      const assignment = vehicleAssignmentMap.get(vehicle.license_plate);
+
+      // If there's an explicit status like "maintenance", it takes priority
+      if (assignment?.status?.toLowerCase() === 'maintenance') {
+        maintenance++;
+      } else {
+        // Check if driver is assigned (from new table or legacy table)
+        const hasDriver = assignment?.driverName || legacyAssignmentMap.has(vehicle.license_plate);
+        if (hasDriver) {
+          assigned++;
+        } else {
+          available++;
+        }
+      }
+    });
+
     return { total, available, assigned, maintenance };
-  }, [snowflakeVehicles, assignedLicensePlates]);
+  }, [snowflakeVehicles, vehicleAssignmentMap, legacyAssignmentMap]);
 
   // Get recent requests (last 3) - filter by user email for non-admin users
   const recentRequests = useMemo(() => {
