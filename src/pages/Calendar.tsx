@@ -34,13 +34,13 @@ const Calendar = () => {
       request: req,
     }));
 
-    // Only show assignments that have a driver assigned (not unassigned)
+    // Only show assignments that have a driver assigned and a valid start_date
     const assignmentEvents: CalendarEvent[] = assignments
-      .filter((assignment) => assignment.driver_id !== null)
+      .filter((assignment) => assignment.driver_id !== null && assignment.start_date !== null)
       .map((assignment) => ({
         id: assignment.id,
         title: `${assignment.license_plate}${assignment.driver_name ? ` - ${assignment.driver_name}` : ''}`,
-        date: parseISO(assignment.start_date),
+        date: parseISO(assignment.start_date!),
         endDate: assignment.end_date ? parseISO(assignment.end_date) : undefined,
         status: assignment.status,
         type: 'assignment' as const,
