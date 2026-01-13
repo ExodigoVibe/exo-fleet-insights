@@ -124,7 +124,6 @@ export default function VehicleProfile() {
   const [insuranceExpiryDate, setInsuranceExpiryDate] = useState('');
   const [insuranceReminderEnabled, setInsuranceReminderEnabled] = useState(false);
   const [insuranceReminderEmail, setInsuranceReminderEmail] = useState('');
-  
 
   // Service info states
   const [nextServiceMileage, setNextServiceMileage] = useState('');
@@ -469,7 +468,6 @@ export default function VehicleProfile() {
                   <SelectItem value="available">Available</SelectItem>
                   <SelectItem value="assigned">Assigned</SelectItem>
                   <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="retired">Retired</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -590,10 +588,7 @@ export default function VehicleProfile() {
               <h4 className="text-sm font-medium text-muted-foreground">Saved Documents</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {documents.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="bg-background rounded-md border p-3 space-y-2"
-                  >
+                  <div key={doc.id} className="bg-background rounded-md border p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-medium capitalize">
                         {doc.document_type === 'license'
@@ -614,7 +609,7 @@ export default function VehicleProfile() {
                           className={cn(
                             isDocumentExpiringSoon(doc.expiry_date) &&
                               !isDocumentExpired(doc.expiry_date) &&
-                              'bg-amber-500 text-white hover:bg-amber-600'
+                              'bg-amber-500 text-white hover:bg-amber-600',
                           )}
                         >
                           {isDocumentExpired(doc.expiry_date)
@@ -729,11 +724,7 @@ export default function VehicleProfile() {
                 />
               </div>
             )}
-            <Button
-              size="sm"
-              onClick={handleSaveLicense}
-              disabled={isSavingLicense}
-            >
+            <Button size="sm" onClick={handleSaveLicense} disabled={isSavingLicense}>
               {isSavingLicense ? 'Saving...' : 'Save License'}
             </Button>
           </div>
@@ -785,11 +776,7 @@ export default function VehicleProfile() {
                 />
               </div>
             )}
-            <Button
-              size="sm"
-              onClick={handleSaveInsurance}
-              disabled={isSavingInsurance}
-            >
+            <Button size="sm" onClick={handleSaveInsurance} disabled={isSavingInsurance}>
               {isSavingInsurance ? 'Saving...' : 'Save Insurance'}
             </Button>
           </div>
