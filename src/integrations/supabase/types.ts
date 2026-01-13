@@ -305,7 +305,7 @@ export type Database = {
           document_type: string
           document_url: string | null
           email_reminder_enabled: boolean
-          expiry_date: string
+          expiry_date: string | null
           id: string
           last_service_date: string | null
           license_plate: string
@@ -318,7 +318,7 @@ export type Database = {
           document_type: string
           document_url?: string | null
           email_reminder_enabled?: boolean
-          expiry_date: string
+          expiry_date?: string | null
           id?: string
           last_service_date?: string | null
           license_plate: string
@@ -331,7 +331,7 @@ export type Database = {
           document_type?: string
           document_url?: string | null
           email_reminder_enabled?: boolean
-          expiry_date?: string
+          expiry_date?: string | null
           id?: string
           last_service_date?: string | null
           license_plate?: string
