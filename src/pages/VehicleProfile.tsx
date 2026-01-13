@@ -131,19 +131,39 @@ export default function VehicleProfile() {
   const [isEditingService, setIsEditingService] = useState(false);
   const [isSavingService, setIsSavingService] = useState(false);
 
-  // Load existing assignment data
+  // Load existing assignment data and set initial status based on data
   useEffect(() => {
     if (existingAssignment) {
+      // Pre-populate with existing assignment data
       setAssignment(existingAssignment.driver_id || 'unassigned');
-      setStatus(existingAssignment.status);
+      // Use the saved status (e.g., maintenance takes priority)
+      setStatus(existingAssignment.status || 'available');
       if (existingAssignment.start_date) {
         setAssignmentStartDate(new Date(existingAssignment.start_date));
       }
       if (existingAssignment.end_date) {
         setAssignmentEndDate(new Date(existingAssignment.end_date));
       }
+    } else if (!assignmentLoading && licensePlate) {
+      // No existing assignment record - set initial status based on driver
+      // This will be 'available' by default (unassigned)
+      setAssignment('unassigned');
+      setStatus('available');
     }
-  }, [existingAssignment]);
+  }, [existingAssignment, assignmentLoading, licensePlate]);
+
+  // Auto-update status when assignment changes (unless explicit status like maintenance is set)
+  useEffect(() => {
+    // Only auto-update if the current status is 'available' or 'assigned'
+    // Don't change if status is 'maintenance' (user explicitly set it)
+    if (status !== 'maintenance') {
+      if (assignment && assignment !== 'unassigned') {
+        setStatus('assigned');
+      } else {
+        setStatus('available');
+      }
+    }
+  }, [assignment]);
 
   // Load document data when fetched
   useEffect(() => {
