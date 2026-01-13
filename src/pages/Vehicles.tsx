@@ -50,7 +50,7 @@ const Vehicles = () => {
         () => {
           // Invalidate the query to refetch data
           queryClient.invalidateQueries({ queryKey: ['vehicle-assignments'] });
-        }
+        },
       )
       .subscribe();
 
@@ -102,6 +102,18 @@ const Vehicles = () => {
     return plates;
   }, [vehicleAssignments, assignedVehiclesData]);
 
+  // Get all unassigned license plates (from vehicles minus assignments)
+  const unassignedLicensePlates = useMemo(() => {
+    const plates = new Set<string>();
+    vehicles?.forEach((vehicle) => {
+      const plate = vehicle.license_plate;
+      if (plate && !assignedLicensePlates.has(plate)) {
+        plates.add(plate);
+      }
+    });
+    return plates;
+  }, [vehicles, assignedLicensePlates]);
+
   // Read filter from URL on mount
   useEffect(() => {
     const filterParam = searchParams.get('filter') as
@@ -124,7 +136,9 @@ const Vehicles = () => {
     if (statusFilter === 'parking') {
       // Available = parking AND not assigned
       filtered = filtered.filter(
-        (v) => v.motion_status?.toLowerCase() === 'parking' && !assignedLicensePlates.has(v.license_plate)
+        (v) =>
+          v.motion_status?.toLowerCase() === 'parking' &&
+          unassignedLicensePlates.has(v.license_plate),
       );
     } else if (statusFilter === 'driving') {
       filtered = filtered.filter((v) => v.motion_status?.toLowerCase() === 'driving');
@@ -135,7 +149,7 @@ const Vehicles = () => {
       // Show all vehicles that are NOT parking or driving
       filtered = filtered.filter((v) => {
         const status = v.motion_status?.toLowerCase();
-        return status !== 'parking' && status !== 'driving';
+        return status === 'maintenance';
       });
     }
 
@@ -160,20 +174,14 @@ const Vehicles = () => {
     }
 
     return filtered;
-  }, [vehicles, searchTerm, statusFilter, assignedLicensePlates]);
+  }, [vehicles, searchTerm, statusFilter, assignedLicensePlates, unassignedLicensePlates]);
 
   // Calculate KPIs
   const totalVehicles = vehicles?.length || 0;
-  const availableVehicles =
-    vehicles?.filter((v) => v.motion_status?.toLowerCase() === 'parking' && !assignedLicensePlates.has(v.license_plate))?.length || 0;
-  const assignedVehiclesCount = assignedLicensePlates.size;
-  const drivingVehicles =
-    vehicles?.filter((v) => v.motion_status?.toLowerCase() === 'driving')?.length || 0;
+  const availableVehicles = unassignedLicensePlates.size || 0;
+  const assignedVehiclesCount = assignedLicensePlates.size || 0;
   const maintenanceVehicles =
-    vehicles?.filter((v) => {
-      const status = v.motion_status?.toLowerCase();
-      return status !== 'parking' && status !== 'driving';
-    })?.length || 0;
+    vehicles?.filter((v) => v.motion_status === 'maintenance')?.length || 0;
 
   const handleExportToExcel = () => {
     if (!filteredVehicles.length) {
@@ -391,7 +399,9 @@ const Vehicles = () => {
                           <TableCell>{vehicle.color || '-'}</TableCell>
                           <TableCell>
                             {assignedTo ? (
-                              <Badge variant="default" className="bg-blue-600">Assigned</Badge>
+                              <Badge variant="default" className="bg-blue-600">
+                                Assigned
+                              </Badge>
                             ) : (
                               getStatusBadge(vehicle.motion_status)
                             )}
