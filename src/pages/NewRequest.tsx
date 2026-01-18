@@ -58,8 +58,9 @@ export default function NewRequest() {
   const { id } = useParams();
   const isEditMode = !!id;
   const [usageType, setUsageType] = useState<"single_use" | "permanent_driver">("single_use");
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [licenseFile, setLicenseFile] = useState<File | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [templateFile, setTemplateFile] = useState<File | null>(null);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const createRequest = useCreateVehicleRequest();
@@ -158,6 +159,7 @@ export default function NewRequest() {
   // Reset template selection when usage type changes
   useEffect(() => {
     setSelectedTemplateId("");
+    setTemplateFile(null);
     setSignatureDataUrl(null);
   }, [usageType]);
 
@@ -193,8 +195,8 @@ export default function NewRequest() {
     try {
       console.log("Submitting request with data:", data);
       
-      // Validate file upload
-      if (uploadedFiles.length === 0 && !isEditMode) {
+      // Validate license file upload
+      if (!licenseFile && !isEditMode) {
         toast.error("Please upload your driver's license");
         return;
       }
@@ -205,35 +207,69 @@ export default function NewRequest() {
         return;
       }
       
+      // Validate template file upload
+      if (!templateFile && !isEditMode) {
+        toast.error("Please upload the signed document");
+        return;
+      }
+      
       // Validate signature
       if (!signatureDataUrl && !isEditMode) {
         toast.error("Please sign the document before submitting");
         return;
       }
       
-      // Upload files to storage
-      const fileUrls: string[] = [];
-      
-      for (const file of uploadedFiles) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `files/${fileName}`;
+      // Upload license file to storage
+      let licenseFileUrl: string | undefined;
+      if (licenseFile) {
+        const fileExt = licenseFile.name.split('.').pop();
+        const fileName = `licenses/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
           .from('vehicle-request-files')
-          .upload(filePath, file);
+          .upload(fileName, licenseFile);
           
         if (uploadError) {
-          console.error("File upload error:", uploadError);
-          toast.error(`Failed to upload file: ${file.name}`);
-          continue;
+          console.error("License file upload error:", uploadError);
+          toast.error("Failed to upload license file");
+          return;
         }
         
         const { data: urlData } = supabase.storage
           .from('vehicle-request-files')
-          .getPublicUrl(filePath);
+          .getPublicUrl(fileName);
           
-        fileUrls.push(urlData.publicUrl);
+        licenseFileUrl = urlData.publicUrl;
+      }
+      
+      // Upload template file and create file_urls array with template info
+      let fileUrls: string[] = [];
+      if (templateFile && selectedTemplateId) {
+        const fileExt = templateFile.name.split('.').pop();
+        const fileName = `documents/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('vehicle-request-files')
+          .upload(fileName, templateFile);
+          
+        if (uploadError) {
+          console.error("Template file upload error:", uploadError);
+          toast.error("Failed to upload document file");
+          return;
+        }
+        
+        const { data: urlData } = supabase.storage
+          .from('vehicle-request-files')
+          .getPublicUrl(fileName);
+        
+        // Store as JSON string with template name and file URL
+        const templateName = selectedTemplate?.form_title || "Unknown Template";
+        const fileObject = JSON.stringify({
+          template_name: templateName,
+          template_id: selectedTemplateId,
+          file_url: urlData.publicUrl
+        });
+        fileUrls = [fileObject];
       }
       
       // Upload signature if present
@@ -258,6 +294,7 @@ export default function NewRequest() {
         department_manager: data.department_manager,
         manager_email: data.manager_email,
         priority: "medium" as const,
+        license_file_url: licenseFileUrl,
         file_urls: fileUrls.length > 0 ? fileUrls : undefined,
         signature_url: signatureUrl,
         signed_at: signatureUrl ? new Date().toISOString() : undefined,
@@ -787,91 +824,229 @@ export default function NewRequest() {
               </div>
             </Card>
 
-            <Card className={`p-6 ${!isEditMode && uploadedFiles.length === 0 ? 'border-amber-500' : ''}`}>
+            {/* Driver's License Upload Section */}
+            <Card className={`p-6 ${!isEditMode && !licenseFile ? 'border-amber-500' : ''}`}>
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                Required Forms
+                Driver's License
                 <span className="text-destructive">*</span>
-                {!isEditMode && uploadedFiles.length > 0 && (
-                  <span className="text-emerald-600 text-sm font-normal ml-2">✓ {uploadedFiles.length} file(s) uploaded</span>
+                {!isEditMode && licenseFile && (
+                  <span className="text-emerald-600 text-sm font-normal ml-2">✓ Uploaded</span>
                 )}
               </h3>
 
               <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-3">
-                    Documents & Files <span className="text-destructive">*</span>
-                  </h4>
-                  <div className={`border-2 border-dashed rounded-lg p-8 ${!isEditMode && uploadedFiles.length === 0 ? 'border-amber-500 bg-amber-50/50' : 'border-border'}`}>
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                        <FileText className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                      <div className="text-center">
-                        <p className="font-medium">Upload Documents</p>
-                        <p className="text-sm text-muted-foreground">Driver's license, traffic history, or other required files</p>
-                      </div>
-                      <label htmlFor="file-upload">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="gap-2 hover:bg-gray-100 hover:text-foreground"
-                          onClick={() => document.getElementById("file-upload")?.click()}
-                        >
-                          <Upload className="h-4 w-4" />
-                          Upload Files
-                        </Button>
-                      </label>
-                      <input
-                        id="file-upload"
-                        type="file"
-                        multiple
-                        accept="image/*,.pdf"
-                        className="hidden"
-                        onChange={(e) => {
-                          if (e.target.files) {
-                            const newFiles = Array.from(e.target.files);
-                            setUploadedFiles([...uploadedFiles, ...newFiles]);
-                            toast.success(`${newFiles.length} file(s) added`);
-                          }
-                        }}
-                      />
-                      {uploadedFiles.length > 0 && (
-                        <div className="mt-4 space-y-2 w-full">
-                          <p className="text-sm text-muted-foreground text-center">
-                            {uploadedFiles.length} file(s) selected
-                          </p>
-                          <div className="flex flex-wrap gap-2 justify-center">
-                            {uploadedFiles.map((file, index) => (
-                              <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded text-sm">
-                                <span className="truncate max-w-[150px]">{file.name}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setUploadedFiles(uploadedFiles.filter((_, i) => i !== index))}
-                                  className="text-muted-foreground hover:text-foreground"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                <div className={`border-2 border-dashed rounded-lg p-8 ${!isEditMode && !licenseFile ? 'border-amber-500 bg-amber-50/50' : 'border-border'}`}>
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                      <FileText className="h-6 w-6 text-muted-foreground" />
                     </div>
+                    <div className="text-center">
+                      <p className="font-medium">Upload Driver's License</p>
+                      <p className="text-sm text-muted-foreground">Upload a photo or scan of your driver's license</p>
+                    </div>
+                    <label htmlFor="license-upload">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="gap-2 hover:bg-gray-100 hover:text-foreground"
+                        onClick={() => document.getElementById("license-upload")?.click()}
+                      >
+                        <Upload className="h-4 w-4" />
+                        Upload License
+                      </Button>
+                    </label>
+                    <input
+                      id="license-upload"
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setLicenseFile(e.target.files[0]);
+                          toast.success("License file added");
+                        }
+                      }}
+                    />
+                    {licenseFile && (
+                      <div className="mt-4 w-full">
+                        <div className="flex items-center justify-center gap-2 bg-muted px-3 py-2 rounded text-sm">
+                          <span className="truncate max-w-[200px]">{licenseFile.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setLicenseFile(null)}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </Card>
 
+            {/* Document Template Upload Section */}
+            <Card className={`p-6 ${!isEditMode && (!selectedTemplateId || !templateFile) ? 'border-amber-500' : ''}`}>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                Required Forms
+                <span className="text-destructive">*</span>
+                {!isEditMode && selectedTemplateId && templateFile && (
+                  <span className="text-emerald-600 text-sm font-normal ml-2">✓ Completed</span>
+                )}
+              </h3>
+
+              <div className="space-y-6">
+                {/* Template Selection */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Select Document Template <span className="text-destructive">*</span>
+                  </label>
+                  <Select value={selectedTemplateId} onValueChange={(value) => {
+                    setSelectedTemplateId(value);
+                    setTemplateFile(null); // Reset file when template changes
+                  }}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a document template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTemplates.length === 0 ? (
+                        <SelectItem value="none" disabled>
+                          No templates available for {usageType === "single_use" ? "Single Use" : "Permanent Driver"}
+                        </SelectItem>
+                      ) : (
+                        availableTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.form_title}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Template Preview */}
+                {selectedTemplate && (
+                  <div className="bg-muted/30 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">{selectedTemplate.form_title}</h4>
+                    {selectedTemplate.description && (
+                      <p className="text-sm text-muted-foreground mb-3">{selectedTemplate.description}</p>
+                    )}
+                    
+                    {/* PDF Preview */}
+                    {selectedTemplate.pdf_template_url && (
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => setShowPdfPreview(!showPdfPreview)}
+                          >
+                            <FileText className="h-4 w-4" />
+                            {showPdfPreview ? 'Hide Preview' : 'Preview PDF'}
+                          </Button>
+                          <a 
+                            href={selectedTemplate.pdf_template_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex"
+                          >
+                            <Button type="button" variant="outline" size="sm" className="gap-2">
+                              Download Template
+                            </Button>
+                          </a>
+                        </div>
+                        
+                        {showPdfPreview && (
+                          <div className="border rounded-lg overflow-hidden bg-white">
+                            <iframe
+                              src={`https://docs.google.com/viewer?url=${encodeURIComponent(selectedTemplate.pdf_template_url)}&embedded=true`}
+                              className="w-full h-[400px]"
+                              title="PDF Preview"
+                              frameBorder="0"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* File Upload for Selected Template */}
+                {selectedTemplateId && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Upload Signed Document <span className="text-destructive">*</span>
+                    </label>
+                    <div className={`border-2 border-dashed rounded-lg p-6 ${!isEditMode && !templateFile ? 'border-amber-500 bg-amber-50/50' : 'border-border'}`}>
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                          <Upload className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div className="text-center">
+                          <p className="font-medium text-sm">Upload your signed document</p>
+                          <p className="text-xs text-muted-foreground">
+                            Download the template above, fill it out, and upload the signed version
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => document.getElementById("template-file-upload")?.click()}
+                        >
+                          <Upload className="h-4 w-4" />
+                          Upload Signed Document
+                        </Button>
+                        <input
+                          id="template-file-upload"
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              setTemplateFile(e.target.files[0]);
+                              toast.success("Document file added");
+                            }
+                          }}
+                        />
+                        {templateFile && (
+                          <div className="mt-2 w-full">
+                            <div className="flex items-center justify-center gap-2 bg-muted px-3 py-2 rounded text-sm">
+                              <span className="truncate max-w-[200px]">{templateFile.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => setTemplateFile(null)}
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+
             {/* Validation Summary */}
-            {!isEditMode && (uploadedFiles.length === 0 || !selectedTemplateId || !signatureDataUrl) && (
+            {!isEditMode && (!licenseFile || !selectedTemplateId || !templateFile || !signatureDataUrl) && (
               <Card className="p-4 border-amber-500 bg-amber-50">
                 <h3 className="font-semibold text-amber-800 mb-2">Required items before submitting:</h3>
                 <ul className="text-sm text-amber-700 space-y-1">
-                  {uploadedFiles.length === 0 && (
+                  {!licenseFile && (
                     <li>• Upload driver's license photo</li>
                   )}
                   {!selectedTemplateId && (
                     <li>• Select a document template</li>
+                  )}
+                  {!templateFile && selectedTemplateId && (
+                    <li>• Upload the signed document</li>
                   )}
                   {!signatureDataUrl && (
                     <li>• Sign the document</li>
@@ -892,7 +1067,7 @@ export default function NewRequest() {
               <Button 
                 type="submit" 
                 className="bg-primary hover:bg-primary/90"
-                disabled={!isEditMode && (uploadedFiles.length === 0 || !selectedTemplateId || !signatureDataUrl)}
+                disabled={!isEditMode && (!licenseFile || !selectedTemplateId || !templateFile || !signatureDataUrl)}
               >
                 {isEditMode ? "Update Request" : "Submit Request"}
               </Button>
