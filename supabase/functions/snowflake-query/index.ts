@@ -1,29 +1,32 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { decode as base64Decode, encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import 'https://deno.land/x/xhr@0.1.0/mod.ts';
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import {
+  decode as base64Decode,
+  encode as base64Encode,
+} from 'https://deno.land/std@0.168.0/encoding/base64.ts';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST,GET,OPTIONS",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST,GET,OPTIONS',
 };
 
 // Base64URL encode (without padding)
 function base64UrlEncode(data: string | Uint8Array): string {
-  let binary = "";
-  if (typeof data === "string") {
+  let binary = '';
+  if (typeof data === 'string') {
     binary = data;
   } else {
     for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
   }
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
 // Compute SHA-256 digest and return standard Base64 (not URL-safe)
 async function sha256Base64(bytes: Uint8Array): Promise<string> {
-  const hashBuf = await crypto.subtle.digest("SHA-256", bytes.buffer as ArrayBuffer);
+  const hashBuf = await crypto.subtle.digest('SHA-256', bytes.buffer as ArrayBuffer);
   const hash = new Uint8Array(hashBuf);
-  let binary = "";
+  let binary = '';
   for (let i = 0; i < hash.length; i++) binary += String.fromCharCode(hash[i]);
   return btoa(binary);
 }
@@ -40,15 +43,15 @@ async function createJWT(
   const qualifiedUsername = `${accountUpper}.${userUpper}`;
 
   const privateKey = await crypto.subtle.importKey(
-    "pkcs8",
+    'pkcs8',
     new Uint8Array(privateKeyDer),
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     false,
-    ["sign"],
+    ['sign'],
   );
 
   const now = Math.floor(Date.now() / 1000);
-  const header = { alg: "RS256", typ: "JWT" };
+  const header = { alg: 'RS256', typ: 'JWT' };
   const payload = {
     iss: `${qualifiedUsername}.${publicKeyFingerprint}`,
     sub: qualifiedUsername,
@@ -57,90 +60,103 @@ async function createJWT(
   };
 
   const message = `${base64UrlEncode(JSON.stringify(header))}.${base64UrlEncode(JSON.stringify(payload))}`;
-  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", privateKey, new TextEncoder().encode(message));
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    privateKey,
+    new TextEncoder().encode(message),
+  );
   const encodedSignature = base64UrlEncode(new Uint8Array(signature));
   return `${message}.${encodedSignature}`;
 }
 
 // Extract public key from private key and compute fingerprint
 async function extractPublicKeyAndComputeFingerprint(privateKeyDer: Uint8Array): Promise<string> {
-  console.log("[Fingerprint] Starting public key extraction from private key");
+  console.log('[Fingerprint] Starting public key extraction from private key');
 
   // Import the private key
   const privateKey = await crypto.subtle.importKey(
-    "pkcs8",
+    'pkcs8',
     privateKeyDer.buffer as ArrayBuffer,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     true,
-    ["sign"],
+    ['sign'],
   );
-  console.log("[Fingerprint] Private key imported successfully");
+  console.log('[Fingerprint] Private key imported successfully');
 
   // Export as JWK to access the public key components
-  const jwk = await crypto.subtle.exportKey("jwk", privateKey);
-  console.log("[Fingerprint] Exported to JWK, modulus length:", jwk.n?.length);
+  const jwk = await crypto.subtle.exportKey('jwk', privateKey);
+  console.log('[Fingerprint] Exported to JWK, modulus length:', jwk.n?.length);
 
   // Re-import as public key and export in SPKI format
   const publicKey = await crypto.subtle.importKey(
-    "jwk",
-    { kty: jwk.kty, n: jwk.n, e: jwk.e, alg: "RS256", key_ops: ["verify"] },
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    'jwk',
+    { kty: jwk.kty, n: jwk.n, e: jwk.e, alg: 'RS256', key_ops: ['verify'] },
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
     true,
-    ["verify"],
+    ['verify'],
   );
-  console.log("[Fingerprint] Public key re-imported successfully");
+  console.log('[Fingerprint] Public key re-imported successfully');
 
-  const publicKeySpki = await crypto.subtle.exportKey("spki", publicKey);
-  console.log("[Fingerprint] Public key SPKI length:", publicKeySpki.byteLength);
+  const publicKeySpki = await crypto.subtle.exportKey('spki', publicKey);
+  console.log('[Fingerprint] Public key SPKI length:', publicKeySpki.byteLength);
 
   const fpB64 = await sha256Base64(new Uint8Array(publicKeySpki));
   const fingerprint = `SHA256:${fpB64}`;
-  console.log("[Fingerprint] Computed fingerprint:", fingerprint);
+  console.log('[Fingerprint] Computed fingerprint:', fingerprint);
 
   return fingerprint;
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
     const { query } = await req.json();
-    if (!query || typeof query !== "string") {
-      return new Response(JSON.stringify({ error: "SQL query is required" }), {
+    if (!query || typeof query !== 'string') {
+      return new Response(JSON.stringify({ error: 'SQL query is required' }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const account = Deno.env.get("SF_ACCOUNT");
-    const user = Deno.env.get("SF_USER");
-    const role = Deno.env.get("SF_ROLE") ?? undefined;
-    const warehouse = Deno.env.get("SF_WAREHOUSE") ?? undefined;
-    const database = Deno.env.get("SF_DATABASE") ?? undefined;
-    const schema = Deno.env.get("SF_SCHEMA") ?? undefined;
+    const account = Deno.env.get('SF_ACCOUNT');
+    const user = Deno.env.get('SF_USER');
+    const role = Deno.env.get('SF_ROLE') ?? undefined;
+    const warehouse = Deno.env.get('SF_WAREHOUSE') ?? undefined;
+    const database = Deno.env.get('SF_DATABASE') ?? undefined;
+    const schema = Deno.env.get('SF_SCHEMA') ?? undefined;
+    const privateKeyBase64 = Deno.env.get('SNOWFLAKE_PRIVATE_KEY_BASE64')?.trim();
+    const configuredFingerprint = Deno.env.get('SNOWFLAKE_PUBLIC_KEY_FP')?.trim();
 
-    console.log(Deno.env.get("SF_PRIVATE_KEY"));
-
-    const privateKeyBase64 = Deno.env.get("SNOWFLAKE_PRIVATE_KEY_BASE64")?.trim();
-    const configuredFingerprint = Deno.env.get("SNOWFLAKE_PUBLIC_KEY_FP")?.trim();
+    console.log('[Snowflake Query] SF_ACCOUNT:', account);
+    console.log('[Snowflake Query] SF_USER:', user);
+    console.log('[Snowflake Query] SF_ROLE:', role);
+    console.log('[Snowflake Query] SF_WAREHOUSE:', warehouse);
+    console.log('[Snowflake Query] SF_DATABASE:', database);
+    console.log('[Snowflake Query] SF_SCHEMA:', schema);
+    console.log('[Snowflake Query] SNOWFLAKE_PRIVATE_KEY_BASE64:', privateKeyBase64);
+    console.log('[Snowflake Query] SNOWFLAKE_PUBLIC_KEY_FP:', configuredFingerprint);
 
     if (!account || !user || !privateKeyBase64) {
       return new Response(
         JSON.stringify({
-          error: "Snowflake credentials not configured (need SF_ACCOUNT, SF_USER, and SNOWFLAKE_PRIVATE_KEY_BASE64).",
+          error:
+            'Snowflake credentials not configured (need SF_ACCOUNT, SF_USER, and SNOWFLAKE_PRIVATE_KEY_BASE64).',
         }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
     // Decode private key (PKCS#8 DER, unencrypted)
     let privateKeyDer: Uint8Array;
     try {
-      privateKeyDer = base64Decode(privateKeyBase64.replace(/\s/g, ""));
+      privateKeyDer = base64Decode(privateKeyBase64.replace(/\s/g, ''));
     } catch {
       return new Response(
-        JSON.stringify({ error: "Failed to decode private key (must be base64 of PKCS#8 DER, unencrypted)." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        JSON.stringify({
+          error: 'Failed to decode private key (must be base64 of PKCS#8 DER, unencrypted).',
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
 
@@ -148,24 +164,27 @@ serve(async (req) => {
     let publicKeyFingerprint: string;
     if (configuredFingerprint) {
       publicKeyFingerprint = configuredFingerprint;
-      console.log("[Fingerprint] Using configured fingerprint from SNOWFLAKE_PUBLIC_KEY_FP:", publicKeyFingerprint);
+      console.log(
+        '[Fingerprint] Using configured fingerprint from SNOWFLAKE_PUBLIC_KEY_FP:',
+        publicKeyFingerprint,
+      );
     } else {
       publicKeyFingerprint = await extractPublicKeyAndComputeFingerprint(privateKeyDer);
-      console.log("[Fingerprint] Computed fingerprint from private key:", publicKeyFingerprint);
+      console.log('[Fingerprint] Computed fingerprint from private key:', publicKeyFingerprint);
     }
 
     // Build JWT (do NOT replace '-' with '_'; Snowflake expects hyphens preserved)
     console.log(
-      "[Snowflake Auth] Building JWT with account:",
+      '[Snowflake Auth] Building JWT with account:',
       account,
-      "user:",
+      'user:',
       user,
-      "fingerprint length:",
+      'fingerprint length:',
       publicKeyFingerprint.length,
     );
     const jwtToken = await createJWT(account, user, privateKeyDer, publicKeyFingerprint);
     console.log(
-      "[Snowflake Auth] JWT created successfully, issuer will be:",
+      '[Snowflake Auth] JWT created successfully, issuer will be:',
       `${account.toUpperCase()}.${user.toUpperCase()}.${publicKeyFingerprint}`,
     );
 
@@ -174,19 +193,22 @@ serve(async (req) => {
     // Connectivity check - verify Snowflake host is reachable
     try {
       const rootUrl = `https://${account}.snowflakecomputing.com/`;
-      const headResp = await fetch(rootUrl, { method: "HEAD" });
-      console.log("[Connectivity] Snowflake host reachable:", rootUrl, "status:", headResp.status);
+      const headResp = await fetch(rootUrl, { method: 'HEAD' });
+      console.log('[Connectivity] Snowflake host reachable:', rootUrl, 'status:', headResp.status);
     } catch (e) {
-      console.error("[Connectivity] Failed to reach Snowflake host:", e instanceof Error ? e.message : e);
+      console.error(
+        '[Connectivity] Failed to reach Snowflake host:',
+        e instanceof Error ? e.message : e,
+      );
     }
 
     const resp = await fetch(snowflakeUrl, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
         Authorization: `Bearer ${jwtToken}`,
-        "X-Snowflake-Authorization-Token-Type": "KEYPAIR_JWT",
+        'X-Snowflake-Authorization-Token-Type': 'KEYPAIR_JWT',
       },
       body: JSON.stringify({
         statement: query,
@@ -202,13 +224,18 @@ serve(async (req) => {
 
     if (!resp.ok) {
       const errText = await resp.text();
-      if (errText.includes("JWT_TOKEN_INVALID")) {
-        console.error("Likely fingerprint/account/user formatting issue in JWT. Check DESCRIBE USER.");
+      if (errText.includes('JWT_TOKEN_INVALID')) {
+        console.error(
+          'Likely fingerprint/account/user formatting issue in JWT. Check DESCRIBE USER.',
+        );
       }
-      return new Response(JSON.stringify({ error: `Snowflake API error: ${resp.status} - ${errText}` }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: `Snowflake API error: ${resp.status} - ${errText}` }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     const result = await resp.json();
@@ -224,70 +251,91 @@ serve(async (req) => {
           if (prJson.data) {
             const metadata = prJson.resultSetMetaData?.rowType || [];
             let allRows = prJson.data.map((row: any[]) => row);
-            
+
             // Handle partitioned results for large datasets
             if (prJson.resultSetMetaData?.partitionInfo) {
-              console.log("[Pagination] Detected partitioned result set, fetching additional partitions...");
+              console.log(
+                '[Pagination] Detected partitioned result set, fetching additional partitions...',
+              );
               const partitions = prJson.resultSetMetaData.partitionInfo;
-              
+
               // Start from partition 1 since partition 0 is already in prJson.data
               for (let p = 1; p < partitions.length; p++) {
                 const partitionUrl = `${snowflakeUrl}/${result.statementHandle}?partition=${p}`;
-                const partResp = await fetch(partitionUrl, { headers: { Authorization: `Bearer ${jwtToken}` } });
+                const partResp = await fetch(partitionUrl, {
+                  headers: { Authorization: `Bearer ${jwtToken}` },
+                });
                 if (partResp.ok) {
                   const partData = await partResp.json();
                   if (partData.data) {
                     allRows = allRows.concat(partData.data.map((row: any[]) => row));
-                    console.log(`[Pagination] Fetched partition ${p + 1}/${partitions.length}, total rows: ${allRows.length}`);
+                    console.log(
+                      `[Pagination] Fetched partition ${p + 1}/${partitions.length}, total rows: ${allRows.length}`,
+                    );
                   }
                 }
               }
             }
-            
-            return new Response(JSON.stringify({ columns: metadata, rows: allRows, rowCount: allRows.length }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
+
+            return new Response(
+              JSON.stringify({ columns: metadata, rows: allRows, rowCount: allRows.length }),
+              {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              },
+            );
           }
         }
       }
-      return new Response(JSON.stringify({ error: "Timed out waiting for Snowflake statement to complete." }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: 'Timed out waiting for Snowflake statement to complete.' }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     const metadata = result.resultSetMetaData?.rowType || [];
     let allRows = result.data ? result.data.map((row: any[]) => row) : [];
-    
+
     // Handle partitioned results for large datasets (30k+ rows)
     if (result.resultSetMetaData?.partitionInfo) {
-      console.log("[Pagination] Detected partitioned result set, fetching additional partitions...");
+      console.log(
+        '[Pagination] Detected partitioned result set, fetching additional partitions...',
+      );
       const partitions = result.resultSetMetaData.partitionInfo;
-      
+
       // Start from partition 1 since partition 0 is already in result.data
       for (let p = 1; p < partitions.length; p++) {
         const partitionUrl = `${snowflakeUrl}/${result.statementHandle}?partition=${p}`;
-        const partResp = await fetch(partitionUrl, { headers: { Authorization: `Bearer ${jwtToken}` } });
+        const partResp = await fetch(partitionUrl, {
+          headers: { Authorization: `Bearer ${jwtToken}` },
+        });
         if (partResp.ok) {
           const partData = await partResp.json();
           if (partData.data) {
             allRows = allRows.concat(partData.data.map((row: any[]) => row));
-            console.log(`[Pagination] Fetched partition ${p + 1}/${partitions.length}, total rows: ${allRows.length}`);
+            console.log(
+              `[Pagination] Fetched partition ${p + 1}/${partitions.length}, total rows: ${allRows.length}`,
+            );
           }
         }
       }
     }
-    
+
     console.log(`[Result] Returning ${allRows.length} total rows from Snowflake`);
-    return new Response(JSON.stringify({ columns: metadata, rows: allRows, rowCount: allRows.length }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ columns: metadata, rows: allRows, rowCount: allRows.length }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    );
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Failed to execute query";
-    console.error("Error in snowflake-query function:", msg);
+    const msg = error instanceof Error ? error.message : 'Failed to execute query';
+    console.error('Error in snowflake-query function:', msg);
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });
