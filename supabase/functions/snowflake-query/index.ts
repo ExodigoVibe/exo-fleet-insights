@@ -128,15 +128,15 @@ serve(async (req) => {
     const privateKeyBase64 = Deno.env.get('SNOWFLAKE_PRIVATE_KEY_BASE64')?.trim();
     const configuredFingerprint = Deno.env.get('SNOWFLAKE_PUBLIC_KEY_FP')?.trim();
 
-    // Log configuration immediately after reading env vars
-    console.log('[Snowflake Query] SF_ACCOUNT:', account);
-    console.log('[Snowflake Query] SF_USER:', user);
-    console.log('[Snowflake Query] SF_ROLE:', role);
-    console.log('[Snowflake Query] SF_WAREHOUSE:', warehouse);
-    console.log('[Snowflake Query] SF_DATABASE:', database);
-    console.log('[Snowflake Query] SF_SCHEMA:', schema);
-    console.log('[Snowflake Query] SNOWFLAKE_PRIVATE_KEY_BASE64:', privateKeyBase64);
-    console.log('[Snowflake Query] SNOWFLAKE_PUBLIC_KEY_FP:', configuredFingerprint);
+    // // Log configuration immediately after reading env vars
+    // console.log('[Snowflake Query] SF_ACCOUNT:', account);
+    // console.log('[Snowflake Query] SF_USER:', user);
+    // console.log('[Snowflake Query] SF_ROLE:', role);
+    // console.log('[Snowflake Query] SF_WAREHOUSE:', warehouse);
+    // console.log('[Snowflake Query] SF_DATABASE:', database);
+    // console.log('[Snowflake Query] SF_SCHEMA:', schema);
+    // console.log('[Snowflake Query] SNOWFLAKE_PRIVATE_KEY_BASE64:', privateKeyBase64);
+    // console.log('[Snowflake Query] SNOWFLAKE_PUBLIC_KEY_FP:', configuredFingerprint);
 
     if (!account || !user || !privateKeyBase64) {
       return new Response(
@@ -323,7 +323,6 @@ serve(async (req) => {
         }
       }
     }
-
 
     console.log(`[Result] Returning ${allRows.length} total rows from Snowflake`);
     return new Response(
